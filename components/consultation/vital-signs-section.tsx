@@ -5,341 +5,281 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Thermometer, Activity, Droplets, Scale, Ruler } from "lucide-react"
-
-interface VitalSigns {
-  bloodPressureSystolic?: number
-  bloodPressureDiastolic?: number
-  heartRate?: number
-  temperature?: number
-  respiratoryRate?: number
-  oxygenSaturation?: number
-  weight?: number
-  height?: number
-  bmi?: number
-}
+import { Activity, Heart, Thermometer, Wind, Droplets, Weight, Ruler, Calculator } from "lucide-react"
+import { useConsultation } from "@/contexts/consultation-context"
 
 interface VitalSignsSectionProps {
-  data: VitalSigns
-  onChange: (data: VitalSigns) => void
+  patientId: string
+  patientName: string
 }
 
-export function VitalSignsSection({ data, onChange }: VitalSignsSectionProps) {
-  const [localData, setLocalData] = useState<VitalSigns>(data || {})
+export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionProps) {
+  const { activeConsultation, updateConsultationData } = useConsultation()
 
+  const [vitals, setVitals] = useState({
+    bloodPressure: "",
+    pulse: "",
+    temperature: "",
+    respiratoryRate: "",
+    spo2: "",
+    weight: "",
+    height: "",
+    bmi: "",
+  })
+
+  // Load vitals from active consultation
   useEffect(() => {
-    setLocalData(data || {})
-  }, [data])
-
-  useEffect(() => {
-    onChange(localData)
-  }, [localData, onChange])
-
-  const updateVital = (field: keyof VitalSigns, value: string) => {
-    const numValue = value === "" ? undefined : Number.parseFloat(value)
-    setLocalData((prev) => ({
-      ...prev,
-      [field]: numValue,
-    }))
-  }
-
-  // Calculate BMI when weight and height are available
-  useEffect(() => {
-    if (localData.weight && localData.height) {
-      const heightInMeters = localData.height / 100
-      const bmi = localData.weight / (heightInMeters * heightInMeters)
-      setLocalData((prev) => ({
-        ...prev,
-        bmi: Math.round(bmi * 10) / 10,
-      }))
+    if (activeConsultation?.vitals) {
+      setVitals({
+        bloodPressure: activeConsultation.vitals.bloodPressure || "",
+        pulse: activeConsultation.vitals.pulse || "",
+        temperature: activeConsultation.vitals.temperature || "",
+        respiratoryRate: activeConsultation.vitals.respiratoryRate || "",
+        spo2: activeConsultation.vitals.spo2 || "",
+        weight: activeConsultation.vitals.weight || "",
+        height: activeConsultation.vitals.height || "",
+        bmi: activeConsultation.vitals.bmi || "",
+      })
     }
-  }, [localData.weight, localData.height])
+  }, [activeConsultation])
 
-  const getBPStatus = (systolic?: number, diastolic?: number) => {
-    if (!systolic || !diastolic) return { status: "Not recorded", color: "gray" }
+  // Auto-calculate BMI when weight or height changes
+  useEffect(() => {
+    if (vitals.weight && vitals.height) {
+      const weightKg = Number.parseFloat(vitals.weight)
+      const heightM = Number.parseFloat(vitals.height) / 100 // Convert cm to m
+      if (weightKg > 0 && heightM > 0) {
+        const bmiValue = (weightKg / (heightM * heightM)).toFixed(1)
+        setVitals((prev) => ({ ...prev, bmi: bmiValue }))
+      }
+    }
+  }, [vitals.weight, vitals.height])
 
-    if (systolic < 90 || diastolic < 60) return { status: "Low", color: "blue" }
-    if (systolic <= 120 && diastolic <= 80) return { status: "Normal", color: "green" }
-    if (systolic <= 129 && diastolic <= 80) return { status: "Elevated", color: "yellow" }
-    if (systolic <= 139 || diastolic <= 89) return { status: "Stage 1 High", color: "orange" }
-    return { status: "Stage 2 High", color: "red" }
+  // Auto-save vitals
+  useEffect(() => {
+    if (activeConsultation) {
+      const timer = setTimeout(() => {
+        updateConsultationData({ vitals })
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [vitals, activeConsultation, updateConsultationData])
+
+  const handleVitalChange = (field: string, value: string) => {
+    setVitals((prev) => ({ ...prev, [field]: value }))
   }
 
-  const getHeartRateStatus = (hr?: number) => {
-    if (!hr) return { status: "Not recorded", color: "gray" }
-    if (hr < 60) return { status: "Bradycardia", color: "blue" }
-    if (hr <= 100) return { status: "Normal", color: "green" }
-    return { status: "Tachycardia", color: "red" }
+  const getBPStatus = (bp: string) => {
+    if (!bp) return null
+    const [systolic, diastolic] = bp.split("/").map((n) => Number.parseInt(n))
+    if (isNaN(systolic) || isNaN(diastolic)) return null
+
+    if (systolic < 90 || diastolic < 60) return { status: "Low", color: "bg-blue-100 text-blue-800" }
+    if (systolic < 120 && diastolic < 80) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (systolic < 130 && diastolic < 80) return { status: "Elevated", color: "bg-yellow-100 text-yellow-800" }
+    if (systolic < 140 || diastolic < 90) return { status: "Stage 1", color: "bg-orange-100 text-orange-800" }
+    return { status: "Stage 2", color: "bg-red-100 text-red-800" }
   }
 
-  const getTemperatureStatus = (temp?: number) => {
-    if (!temp) return { status: "Not recorded", color: "gray" }
-    if (temp < 36.1) return { status: "Low", color: "blue" }
-    if (temp <= 37.2) return { status: "Normal", color: "green" }
-    if (temp <= 38.0) return { status: "Low Fever", color: "yellow" }
-    if (temp <= 39.0) return { status: "Moderate Fever", color: "orange" }
-    return { status: "High Fever", color: "red" }
+  const getPulseStatus = (pulse: string) => {
+    if (!pulse) return null
+    const rate = Number.parseInt(pulse)
+    if (isNaN(rate)) return null
+
+    if (rate < 60) return { status: "Bradycardia", color: "bg-blue-100 text-blue-800" }
+    if (rate <= 100) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    return { status: "Tachycardia", color: "bg-red-100 text-red-800" }
   }
 
-  const getSpO2Status = (spo2?: number) => {
-    if (!spo2) return { status: "Not recorded", color: "gray" }
-    if (spo2 >= 95) return { status: "Normal", color: "green" }
-    if (spo2 >= 90) return { status: "Mild Hypoxemia", color: "yellow" }
-    if (spo2 >= 85) return { status: "Moderate Hypoxemia", color: "orange" }
-    return { status: "Severe Hypoxemia", color: "red" }
+  const getTempStatus = (temp: string) => {
+    if (!temp) return null
+    const temperature = Number.parseFloat(temp)
+    if (isNaN(temperature)) return null
+
+    if (temperature < 97) return { status: "Low", color: "bg-blue-100 text-blue-800" }
+    if (temperature <= 99.5) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (temperature <= 100.4) return { status: "Low Fever", color: "bg-yellow-100 text-yellow-800" }
+    return { status: "Fever", color: "bg-red-100 text-red-800" }
   }
 
-  const getBMIStatus = (bmi?: number) => {
-    if (!bmi) return { status: "Not calculated", color: "gray" }
-    if (bmi < 18.5) return { status: "Underweight", color: "blue" }
-    if (bmi <= 24.9) return { status: "Normal", color: "green" }
-    if (bmi <= 29.9) return { status: "Overweight", color: "yellow" }
-    if (bmi <= 34.9) return { status: "Obese Class I", color: "orange" }
-    if (bmi <= 39.9) return { status: "Obese Class II", color: "red" }
-    return { status: "Obese Class III", color: "red" }
+  const getSpo2Status = (spo2: string) => {
+    if (!spo2) return null
+    const oxygen = Number.parseInt(spo2)
+    if (isNaN(oxygen)) return null
+
+    if (oxygen < 90) return { status: "Critical", color: "bg-red-100 text-red-800" }
+    if (oxygen < 95) return { status: "Low", color: "bg-orange-100 text-orange-800" }
+    return { status: "Normal", color: "bg-green-100 text-green-800" }
   }
 
-  const bpStatus = getBPStatus(localData.bloodPressureSystolic, localData.bloodPressureDiastolic)
-  const hrStatus = getHeartRateStatus(localData.heartRate)
-  const tempStatus = getTemperatureStatus(localData.temperature)
-  const spo2Status = getSpO2Status(localData.oxygenSaturation)
-  const bmiStatus = getBMIStatus(localData.bmi)
+  const getBMIStatus = (bmi: string) => {
+    if (!bmi) return null
+    const bmiValue = Number.parseFloat(bmi)
+    if (isNaN(bmiValue)) return null
 
-  return (
-    <div className="space-y-6">
+    if (bmiValue < 18.5) return { status: "Underweight", color: "bg-blue-100 text-blue-800" }
+    if (bmiValue < 25) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (bmiValue < 30) return { status: "Overweight", color: "bg-yellow-100 text-yellow-800" }
+    return { status: "Obese", color: "bg-red-100 text-red-800" }
+  }
+
+  if (!activeConsultation) {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-red-500" />
-            Vital Signs
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Blood Pressure */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-red-500" />
-                <Label className="font-medium">Blood Pressure</Label>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    placeholder="Systolic"
-                    value={localData.bloodPressureSystolic || ""}
-                    onChange={(e) => updateVital("bloodPressureSystolic", e.target.value)}
-                  />
-                </div>
-                <span className="flex items-center text-gray-500">/</span>
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    placeholder="Diastolic"
-                    value={localData.bloodPressureDiastolic || ""}
-                    onChange={(e) => updateVital("bloodPressureDiastolic", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="text-sm text-gray-600">
-                {localData.bloodPressureSystolic && localData.bloodPressureDiastolic && (
-                  <span>
-                    {localData.bloodPressureSystolic}/{localData.bloodPressureDiastolic} mmHg
-                  </span>
-                )}
-              </div>
-              <Badge
-                variant={bpStatus.color === "green" ? "default" : "secondary"}
-                className={`
-                  ${bpStatus.color === "green" ? "bg-green-100 text-green-800" : ""}
-                  ${bpStatus.color === "yellow" ? "bg-yellow-100 text-yellow-800" : ""}
-                  ${bpStatus.color === "orange" ? "bg-orange-100 text-orange-800" : ""}
-                  ${bpStatus.color === "red" ? "bg-red-100 text-red-800" : ""}
-                  ${bpStatus.color === "blue" ? "bg-blue-100 text-blue-800" : ""}
-                  ${bpStatus.color === "gray" ? "bg-gray-100 text-gray-800" : ""}
-                `}
-              >
-                {bpStatus.status}
-              </Badge>
-            </div>
-
-            {/* Heart Rate */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-pink-500" />
-                <Label className="font-medium">Heart Rate</Label>
-              </div>
-              <Input
-                type="number"
-                placeholder="BPM"
-                value={localData.heartRate || ""}
-                onChange={(e) => updateVital("heartRate", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">
-                {localData.heartRate && <span>{localData.heartRate} BPM</span>}
-              </div>
-              <Badge
-                variant={hrStatus.color === "green" ? "default" : "secondary"}
-                className={`
-                  ${hrStatus.color === "green" ? "bg-green-100 text-green-800" : ""}
-                  ${hrStatus.color === "blue" ? "bg-blue-100 text-blue-800" : ""}
-                  ${hrStatus.color === "red" ? "bg-red-100 text-red-800" : ""}
-                  ${hrStatus.color === "gray" ? "bg-gray-100 text-gray-800" : ""}
-                `}
-              >
-                {hrStatus.status}
-              </Badge>
-            </div>
-
-            {/* Temperature */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Thermometer className="h-4 w-4 text-orange-500" />
-                <Label className="font-medium">Temperature</Label>
-              </div>
-              <Input
-                type="number"
-                step="0.1"
-                placeholder="°C"
-                value={localData.temperature || ""}
-                onChange={(e) => updateVital("temperature", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">
-                {localData.temperature && <span>{localData.temperature}°C</span>}
-              </div>
-              <Badge
-                variant={tempStatus.color === "green" ? "default" : "secondary"}
-                className={`
-                  ${tempStatus.color === "green" ? "bg-green-100 text-green-800" : ""}
-                  ${tempStatus.color === "yellow" ? "bg-yellow-100 text-yellow-800" : ""}
-                  ${tempStatus.color === "orange" ? "bg-orange-100 text-orange-800" : ""}
-                  ${tempStatus.color === "red" ? "bg-red-100 text-red-800" : ""}
-                  ${tempStatus.color === "blue" ? "bg-blue-100 text-blue-800" : ""}
-                  ${tempStatus.color === "gray" ? "bg-gray-100 text-gray-800" : ""}
-                `}
-              >
-                {tempStatus.status}
-              </Badge>
-            </div>
-
-            {/* Respiratory Rate */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-blue-500" />
-                <Label className="font-medium">Respiratory Rate</Label>
-              </div>
-              <Input
-                type="number"
-                placeholder="Breaths/min"
-                value={localData.respiratoryRate || ""}
-                onChange={(e) => updateVital("respiratoryRate", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">
-                {localData.respiratoryRate && <span>{localData.respiratoryRate} breaths/min</span>}
-              </div>
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                {localData.respiratoryRate ? "Recorded" : "Not recorded"}
-              </Badge>
-            </div>
-
-            {/* Oxygen Saturation */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Droplets className="h-4 w-4 text-cyan-500" />
-                <Label className="font-medium">Oxygen Saturation</Label>
-              </div>
-              <Input
-                type="number"
-                placeholder="SpO2 %"
-                value={localData.oxygenSaturation || ""}
-                onChange={(e) => updateVital("oxygenSaturation", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">
-                {localData.oxygenSaturation && <span>{localData.oxygenSaturation}%</span>}
-              </div>
-              <Badge
-                variant={spo2Status.color === "green" ? "default" : "secondary"}
-                className={`
-                  ${spo2Status.color === "green" ? "bg-green-100 text-green-800" : ""}
-                  ${spo2Status.color === "yellow" ? "bg-yellow-100 text-yellow-800" : ""}
-                  ${spo2Status.color === "orange" ? "bg-orange-100 text-orange-800" : ""}
-                  ${spo2Status.color === "red" ? "bg-red-100 text-red-800" : ""}
-                  ${spo2Status.color === "gray" ? "bg-gray-100 text-gray-800" : ""}
-                `}
-              >
-                {spo2Status.status}
-              </Badge>
-            </div>
-
-            {/* Weight */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-purple-500" />
-                <Label className="font-medium">Weight</Label>
-              </div>
-              <Input
-                type="number"
-                step="0.1"
-                placeholder="kg"
-                value={localData.weight || ""}
-                onChange={(e) => updateVital("weight", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">{localData.weight && <span>{localData.weight} kg</span>}</div>
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                {localData.weight ? "Recorded" : "Not recorded"}
-              </Badge>
-            </div>
-
-            {/* Height */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Ruler className="h-4 w-4 text-green-500" />
-                <Label className="font-medium">Height</Label>
-              </div>
-              <Input
-                type="number"
-                placeholder="cm"
-                value={localData.height || ""}
-                onChange={(e) => updateVital("height", e.target.value)}
-              />
-              <div className="text-sm text-gray-600">{localData.height && <span>{localData.height} cm</span>}</div>
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                {localData.height ? "Recorded" : "Not recorded"}
-              </Badge>
-            </div>
-
-            {/* BMI */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-indigo-500" />
-                <Label className="font-medium">BMI</Label>
-              </div>
-              <Input
-                type="number"
-                step="0.1"
-                placeholder="Auto-calculated"
-                value={localData.bmi || ""}
-                disabled
-                className="bg-gray-50"
-              />
-              <div className="text-sm text-gray-600">{localData.bmi && <span>{localData.bmi} kg/m²</span>}</div>
-              <Badge
-                variant={bmiStatus.color === "green" ? "default" : "secondary"}
-                className={`
-                  ${bmiStatus.color === "green" ? "bg-green-100 text-green-800" : ""}
-                  ${bmiStatus.color === "yellow" ? "bg-yellow-100 text-yellow-800" : ""}
-                  ${bmiStatus.color === "orange" ? "bg-orange-100 text-orange-800" : ""}
-                  ${bmiStatus.color === "red" ? "bg-red-100 text-red-800" : ""}
-                  ${bmiStatus.color === "blue" ? "bg-blue-100 text-blue-800" : ""}
-                  ${bmiStatus.color === "gray" ? "bg-gray-100 text-gray-800" : ""}
-                `}
-              >
-                {bmiStatus.status}
-              </Badge>
-            </div>
-          </div>
+        <CardContent className="text-center py-12">
+          <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No Active Consultation</h3>
+          <p className="text-muted-foreground">Start a consultation to record vital signs</p>
         </CardContent>
       </Card>
-    </div>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Vital Signs
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Blood Pressure */}
+          <div className="space-y-2">
+            <Label htmlFor="bloodPressure" className="flex items-center gap-2">
+              <Heart className="h-4 w-4 text-red-500" />
+              Blood Pressure
+            </Label>
+            <Input
+              id="bloodPressure"
+              placeholder="120/80"
+              value={vitals.bloodPressure}
+              onChange={(e) => handleVitalChange("bloodPressure", e.target.value)}
+            />
+            {getBPStatus(vitals.bloodPressure) && (
+              <Badge className={getBPStatus(vitals.bloodPressure)!.color}>
+                {getBPStatus(vitals.bloodPressure)!.status}
+              </Badge>
+            )}
+          </div>
+
+          {/* Pulse */}
+          <div className="space-y-2">
+            <Label htmlFor="pulse" className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-green-500" />
+              Pulse (bpm)
+            </Label>
+            <Input
+              id="pulse"
+              placeholder="72"
+              type="number"
+              value={vitals.pulse}
+              onChange={(e) => handleVitalChange("pulse", e.target.value)}
+            />
+            {getPulseStatus(vitals.pulse) && (
+              <Badge className={getPulseStatus(vitals.pulse)!.color}>{getPulseStatus(vitals.pulse)!.status}</Badge>
+            )}
+          </div>
+
+          {/* Temperature */}
+          <div className="space-y-2">
+            <Label htmlFor="temperature" className="flex items-center gap-2">
+              <Thermometer className="h-4 w-4 text-orange-500" />
+              Temperature (°F)
+            </Label>
+            <Input
+              id="temperature"
+              placeholder="98.6"
+              type="number"
+              step="0.1"
+              value={vitals.temperature}
+              onChange={(e) => handleVitalChange("temperature", e.target.value)}
+            />
+            {getTempStatus(vitals.temperature) && (
+              <Badge className={getTempStatus(vitals.temperature)!.color}>
+                {getTempStatus(vitals.temperature)!.status}
+              </Badge>
+            )}
+          </div>
+
+          {/* Respiratory Rate */}
+          <div className="space-y-2">
+            <Label htmlFor="respiratoryRate" className="flex items-center gap-2">
+              <Wind className="h-4 w-4 text-blue-500" />
+              Respiratory Rate
+            </Label>
+            <Input
+              id="respiratoryRate"
+              placeholder="16"
+              type="number"
+              value={vitals.respiratoryRate}
+              onChange={(e) => handleVitalChange("respiratoryRate", e.target.value)}
+            />
+          </div>
+
+          {/* SpO2 */}
+          <div className="space-y-2">
+            <Label htmlFor="spo2" className="flex items-center gap-2">
+              <Droplets className="h-4 w-4 text-cyan-500" />
+              SpO2 (%)
+            </Label>
+            <Input
+              id="spo2"
+              placeholder="98"
+              type="number"
+              value={vitals.spo2}
+              onChange={(e) => handleVitalChange("spo2", e.target.value)}
+            />
+            {getSpo2Status(vitals.spo2) && (
+              <Badge className={getSpo2Status(vitals.spo2)!.color}>{getSpo2Status(vitals.spo2)!.status}</Badge>
+            )}
+          </div>
+
+          {/* Weight */}
+          <div className="space-y-2">
+            <Label htmlFor="weight" className="flex items-center gap-2">
+              <Weight className="h-4 w-4 text-purple-500" />
+              Weight (kg)
+            </Label>
+            <Input
+              id="weight"
+              placeholder="70"
+              type="number"
+              step="0.1"
+              value={vitals.weight}
+              onChange={(e) => handleVitalChange("weight", e.target.value)}
+            />
+          </div>
+
+          {/* Height */}
+          <div className="space-y-2">
+            <Label htmlFor="height" className="flex items-center gap-2">
+              <Ruler className="h-4 w-4 text-indigo-500" />
+              Height (cm)
+            </Label>
+            <Input
+              id="height"
+              placeholder="175"
+              type="number"
+              value={vitals.height}
+              onChange={(e) => handleVitalChange("height", e.target.value)}
+            />
+          </div>
+
+          {/* BMI */}
+          <div className="space-y-2">
+            <Label htmlFor="bmi" className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-teal-500" />
+              BMI
+            </Label>
+            <Input id="bmi" placeholder="Auto-calculated" value={vitals.bmi} readOnly className="bg-gray-50" />
+            {getBMIStatus(vitals.bmi) && (
+              <Badge className={getBMIStatus(vitals.bmi)!.color}>{getBMIStatus(vitals.bmi)!.status}</Badge>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

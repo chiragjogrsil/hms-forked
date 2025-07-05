@@ -366,6 +366,7 @@ export default function PatientDetailsPage() {
       if (!confirmed) return
     }
 
+    // Open the new consultation modal directly
     setIsNewConsultationModalOpen(true)
   }
 
@@ -1338,6 +1339,60 @@ export default function PatientDetailsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Incomplete Visits Modal */}
+      <Dialog open={isIncompleteVisitsModalOpen} onOpenChange={setIsIncompleteVisitsModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              Incomplete Visits Found
+            </DialogTitle>
+            <DialogDescription>
+              This patient has incomplete visits that need to be completed before starting a new consultation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+              <p className="text-sm text-orange-800 mb-3">
+                <strong>{incompleteVisits.length}</strong> incomplete visit(s) found:
+              </p>
+              <div className="space-y-2">
+                {incompleteVisits.map((visit) => (
+                  <div key={visit.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div>
+                      <p className="font-medium text-sm">{new Date(visit.visitDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-600">{visit.chiefComplaint || "No chief complaint"}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleCompleteIncompleteVisit(visit.id)}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      Complete
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsIncompleteVisitsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsIncompleteVisitsModalOpen(false)
+                setIsNewConsultationModalOpen(true)
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Start New Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Other modals would go here but keeping response concise */}
     </div>
   )
