@@ -10,9 +10,18 @@ import { Badge } from "@/components/ui/badge"
 import { useConsultation } from "@/contexts/consultation-context"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, CheckCircle, Clock, User, FileText } from "lucide-react"
+import { ConsultationProvider } from "@/contexts/consultation-context"
 
-export default function TestConsultationPage() {
-  const { activeConsultation, consultationHistory, startConsultation, updateConsultationData, completeVisit } =
+export default function TestConsultationPageWrapper() {
+  return (
+    <ConsultationProvider>
+      <TestConsultationPage />
+    </ConsultationProvider>
+  )
+}
+
+function TestConsultationPage() {
+  const { activeConsultation, consultationHistory, startNewConsultation, updateConsultationData, completeVisit } =
     useConsultation()
 
   const { toast } = useToast()
@@ -24,20 +33,20 @@ export default function TestConsultationPage() {
   const [diagnosis, setDiagnosis] = useState("")
 
   const handleStartConsultation = () => {
-    const consultation = startConsultation("P12345", "John Doe")
+    startNewConsultation("P12345", "John Doe", new Date().toISOString().split("T")[0])
     toast({
       title: "Consultation Started",
-      description: `Started consultation for ${consultation.patientName}`,
+      description: `Started consultation for John Doe`,
     })
   }
 
   const handleUpdateData = () => {
     if (!activeConsultation) return
 
-    updateConsultationData(activeConsultation.id, {
+    updateConsultationData({
       chiefComplaint,
       clinicalNotes,
-      diagnosis,
+      diagnosis: diagnosis ? [diagnosis] : [],
     })
 
     toast({
@@ -54,7 +63,7 @@ export default function TestConsultationPage() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    completeVisit(activeConsultation.id)
+    await completeVisit()
 
     // Clear form
     setChiefComplaint("")
@@ -187,9 +196,6 @@ export default function TestConsultationPage() {
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                     <div className="text-sm">
                       <div>
-                        <strong>Started:</strong> {new Date(activeConsultation.startTime).toLocaleString()}
-                      </div>
-                      <div>
                         <strong>Status:</strong> {activeConsultation.status}
                       </div>
                     </div>
@@ -219,9 +225,6 @@ export default function TestConsultationPage() {
                     <div>
                       <div className="font-medium">{consultation.patientName}</div>
                       <div className="text-sm text-muted-foreground">{consultation.patientId}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(consultation.startTime).toLocaleString()}
-                      </div>
                     </div>
                     <Badge variant={consultation.status === "completed" ? "default" : "secondary"}>
                       {consultation.status}
