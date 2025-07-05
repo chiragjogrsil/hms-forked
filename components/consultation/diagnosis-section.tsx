@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -189,7 +189,7 @@ export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionPro
   const [customDiagnosis, setCustomDiagnosis] = useState("")
   const [clinicalImpression, setClinicalImpression] = useState("")
 
-  // Load data from active consultation
+  // Load data from active consultation only when consultation ID changes
   useEffect(() => {
     if (activeConsultation) {
       setProvisionalDiagnosis(activeConsultation.provisionalDiagnosis || [])
@@ -201,10 +201,10 @@ export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionPro
         setSelectedDepartment(activeConsultation.department)
       }
     }
-  }, [activeConsultation])
+  }, [activeConsultation]) // Only depend on consultation ID
 
-  // Auto-save function
-  const autoSave = () => {
+  // Memoized auto-save function
+  const autoSave = useCallback(() => {
     if (activeConsultation) {
       updateConsultationData({
         provisionalDiagnosis,
@@ -212,54 +212,68 @@ export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionPro
         clinicalFindings: clinicalImpression,
       })
     }
-  }
+  }, [activeConsultation, provisionalDiagnosis, differentialDiagnosis, clinicalImpression, updateConsultationData])
 
-  // Auto-save on changes
+  // Debounced auto-save
   useEffect(() => {
-    const timer = setTimeout(autoSave, 1000)
+    if (!activeConsultation) return
+
+    const timer = setTimeout(() => {
+      autoSave()
+    }, 2000) // 2 second delay
+
     return () => clearTimeout(timer)
-  }, [provisionalDiagnosis, differentialDiagnosis, clinicalImpression])
+  }, [autoSave])
 
   // Get filtered diagnoses based on search and department
-  const getFilteredDiagnoses = () => {
+  const getFilteredDiagnoses = useCallback(() => {
     const departmentDiagnoses =
       diagnosisDatabase[selectedDepartment as keyof typeof diagnosisDatabase] || diagnosisDatabase.general
 
     if (!searchTerm) return departmentDiagnoses
 
     return departmentDiagnoses.filter((diagnosis) => diagnosis.toLowerCase().includes(searchTerm.toLowerCase()))
-  }
+  }, [selectedDepartment, searchTerm])
 
-  const addProvisionalDiagnosis = (diagnosis: string) => {
-    if (!provisionalDiagnosis.includes(diagnosis)) {
-      setProvisionalDiagnosis([...provisionalDiagnosis, diagnosis])
-    }
-  }
-
-  const removeProvisionalDiagnosis = (index: number) => {
-    setProvisionalDiagnosis(provisionalDiagnosis.filter((_, i) => i !== index))
-  }
-
-  const addDifferentialDiagnosis = (diagnosis: string) => {
-    if (!differentialDiagnosis.includes(diagnosis)) {
-      setDifferentialDiagnosis([...differentialDiagnosis, diagnosis])
-    }
-  }
-
-  const removeDifferentialDiagnosis = (index: number) => {
-    setDifferentialDiagnosis(differentialDiagnosis.filter((_, i) => i !== index))
-  }
-
-  const addCustomDiagnosis = (type: "provisional" | "differential") => {
-    if (customDiagnosis.trim()) {
-      if (type === "provisional") {
-        addProvisionalDiagnosis(customDiagnosis.trim())
-      } else {
-        addDifferentialDiagnosis(customDiagnosis.trim())
+  const addProvisionalDiagnosis = useCallback((diagnosis: string) => {
+    setProvisionalDiagnosis((prev) => {
+      if (!prev.includes(diagnosis)) {
+        return [...prev, diagnosis]
       }
-      setCustomDiagnosis("")
-    }
-  }
+      return prev
+    })
+  }, [])
+
+  const removeProvisionalDiagnosis = useCallback((index: number) => {
+    setProvisionalDiagnosis((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const addDifferentialDiagnosis = useCallback((diagnosis: string) => {
+    setDifferentialDiagnosis((prev) => {
+      if (!prev.includes(diagnosis)) {
+        return [...prev, diagnosis]
+      }
+      return prev
+    })
+  }, [])
+
+  const removeDifferentialDiagnosis = useCallback((index: number) => {
+    setDifferentialDiagnosis((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const addCustomDiagnosis = useCallback(
+    (type: "provisional" | "differential") => {
+      if (customDiagnosis.trim()) {
+        if (type === "provisional") {
+          addProvisionalDiagnosis(customDiagnosis.trim())
+        } else {
+          addDifferentialDiagnosis(customDiagnosis.trim())
+        }
+        setCustomDiagnosis("")
+      }
+    },
+    [customDiagnosis, addProvisionalDiagnosis, addDifferentialDiagnosis],
+  )
 
   const departments = [
     { value: "general", label: "General Medicine" },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +27,7 @@ export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionP
     bmi: "",
   })
 
-  // Load vitals from active consultation
+  // Load vitals from active consultation only when consultation ID changes
   useEffect(() => {
     if (activeConsultation?.vitals) {
       setVitals({
@@ -41,7 +41,7 @@ export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionP
         bmi: activeConsultation.vitals.bmi || "",
       })
     }
-  }, [activeConsultation])
+  }, [activeConsultation?.id]) // Only depend on consultation ID
 
   // Auto-calculate BMI when weight or height changes
   useEffect(() => {
@@ -55,19 +55,27 @@ export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionP
     }
   }, [vitals.weight, vitals.height])
 
-  // Auto-save vitals
-  useEffect(() => {
+  // Memoized auto-save function
+  const autoSave = useCallback(() => {
     if (activeConsultation) {
-      const timer = setTimeout(() => {
-        updateConsultationData({ vitals })
-      }, 1000)
-      return () => clearTimeout(timer)
+      updateConsultationData({ vitals })
     }
-  }, [vitals, activeConsultation, updateConsultationData])
+  }, [activeConsultation, vitals, updateConsultationData]) // Updated dependency
 
-  const handleVitalChange = (field: string, value: string) => {
+  // Debounced auto-save
+  useEffect(() => {
+    if (!activeConsultation) return
+
+    const timer = setTimeout(() => {
+      autoSave()
+    }, 2000) // 2 second delay
+
+    return () => clearTimeout(timer)
+  }, [autoSave])
+
+  const handleVitalChange = useCallback((field: string, value: string) => {
     setVitals((prev) => ({ ...prev, [field]: value }))
-  }
+  }, [])
 
   const getBPStatus = (bp: string) => {
     if (!bp) return null

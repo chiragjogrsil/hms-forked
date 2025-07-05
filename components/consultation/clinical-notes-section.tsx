@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -49,7 +49,7 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
   const [newAllergy, setNewAllergy] = useState("")
   const [newMedication, setNewMedication] = useState("")
 
-  // Load data from active consultation
+  // Load data from active consultation only once when consultation changes
   useEffect(() => {
     if (activeConsultation) {
       setChiefComplaint(activeConsultation.chiefComplaint || "")
@@ -75,10 +75,10 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
         },
       )
     }
-  }, [activeConsultation])
+  }, [activeConsultation]) // Updated to depend on the entire activeConsultation object
 
-  // Auto-save function
-  const autoSave = () => {
+  // Memoized auto-save function
+  const autoSave = useCallback(() => {
     if (activeConsultation) {
       updateConsultationData({
         chiefComplaint,
@@ -94,13 +94,8 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
         systemReview,
       })
     }
-  }
-
-  // Auto-save on changes
-  useEffect(() => {
-    const timer = setTimeout(autoSave, 1000)
-    return () => clearTimeout(timer)
   }, [
+    activeConsultation,
     chiefComplaint,
     historyOfPresentIllness,
     pastMedicalHistory,
@@ -112,47 +107,59 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
     doctorNotes,
     privateNotes,
     systemReview,
+    updateConsultationData,
   ])
 
-  const handleAddMedicalHistory = () => {
+  // Debounced auto-save
+  useEffect(() => {
+    if (!activeConsultation) return
+
+    const timer = setTimeout(() => {
+      autoSave()
+    }, 2000) // Increased delay to 2 seconds
+
+    return () => clearTimeout(timer)
+  }, [autoSave])
+
+  const handleAddMedicalHistory = useCallback(() => {
     if (newMedicalHistory.trim()) {
-      setPastMedicalHistory([...pastMedicalHistory, newMedicalHistory.trim()])
+      setPastMedicalHistory((prev) => [...prev, newMedicalHistory.trim()])
       setNewMedicalHistory("")
     }
-  }
+  }, [newMedicalHistory])
 
-  const handleRemoveMedicalHistory = (index: number) => {
-    setPastMedicalHistory(pastMedicalHistory.filter((_, i) => i !== index))
-  }
+  const handleRemoveMedicalHistory = useCallback((index: number) => {
+    setPastMedicalHistory((prev) => prev.filter((_, i) => i !== index))
+  }, [])
 
-  const handleAddAllergy = () => {
+  const handleAddAllergy = useCallback(() => {
     if (newAllergy.trim()) {
-      setAllergies([...allergies, newAllergy.trim()])
+      setAllergies((prev) => [...prev, newAllergy.trim()])
       setNewAllergy("")
     }
-  }
+  }, [newAllergy])
 
-  const handleRemoveAllergy = (index: number) => {
-    setAllergies(allergies.filter((_, i) => i !== index))
-  }
+  const handleRemoveAllergy = useCallback((index: number) => {
+    setAllergies((prev) => prev.filter((_, i) => i !== index))
+  }, [])
 
-  const handleAddMedication = () => {
+  const handleAddMedication = useCallback(() => {
     if (newMedication.trim()) {
-      setCurrentMedications([...currentMedications, newMedication.trim()])
+      setCurrentMedications((prev) => [...prev, newMedication.trim()])
       setNewMedication("")
     }
-  }
+  }, [newMedication])
 
-  const handleRemoveMedication = (index: number) => {
-    setCurrentMedications(currentMedications.filter((_, i) => i !== index))
-  }
+  const handleRemoveMedication = useCallback((index: number) => {
+    setCurrentMedications((prev) => prev.filter((_, i) => i !== index))
+  }, [])
 
-  const handleSystemReviewChange = (system: string, value: string) => {
+  const handleSystemReviewChange = useCallback((system: string, value: string) => {
     setSystemReview((prev) => ({
       ...prev,
       [system]: value,
     }))
-  }
+  }, [])
 
   const getSystemIcon = (system: string) => {
     switch (system) {
