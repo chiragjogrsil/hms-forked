@@ -1,548 +1,598 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Search, X, Plus } from "lucide-react"
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { toast } from "@/components/ui/use-toast"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Search, Plus, Clock, DollarSign, Users } from "lucide-react"
+import { toast } from "sonner"
 
-// Available procedures by department
-const procedures = [
-  // General Medicine
-  {
-    value: "gen-vaccination",
-    label: "Vaccination",
-    department: "General Medicine",
-    sessions: 1,
-    duration: "1 day",
-    price: 500,
-  },
-  {
-    value: "gen-health-checkup",
-    label: "Comprehensive Health Checkup",
-    department: "General Medicine",
-    sessions: 1,
-    duration: "1 day",
-    price: 2000,
-  },
-
-  // Cardiology
-  {
-    value: "cardio-echo",
-    label: "Echocardiogram",
-    department: "Cardiology",
-    sessions: 1,
-    duration: "1 day",
-    price: 2500,
-  },
-  {
-    value: "cardio-stress-test",
-    label: "Cardiac Stress Test",
-    department: "Cardiology",
-    sessions: 1,
-    duration: "1 day",
-    price: 3000,
-  },
-  {
-    value: "cardio-holter",
-    label: "24-Hour Holter Monitor",
-    department: "Cardiology",
-    sessions: 1,
-    duration: "2 days",
-    price: 3500,
-  },
-
-  // Orthopedics
-  {
-    value: "ortho-physio-rehab",
-    label: "Physiotherapy Rehabilitation",
-    department: "Orthopedics",
-    sessions: 10,
-    duration: "3 weeks",
-    price: 5000,
-  },
-  {
-    value: "ortho-joint-injection",
-    label: "Joint Injection",
-    department: "Orthopedics",
-    sessions: 1,
-    duration: "1 day",
-    price: 1500,
-  },
-
-  // Dermatology
-  {
-    value: "derm-biopsy",
-    label: "Skin Biopsy",
-    department: "Dermatology",
-    sessions: 1,
-    duration: "1 day",
-    price: 1800,
-  },
-  {
-    value: "derm-phototherapy",
-    label: "Phototherapy Treatment",
-    department: "Dermatology",
-    sessions: 8,
-    duration: "4 weeks",
-    price: 4000,
-  },
-  {
-    value: "derm-laser-therapy",
-    label: "Laser Therapy",
-    department: "Dermatology",
-    sessions: 5,
-    duration: "2 weeks",
-    price: 6000,
-  },
-
-  // Neurology
-  {
-    value: "neuro-eeg",
-    label: "Electroencephalogram (EEG)",
-    department: "Neurology",
-    sessions: 1,
-    duration: "1 day",
-    price: 2000,
-  },
-  {
-    value: "neuro-emg",
-    label: "Electromyography (EMG)",
-    department: "Neurology",
-    sessions: 1,
-    duration: "1 day",
-    price: 2500,
-  },
-
-  // Ayurveda
-  {
-    value: "abhyanga",
-    label: "Abhyanga Therapy",
-    department: "Ayurveda",
-    sessions: 5,
-    duration: "1 week",
-    price: 3000,
-  },
-  {
-    value: "shirodhara",
-    label: "Shirodhara Treatment",
-    department: "Ayurveda",
-    sessions: 7,
-    duration: "2 weeks",
-    price: 4500,
-  },
-  {
-    value: "panchkarma-basic",
-    label: "Basic Panchkarma Package",
-    department: "Ayurveda",
-    sessions: 7,
-    duration: "2 weeks",
-    price: 8000,
-  },
-  {
-    value: "panchkarma-premium",
-    label: "Premium Panchkarma Package",
-    department: "Ayurveda",
-    sessions: 14,
-    duration: "4 weeks",
-    price: 15000,
-  },
-
-  // Gynecology
-  {
-    value: "gynec-pap-smear",
-    label: "Pap Smear",
-    department: "Gynecology",
-    sessions: 1,
-    duration: "1 day",
-    price: 800,
-  },
-  {
-    value: "gynec-colposcopy",
-    label: "Colposcopy",
-    department: "Gynecology",
-    sessions: 1,
-    duration: "1 day",
-    price: 1500,
-  },
-
-  // Ophthalmology
-  {
-    value: "ophthal-laser",
-    label: "Laser Eye Treatment",
-    department: "Ophthalmology",
-    sessions: 1,
-    duration: "1 day",
-    price: 8000,
-  },
-  {
-    value: "ophthal-retinal-exam",
-    label: "Comprehensive Retinal Examination",
-    department: "Ophthalmology",
-    sessions: 1,
-    duration: "1 day",
-    price: 1200,
-  },
-]
-
-// Form schema
-const formSchema = z.object({
-  procedureIds: z.array(z.string()).min(1, "Please select at least one procedure"),
-  priority: z.enum(["routine", "urgent", "stat"], {
-    required_error: "Please select a priority level",
-  }),
-  indication: z.string().min(1, "Please provide clinical indication"),
-  notes: z.string().optional(),
-})
-
-type FormValues = z.infer<typeof formSchema>
+interface Procedure {
+  id: string
+  name: string
+  department: string
+  category: string
+  duration: string
+  cost: number
+  description: string
+  requiresAnesthesia: boolean
+  sessionCount: number
+}
 
 interface AddProceduresModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
   patientId: string
   patientName: string
+  onProceduresAdded: (procedures: Procedure[]) => void
 }
 
-export function AddProceduresModal({ isOpen, onClose, onSuccess, patientId, patientName }: AddProceduresModalProps) {
+// Mock procedures data with more examples
+const mockProcedures: Procedure[] = [
+  // General Medicine
+  {
+    id: "PROC-001",
+    name: "Blood Pressure Monitoring",
+    department: "general",
+    category: "monitoring",
+    duration: "15 min",
+    cost: 25,
+    description: "Regular blood pressure check and monitoring",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-002",
+    name: "Wound Dressing",
+    department: "general",
+    category: "treatment",
+    duration: "20 min",
+    cost: 40,
+    description: "Professional wound cleaning and dressing",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-003",
+    name: "Vaccination - Flu Shot",
+    department: "general",
+    category: "vaccination",
+    duration: "10 min",
+    cost: 30,
+    description: "Annual influenza vaccination",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // Cardiology
+  {
+    id: "PROC-004",
+    name: "ECG (Electrocardiogram)",
+    department: "cardiology",
+    category: "diagnostic",
+    duration: "30 min",
+    cost: 80,
+    description: "12-lead electrocardiogram for heart rhythm analysis",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-005",
+    name: "Echocardiogram",
+    department: "cardiology",
+    category: "diagnostic",
+    duration: "45 min",
+    cost: 200,
+    description: "Ultrasound examination of the heart",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-006",
+    name: "Cardiac Stress Test",
+    department: "cardiology",
+    category: "diagnostic",
+    duration: "60 min",
+    cost: 300,
+    description: "Exercise stress test to evaluate heart function",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // Orthopedics
+  {
+    id: "PROC-007",
+    name: "Joint Injection",
+    department: "orthopedics",
+    category: "treatment",
+    duration: "30 min",
+    cost: 150,
+    description: "Corticosteroid injection for joint pain relief",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-008",
+    name: "Physical Therapy Session",
+    department: "orthopedics",
+    category: "therapy",
+    duration: "45 min",
+    cost: 75,
+    description: "Guided physical therapy and rehabilitation",
+    requiresAnesthesia: false,
+    sessionCount: 6,
+  },
+  {
+    id: "PROC-009",
+    name: "Bone Density Scan",
+    department: "orthopedics",
+    category: "diagnostic",
+    duration: "30 min",
+    cost: 120,
+    description: "DEXA scan for osteoporosis screening",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // Dermatology
+  {
+    id: "PROC-010",
+    name: "Skin Biopsy",
+    department: "dermatology",
+    category: "diagnostic",
+    duration: "20 min",
+    cost: 180,
+    description: "Tissue sample collection for pathological examination",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-011",
+    name: "Mole Removal",
+    department: "dermatology",
+    category: "surgical",
+    duration: "30 min",
+    cost: 250,
+    description: "Surgical removal of benign or suspicious moles",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-012",
+    name: "Acne Treatment",
+    department: "dermatology",
+    category: "treatment",
+    duration: "25 min",
+    cost: 90,
+    description: "Professional acne extraction and treatment",
+    requiresAnesthesia: false,
+    sessionCount: 3,
+  },
+
+  // Ophthalmology
+  {
+    id: "PROC-013",
+    name: "Comprehensive Eye Exam",
+    department: "ophthalmology",
+    category: "diagnostic",
+    duration: "45 min",
+    cost: 120,
+    description: "Complete eye examination including vision and retinal check",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-014",
+    name: "Cataract Surgery",
+    department: "ophthalmology",
+    category: "surgical",
+    duration: "60 min",
+    cost: 2500,
+    description: "Phacoemulsification cataract removal with IOL implantation",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-015",
+    name: "Glaucoma Screening",
+    department: "ophthalmology",
+    category: "diagnostic",
+    duration: "30 min",
+    cost: 85,
+    description: "Intraocular pressure measurement and optic nerve assessment",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // Gynecology
+  {
+    id: "PROC-016",
+    name: "Pap Smear",
+    department: "gynecology",
+    category: "screening",
+    duration: "15 min",
+    cost: 60,
+    description: "Cervical cancer screening test",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-017",
+    name: "Pelvic Ultrasound",
+    department: "gynecology",
+    category: "diagnostic",
+    duration: "30 min",
+    cost: 150,
+    description: "Transvaginal or abdominal pelvic ultrasound examination",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-018",
+    name: "IUD Insertion",
+    department: "gynecology",
+    category: "procedure",
+    duration: "20 min",
+    cost: 300,
+    description: "Intrauterine device insertion for contraception",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // ENT
+  {
+    id: "PROC-019",
+    name: "Hearing Test",
+    department: "ent",
+    category: "diagnostic",
+    duration: "30 min",
+    cost: 75,
+    description: "Comprehensive audiological assessment",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-020",
+    name: "Nasal Endoscopy",
+    department: "ent",
+    category: "diagnostic",
+    duration: "20 min",
+    cost: 120,
+    description: "Flexible nasal endoscopy for sinus examination",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-021",
+    name: "Tonsillectomy",
+    department: "ent",
+    category: "surgical",
+    duration: "45 min",
+    cost: 1200,
+    description: "Surgical removal of tonsils",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+
+  // Dental
+  {
+    id: "PROC-022",
+    name: "Dental Cleaning",
+    department: "dental",
+    category: "preventive",
+    duration: "45 min",
+    cost: 80,
+    description: "Professional dental cleaning and polishing",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-023",
+    name: "Tooth Extraction",
+    department: "dental",
+    category: "surgical",
+    duration: "30 min",
+    cost: 150,
+    description: "Simple tooth extraction procedure",
+    requiresAnesthesia: true,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-024",
+    name: "Root Canal Treatment",
+    department: "dental",
+    category: "treatment",
+    duration: "90 min",
+    cost: 400,
+    description: "Endodontic root canal therapy",
+    requiresAnesthesia: true,
+    sessionCount: 2,
+  },
+
+  // Pediatrics
+  {
+    id: "PROC-025",
+    name: "Child Wellness Check",
+    department: "pediatrics",
+    category: "checkup",
+    duration: "30 min",
+    cost: 100,
+    description: "Routine pediatric health examination",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-026",
+    name: "Childhood Vaccination",
+    department: "pediatrics",
+    category: "vaccination",
+    duration: "15 min",
+    cost: 45,
+    description: "Age-appropriate childhood immunizations",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-027",
+    name: "Growth Assessment",
+    department: "pediatrics",
+    category: "assessment",
+    duration: "20 min",
+    cost: 60,
+    description: "Height, weight, and developmental milestone assessment",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+
+  // Psychiatry
+  {
+    id: "PROC-028",
+    name: "Psychiatric Evaluation",
+    department: "psychiatry",
+    category: "assessment",
+    duration: "60 min",
+    cost: 200,
+    description: "Comprehensive mental health assessment",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+  {
+    id: "PROC-029",
+    name: "Therapy Session",
+    department: "psychiatry",
+    category: "therapy",
+    duration: "50 min",
+    cost: 120,
+    description: "Individual psychotherapy session",
+    requiresAnesthesia: false,
+    sessionCount: 8,
+  },
+  {
+    id: "PROC-030",
+    name: "Cognitive Assessment",
+    department: "psychiatry",
+    category: "assessment",
+    duration: "45 min",
+    cost: 150,
+    description: "Neuropsychological cognitive function testing",
+    requiresAnesthesia: false,
+    sessionCount: 1,
+  },
+]
+
+// Department labels
+const departmentLabels = {
+  general: "General Medicine",
+  cardiology: "Cardiology",
+  orthopedics: "Orthopedics",
+  dermatology: "Dermatology",
+  ophthalmology: "Ophthalmology",
+  gynecology: "Gynecology",
+  ent: "ENT",
+  dental: "Dental",
+  pediatrics: "Pediatrics",
+  psychiatry: "Psychiatry",
+  neurology: "Neurology",
+  ayurveda: "Ayurveda",
+  emergency: "Emergency",
+}
+
+export function AddProceduresModal({
+  isOpen,
+  onClose,
+  patientId,
+  patientName,
+  onProceduresAdded,
+}: AddProceduresModalProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("all")
+  const [selectedDepartment, setSelectedDepartment] = useState("all")
+  const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      procedureIds: [],
-      priority: "routine",
-      indication: "",
-      notes: "",
-    },
-  })
-
-  // Reset form when modal closes
+  // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      form.reset({
-        procedureIds: [],
-        priority: "routine",
-        indication: "",
-        notes: "",
-      })
       setSearchTerm("")
       setSelectedDepartment("all")
+      setSelectedProcedures([])
     }
-  }, [isOpen, form])
-
-  // Get unique departments
-  const departments = ["all", ...Array.from(new Set(procedures.map((procedure) => procedure.department)))]
+  }, [isOpen])
 
   // Filter procedures based on search term and department
-  const filteredProcedures = procedures.filter((procedure) => {
-    const matchesSearch = procedure.label.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProcedures = mockProcedures.filter((procedure) => {
+    const matchesSearch =
+      procedure.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      procedure.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDepartment = selectedDepartment === "all" || procedure.department === selectedDepartment
     return matchesSearch && matchesDepartment
   })
 
-  // Calculate total price and sessions
-  const selectedProcedures = form.watch("procedureIds")
-  const totalPrice = selectedProcedures.reduce((sum, procedureId) => {
-    const procedure = procedures.find((procedure) => procedure.value === procedureId)
-    return sum + (procedure?.price || 0)
-  }, 0)
-
-  const totalSessions = selectedProcedures.reduce((sum, procedureId) => {
-    const procedure = procedures.find((procedure) => procedure.value === procedureId)
-    return sum + (procedure?.sessions || 0)
-  }, 0)
-
-  function onSubmit(data: FormValues) {
-    // In a real app, this would call an API to add the procedures
-    console.log("Adding procedures:", data)
-
-    // Show success message
-    toast({
-      title: "Procedures added successfully",
-      description: `${data.procedureIds.length} procedures have been added for ${patientName}`,
-    })
-
-    // Call success callback
-    onSuccess()
+  const handleProcedureToggle = (procedureId: string) => {
+    setSelectedProcedures((prev) =>
+      prev.includes(procedureId) ? prev.filter((id) => id !== procedureId) : [...prev, procedureId],
+    )
   }
 
+  const handleAddProcedures = () => {
+    const proceduresToAdd = mockProcedures.filter((p) => selectedProcedures.includes(p.id))
+    onProceduresAdded(proceduresToAdd)
+
+    toast.success("Procedures added successfully", {
+      description: `${proceduresToAdd.length} procedure(s) added for ${patientName}`,
+    })
+
+    onClose()
+  }
+
+  const totalCost = selectedProcedures.reduce((sum, id) => {
+    const procedure = mockProcedures.find((p) => p.id === id)
+    return sum + (procedure?.cost || 0)
+  }, 0)
+
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose()
-        }
-      }}
-    >
-      <DialogContent className="max-w-[95vw] w-full sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Add Medical Procedures
           </DialogTitle>
-          <DialogDescription>Add medical procedures and treatments for {patientName}</DialogDescription>
+          <p className="text-sm text-muted-foreground">
+            Select procedures for {patientName} (ID: {patientId})
+          </p>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-grow pr-1">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                {/* Search and Filter */}
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search procedures..."
-                      className="pl-8"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {departments.map((department) => (
-                      <Button
-                        key={department}
-                        type="button"
-                        variant={selectedDepartment === department ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedDepartment(department)}
-                      >
-                        {department === "all" ? "All Departments" : department}
-                      </Button>
+        <div className="flex flex-col h-full">
+          {/* Search and Filter Section */}
+          <div className="p-6 pb-4 border-b bg-gray-50">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search procedures..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="department-filter" className="text-sm font-medium whitespace-nowrap">
+                  Department:
+                </Label>
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All Departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {Object.entries(departmentLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
                     ))}
-                  </div>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Procedures List */}
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4">
+              {filteredProcedures.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-2">No procedures found</div>
+                  <div className="text-sm text-gray-500">Try adjusting your search terms or department filter</div>
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="procedureIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Available Procedures</Label>
-                          <div className="h-[200px] rounded-md border overflow-hidden">
-                            <ScrollArea className="h-full w-full">
-                              <div className="p-2 space-y-1">
-                                {filteredProcedures.length > 0 ? (
-                                  filteredProcedures.map((procedure) => {
-                                    const isSelected = field.value?.includes(procedure.value)
-                                    return (
-                                      <div
-                                        key={procedure.value}
-                                        className="flex flex-row items-start space-x-2 space-y-0 p-2 hover:bg-accent rounded-md"
-                                      >
-                                        <Checkbox
-                                          id={`procedure-${procedure.value}`}
-                                          checked={isSelected}
-                                          onCheckedChange={(checked) => {
-                                            const updatedValue = checked
-                                              ? [...field.value, procedure.value]
-                                              : field.value.filter((value) => value !== procedure.value)
-                                            field.onChange(updatedValue)
-                                          }}
-                                        />
-                                        <Label
-                                          htmlFor={`procedure-${procedure.value}`}
-                                          className="flex-1 cursor-pointer text-sm"
-                                        >
-                                          <span className="font-medium">{procedure.label}</span>
-                                          <div className="text-xs text-muted-foreground">
-                                            {procedure.department} • {procedure.sessions} sessions •{" "}
-                                            {procedure.duration} • ₹{procedure.price.toFixed(2)}
-                                          </div>
-                                        </Label>
-                                      </div>
-                                    )
-                                  })
-                                ) : (
-                                  <div className="p-2 text-center text-sm text-muted-foreground">
-                                    No procedures found
+              ) : (
+                filteredProcedures.map((procedure) => (
+                  <Card key={procedure.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          id={procedure.id}
+                          checked={selectedProcedures.includes(procedure.id)}
+                          onCheckedChange={() => handleProcedureToggle(procedure.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-1">{procedure.name}</h4>
+                              <p className="text-sm text-gray-600 mb-3">{procedure.description}</p>
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{procedure.duration}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4" />
+                                  <span>${procedure.cost}</span>
+                                </div>
+                                {procedure.sessionCount > 1 && (
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-4 w-4" />
+                                    <span>{procedure.sessionCount} sessions</span>
                                   </div>
                                 )}
                               </div>
-                            </ScrollArea>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label>Selected Procedures ({selectedProcedures.length})</Label>
-                          <div className="h-[200px] rounded-md border overflow-hidden">
-                            <ScrollArea className="h-full w-full">
-                              <div className="p-2 space-y-1">
-                                {selectedProcedures.length > 0 ? (
-                                  selectedProcedures.map((procedureId) => {
-                                    const procedure = procedures.find((p) => p.value === procedureId)
-                                    return (
-                                      <div
-                                        key={procedureId}
-                                        className="flex items-center justify-between rounded-md px-2 py-1 text-sm bg-accent/30"
-                                      >
-                                        <div className="mr-2 flex-1">
-                                          <div className="font-medium">{procedure?.label}</div>
-                                          <div className="text-xs text-muted-foreground">
-                                            {procedure?.sessions} sessions • ₹{procedure?.price.toFixed(2)}
-                                          </div>
-                                        </div>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 w-7 p-0 flex-shrink-0 hover:bg-destructive/20"
-                                          onClick={() => {
-                                            const updatedValue = field.value.filter((id) => id !== procedureId)
-                                            field.onChange(updatedValue)
-                                          }}
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    )
-                                  })
-                                ) : (
-                                  <div className="p-2 text-center text-sm text-muted-foreground">
-                                    No procedures selected yet
-                                  </div>
-                                )}
-                              </div>
-                            </ScrollArea>
-                          </div>
-
-                          <div className="mt-2 rounded-md border p-2 space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>Total Sessions</span>
-                              <span className="font-medium">{totalSessions}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                              <span>Total Cost</span>
-                              <span className="font-medium">₹{totalPrice.toFixed(2)}</span>
+                            <div className="flex flex-col items-end gap-2">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                {departmentLabels[procedure.department as keyof typeof departmentLabels]}
+                              </Badge>
+                              <Badge variant="secondary" className="capitalize">
+                                {procedure.category}
+                              </Badge>
+                              {procedure.requiresAnesthesia && (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                  Anesthesia Required
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
 
-                <FormField
-                  control={form.control}
-                  name="indication"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Clinical Indication *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter the clinical reason for these procedures..."
-                          className="resize-none h-20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Provide the medical reason or symptoms that justify these procedures
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Priority</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="routine" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Routine (Schedule within 1-2 weeks)</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="urgent" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Urgent (Schedule within 2-3 days)</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="stat" />
-                            </FormControl>
-                            <FormLabel className="font-normal">STAT (Schedule immediately)</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Additional Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter any special instructions or additional information..."
-                          className="resize-none h-20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Include any special preparation instructions or relevant clinical information
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* Footer with Selection Summary and Actions */}
+          <div className="p-6 border-t bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">{selectedProcedures.length}</span> procedure(s) selected
+                </div>
+                {selectedProcedures.length > 0 && (
+                  <div className="text-sm font-medium text-gray-900">
+                    Total Cost: <span className="text-green-600">${totalCost}</span>
+                  </div>
+                )}
               </div>
-            </form>
-          </Form>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddProcedures}
+                  disabled={selectedProcedures.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Add Selected Procedures
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={selectedProcedures.length === 0}
-            onClick={form.handleSubmit(onSubmit)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Add {selectedProcedures.length} {selectedProcedures.length === 1 ? "Procedure" : "Procedures"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -1,198 +1,502 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { MultiSelect, type Option } from "@/components/ui/multi-select"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MultiSelect } from "@/components/ui/multi-select"
+import { Plus, X, FileText, Stethoscope, ClipboardList, Eye } from "lucide-react"
 
-// Define options for each dropdown
-const chiefComplaintOptions: Option[] = [
-  { value: "fever", label: "Fever" },
-  { value: "headache", label: "Headache" },
-  { value: "cough", label: "Cough" },
-  { value: "cold", label: "Cold" },
-  { value: "bodyache", label: "Body ache" },
-  { value: "fatigue", label: "Fatigue" },
-  { value: "nausea", label: "Nausea" },
-  { value: "vomiting", label: "Vomiting" },
-  { value: "diarrhea", label: "Diarrhea" },
-  { value: "constipation", label: "Constipation" },
-  { value: "chestpain", label: "Chest pain" },
-  { value: "shortnessofbreath", label: "Shortness of breath" },
-  { value: "dizziness", label: "Dizziness" },
-  { value: "jointpain", label: "Joint pain" },
-  { value: "backpain", label: "Back pain" },
-  { value: "abdominalpain", label: "Abdominal pain" },
-  { value: "lossofappetite", label: "Loss of appetite" },
-  { value: "sleepdisturbance", label: "Sleep disturbance" },
-  { value: "anxiety", label: "Anxiety" },
-  { value: "depression", label: "Depression" },
-]
-
-const medicalHistoryOptions: Option[] = [
-  { value: "diabetes", label: "Diabetes" },
-  { value: "hypertension", label: "Hypertension" },
-  { value: "heartdisease", label: "Heart disease" },
-  { value: "asthma", label: "Asthma" },
-  { value: "allergies", label: "Allergies" },
-  { value: "kidneydisease", label: "Kidney disease" },
-  { value: "liverdisease", label: "Liver disease" },
-  { value: "thyroiddisorder", label: "Thyroid disorder" },
-  { value: "cancer", label: "Cancer" },
-  { value: "stroke", label: "Stroke" },
-  { value: "arthritis", label: "Arthritis" },
-  { value: "osteoporosis", label: "Osteoporosis" },
-  { value: "mentalhealthissues", label: "Mental health issues" },
-  { value: "previoussurgeries", label: "Previous surgeries" },
-  { value: "familyhistorydiabetes", label: "Family history of diabetes" },
-  { value: "familyhistoryheartdisease", label: "Family history of heart disease" },
-  { value: "smokinghistory", label: "Smoking history" },
-  { value: "alcoholconsumption", label: "Alcohol consumption" },
-  { value: "drugallergies", label: "Drug allergies" },
-  { value: "previoushospitalizations", label: "Previous hospitalizations" },
-]
-
-const investigationOptions: Option[] = [
-  { value: "bloodtest", label: "Blood test" },
-  { value: "urinetest", label: "Urine test" },
-  { value: "xray", label: "X-ray" },
-  { value: "ctscan", label: "CT scan" },
-  { value: "mri", label: "MRI" },
-  { value: "ultrasound", label: "Ultrasound" },
-  { value: "ecg", label: "ECG" },
-  { value: "echo", label: "Echo" },
-  { value: "endoscopy", label: "Endoscopy" },
-  { value: "colonoscopy", label: "Colonoscopy" },
-  { value: "biopsy", label: "Biopsy" },
-  { value: "mammography", label: "Mammography" },
-  { value: "bonedensityscan", label: "Bone density scan" },
-  { value: "stresstest", label: "Stress test" },
-  { value: "pulmonaryfunctiontest", label: "Pulmonary function test" },
-  { value: "thyroidfunctiontest", label: "Thyroid function test" },
-  { value: "liverfunctiontest", label: "Liver function test" },
-  { value: "kidneyfunctiontest", label: "Kidney function test" },
-  { value: "lipidprofile", label: "Lipid profile" },
-  { value: "hba1c", label: "HbA1c" },
-]
-
-const observationOptions: Option[] = [
-  { value: "normalvitalsigns", label: "Normal vital signs" },
-  { value: "elevatedbp", label: "Elevated BP" },
-  { value: "rapidpulse", label: "Rapid pulse" },
-  { value: "feverpresent", label: "Fever present" },
-  { value: "alertandoriented", label: "Alert and oriented" },
-  { value: "cooperativepatient", label: "Cooperative patient" },
-  { value: "anxious", label: "Anxious" },
-  { value: "restless", label: "Restless" },
-  { value: "pallor", label: "Pallor" },
-  { value: "jaundice", label: "Jaundice" },
-  { value: "cyanosis", label: "Cyanosis" },
-  { value: "edema", label: "Edema" },
-  { value: "dehydration", label: "Dehydration" },
-  { value: "normalhearthsounds", label: "Normal heart sounds" },
-  { value: "abnormallungsounds", label: "Abnormal lung sounds" },
-  { value: "tenderabdomen", label: "Tender abdomen" },
-  { value: "swollenjoints", label: "Swollen joints" },
-  { value: "normalreflexes", label: "Normal reflexes" },
-  { value: "abnormalgait", label: "Abnormal gait" },
-  { value: "goodgeneralcondition", label: "Good general condition" },
-]
-
-interface ClinicalNotesSectionProps {
-  data: string
-  onChange: (data: string) => void
+interface ClinicalNotes {
+  chiefComplaints: string[]
+  historyOfPresentIllness: string
+  pastMedicalHistory: string[]
+  familyHistory: string
+  socialHistory: string
+  reviewOfSystems: string[]
+  physicalExamination: string
+  clinicalFindings: string[]
+  provisionalDiagnosis: string[]
+  differentialDiagnosis: string[]
+  investigations: string[]
+  treatmentPlan: string
+  followUpInstructions: string
+  doctorNotes: string
 }
 
-export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionProps) {
-  const [chiefComplaints, setChiefComplaints] = useState<string[]>([])
-  const [medicalHistory, setMedicalHistory] = useState<string[]>([])
-  const [investigations, setInvestigations] = useState<string[]>([])
-  const [observations, setObservations] = useState<string[]>([])
-  const [additionalNotes, setAdditionalNotes] = useState("")
-  const [isDataPrefilled, setIsDataPrefilled] = useState(false)
+interface ClinicalNotesSectionProps {
+  department: string
+  data: ClinicalNotes
+  onChange: (data: ClinicalNotes) => void
+}
 
-  // Initialize state from incoming data - only run when data changes
+export function ClinicalNotesSection({ department, data, onChange }: ClinicalNotesSectionProps) {
+  // Initialize with default empty arrays to prevent undefined errors
+  const [localData, setLocalData] = useState<ClinicalNotes>({
+    chiefComplaints: [],
+    historyOfPresentIllness: "",
+    pastMedicalHistory: [],
+    familyHistory: "",
+    socialHistory: "",
+    reviewOfSystems: [],
+    physicalExamination: "",
+    clinicalFindings: [],
+    provisionalDiagnosis: [],
+    differentialDiagnosis: [],
+    investigations: [],
+    treatmentPlan: "",
+    followUpInstructions: "",
+    doctorNotes: "",
+    ...data, // Override with actual data
+  })
+
+  const [newComplaint, setNewComplaint] = useState("")
+  const [newDiagnosis, setNewDiagnosis] = useState("")
+
   useEffect(() => {
-    if (data && data.trim() !== "" && data !== additionalNotes) {
-      setAdditionalNotes(data)
-      setIsDataPrefilled(true)
-      console.log("🔄 ClinicalNotesSection: Data prefilled:", data)
+    // Ensure all array properties are initialized
+    const safeData = {
+      chiefComplaints: [],
+      historyOfPresentIllness: "",
+      pastMedicalHistory: [],
+      familyHistory: "",
+      socialHistory: "",
+      reviewOfSystems: [],
+      physicalExamination: "",
+      clinicalFindings: [],
+      provisionalDiagnosis: [],
+      differentialDiagnosis: [],
+      investigations: [],
+      treatmentPlan: "",
+      followUpInstructions: "",
+      doctorNotes: "",
+      ...data,
     }
-  }, [data]) // Remove additionalNotes from dependencies to prevent loop
+    setLocalData(safeData)
+  }, [data])
 
-  const handleNotesChange = (value: string) => {
-    setAdditionalNotes(value)
-    onChange(value)
+  useEffect(() => {
+    onChange(localData)
+  }, [localData, onChange])
+
+  // Department-specific options
+  const departmentOptions = {
+    general: {
+      complaints: [
+        "Fever",
+        "Headache",
+        "Cough",
+        "Cold",
+        "Body ache",
+        "Fatigue",
+        "Nausea",
+        "Vomiting",
+        "Diarrhea",
+        "Constipation",
+        "Abdominal pain",
+        "Loss of appetite",
+        "Weight loss",
+        "Weight gain",
+      ],
+      diagnoses: [
+        "Upper Respiratory Tract Infection",
+        "Viral Fever",
+        "Gastroenteritis",
+        "Hypertension",
+        "Diabetes Mellitus",
+        "Migraine",
+        "Tension Headache",
+        "Acid Peptic Disease",
+        "IBS",
+        "UTI",
+      ],
+      investigations: [
+        "Complete Blood Count",
+        "ESR",
+        "CRP",
+        "Blood Sugar",
+        "HbA1c",
+        "Lipid Profile",
+        "Liver Function Test",
+        "Kidney Function Test",
+        "Urine Analysis",
+        "Chest X-ray",
+      ],
+    },
+    cardiology: {
+      complaints: [
+        "Chest pain",
+        "Shortness of breath",
+        "Palpitations",
+        "Dizziness",
+        "Syncope",
+        "Leg swelling",
+        "Fatigue",
+        "Exercise intolerance",
+        "Orthopnea",
+        "PND",
+      ],
+      diagnoses: [
+        "Coronary Artery Disease",
+        "Myocardial Infarction",
+        "Heart Failure",
+        "Arrhythmia",
+        "Hypertension",
+        "Valvular Heart Disease",
+        "Cardiomyopathy",
+        "Pericarditis",
+        "Angina",
+      ],
+      investigations: [
+        "ECG",
+        "Echocardiography",
+        "Stress Test",
+        "Holter Monitor",
+        "Cardiac Enzymes",
+        "Lipid Profile",
+        "BNP/NT-proBNP",
+        "Coronary Angiography",
+        "CT Angiography",
+      ],
+    },
+    orthopedics: {
+      complaints: [
+        "Joint pain",
+        "Back pain",
+        "Neck pain",
+        "Muscle pain",
+        "Stiffness",
+        "Swelling",
+        "Limited mobility",
+        "Numbness",
+        "Tingling",
+        "Weakness",
+        "Trauma",
+        "Fracture pain",
+      ],
+      diagnoses: [
+        "Osteoarthritis",
+        "Rheumatoid Arthritis",
+        "Fracture",
+        "Sprain",
+        "Strain",
+        "Disc Prolapse",
+        "Sciatica",
+        "Frozen Shoulder",
+        "Tennis Elbow",
+        "Carpal Tunnel Syndrome",
+      ],
+      investigations: [
+        "X-ray",
+        "MRI",
+        "CT Scan",
+        "Bone Scan",
+        "Arthroscopy",
+        "EMG",
+        "NCV",
+        "Bone Density",
+        "ESR",
+        "CRP",
+        "Rheumatoid Factor",
+        "Anti-CCP",
+      ],
+    },
+  }
+
+  const currentOptions = departmentOptions[department as keyof typeof departmentOptions] || departmentOptions.general
+
+  const addComplaint = () => {
+    if (newComplaint.trim() && !localData.chiefComplaints.includes(newComplaint.trim())) {
+      setLocalData((prev) => ({
+        ...prev,
+        chiefComplaints: [...prev.chiefComplaints, newComplaint.trim()],
+      }))
+      setNewComplaint("")
+    }
+  }
+
+  const removeComplaint = (complaint: string) => {
+    setLocalData((prev) => ({
+      ...prev,
+      chiefComplaints: prev.chiefComplaints.filter((c) => c !== complaint),
+    }))
+  }
+
+  const addDiagnosis = () => {
+    if (newDiagnosis.trim() && !localData.provisionalDiagnosis.includes(newDiagnosis.trim())) {
+      setLocalData((prev) => ({
+        ...prev,
+        provisionalDiagnosis: [...prev.provisionalDiagnosis, newDiagnosis.trim()],
+      }))
+      setNewDiagnosis("")
+    }
+  }
+
+  const removeDiagnosis = (diagnosis: string) => {
+    setLocalData((prev) => ({
+      ...prev,
+      provisionalDiagnosis: prev.provisionalDiagnosis.filter((d) => d !== diagnosis),
+    }))
   }
 
   return (
-    <div className="space-y-4">
-      {isDataPrefilled && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700 font-medium">✅ Clinical notes loaded from previous consultation</p>
-        </div>
-      )}
+    <div className="space-y-6">
+      {/* Chief Complaints */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-blue-600" />
+            Chief Complaints
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newComplaint}
+              onChange={(e) => setNewComplaint(e.target.value)}
+              placeholder="Enter chief complaint"
+              onKeyPress={(e) => e.key === "Enter" && addComplaint()}
+            />
+            <Select onValueChange={(value) => setNewComplaint(value)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Quick select" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentOptions.complaints.map((complaint) => (
+                  <SelectItem key={complaint} value={complaint}>
+                    {complaint}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={addComplaint} size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
 
-      <div>
-        <Label htmlFor="chief-complaints" className="mb-1 block">
-          Chief Complaints
-        </Label>
-        <MultiSelect
-          options={chiefComplaintOptions}
-          selected={chiefComplaints}
-          onChange={setChiefComplaints}
-          placeholder="Select chief complaints..."
-        />
-      </div>
+          {localData.chiefComplaints.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {localData.chiefComplaints.map((complaint) => (
+                <Badge key={complaint} variant="secondary" className="flex items-center gap-1">
+                  {complaint}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => removeComplaint(complaint)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <div>
-        <Label htmlFor="medical-history" className="mb-1 block">
-          Detailed Medical History
-        </Label>
-        <MultiSelect
-          options={medicalHistoryOptions}
-          selected={medicalHistory}
-          onChange={setMedicalHistory}
-          placeholder="Select medical history items..."
-        />
-      </div>
+      {/* History of Present Illness */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-green-600" />
+            History of Present Illness
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={localData.historyOfPresentIllness}
+            onChange={(e) => setLocalData((prev) => ({ ...prev, historyOfPresentIllness: e.target.value }))}
+            placeholder="Describe the history of present illness..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
 
-      <div>
-        <Label htmlFor="investigations" className="mb-1 block">
-          Investigation
-        </Label>
-        <MultiSelect
-          options={investigationOptions}
-          selected={investigations}
-          onChange={setInvestigations}
-          placeholder="Select investigations..."
-        />
-      </div>
+      {/* Past Medical History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-purple-600" />
+            Past Medical History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <MultiSelect
+            options={[
+              { label: "Diabetes", value: "Diabetes" },
+              { label: "Hypertension", value: "Hypertension" },
+              { label: "Heart Disease", value: "Heart Disease" },
+              { label: "Kidney Disease", value: "Kidney Disease" },
+              { label: "Liver Disease", value: "Liver Disease" },
+              { label: "Cancer", value: "Cancer" },
+              { label: "Stroke", value: "Stroke" },
+              { label: "Asthma", value: "Asthma" },
+              { label: "COPD", value: "COPD" },
+              { label: "Thyroid Disease", value: "Thyroid Disease" },
+            ]}
+            selected={localData.pastMedicalHistory}
+            onChange={(selected) => setLocalData((prev) => ({ ...prev, pastMedicalHistory: selected }))}
+            placeholder="Select past medical history"
+          />
+        </CardContent>
+      </Card>
 
-      <div>
-        <Label htmlFor="observations" className="mb-1 block">
-          Observations
-        </Label>
-        <MultiSelect
-          options={observationOptions}
-          selected={observations}
-          onChange={setObservations}
-          placeholder="Select observations..."
-        />
-      </div>
+      {/* Physical Examination */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5 text-orange-600" />
+            Physical Examination
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={localData.physicalExamination}
+            onChange={(e) => setLocalData((prev) => ({ ...prev, physicalExamination: e.target.value }))}
+            placeholder="Document physical examination findings..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
 
-      <div>
-        <Label htmlFor="additional-notes" className="mb-1 block">
-          Clinical Notes {isDataPrefilled && "(Prefilled from Previous Visit)"}
-        </Label>
-        <Textarea
-          id="additional-notes"
-          placeholder="Enter clinical notes here..."
-          value={additionalNotes}
-          onChange={(e) => handleNotesChange(e.target.value)}
-          className="min-h-[150px]"
-        />
-      </div>
+      {/* Clinical Findings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-red-600" />
+            Clinical Findings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MultiSelect
+            options={[
+              { label: "Normal", value: "Normal" },
+              { label: "Abnormal heart sounds", value: "Abnormal heart sounds" },
+              { label: "Abnormal lung sounds", value: "Abnormal lung sounds" },
+              { label: "Lymphadenopathy", value: "Lymphadenopathy" },
+              { label: "Organomegaly", value: "Organomegaly" },
+              { label: "Edema", value: "Edema" },
+              { label: "Cyanosis", value: "Cyanosis" },
+              { label: "Jaundice", value: "Jaundice" },
+              { label: "Pallor", value: "Pallor" },
+              { label: "Dehydration", value: "Dehydration" },
+            ]}
+            selected={localData.clinicalFindings}
+            onChange={(selected) => setLocalData((prev) => ({ ...prev, clinicalFindings: selected }))}
+            placeholder="Select clinical findings"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Provisional Diagnosis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-indigo-600" />
+            Provisional Diagnosis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newDiagnosis}
+              onChange={(e) => setNewDiagnosis(e.target.value)}
+              placeholder="Enter diagnosis"
+              onKeyPress={(e) => e.key === "Enter" && addDiagnosis()}
+            />
+            <Select onValueChange={(value) => setNewDiagnosis(value)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Quick select" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentOptions.diagnoses.map((diagnosis) => (
+                  <SelectItem key={diagnosis} value={diagnosis}>
+                    {diagnosis}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={addDiagnosis} size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {localData.provisionalDiagnosis.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {localData.provisionalDiagnosis.map((diagnosis) => (
+                <Badge key={diagnosis} variant="secondary" className="flex items-center gap-1">
+                  {diagnosis}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => removeDiagnosis(diagnosis)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Investigations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-teal-600" />
+            Investigations
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MultiSelect
+            options={currentOptions.investigations.map((inv) => ({ label: inv, value: inv }))}
+            selected={localData.investigations}
+            onChange={(selected) => setLocalData((prev) => ({ ...prev, investigations: selected }))}
+            placeholder="Select investigations"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Treatment Plan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            Treatment Plan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={localData.treatmentPlan}
+            onChange={(e) => setLocalData((prev) => ({ ...prev, treatmentPlan: e.target.value }))}
+            placeholder="Outline the treatment plan..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Doctor's Notes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-gray-600" />
+            Doctor's Notes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={localData.doctorNotes}
+            onChange={(e) => setLocalData((prev) => ({ ...prev, doctorNotes: e.target.value }))}
+            placeholder="Additional notes and observations..."
+            rows={3}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }

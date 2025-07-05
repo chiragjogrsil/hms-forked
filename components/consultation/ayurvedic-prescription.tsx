@@ -1,370 +1,406 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Edit, Trash2, Pill } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
-import { AddAyurvedicPrescriptionModal } from "@/components/modals/add-ayurvedic-prescription-modal"
+import { MultiSelect } from "@/components/ui/multi-select"
+import { Plus, X, Leaf, Save } from "lucide-react"
+import { toast } from "sonner"
 
-interface AyurvedicPrescriptionProps {
-  data: any[]
-  onChange: (data: any[]) => void
-  readOnly?: boolean
+interface AyurvedicMedicine {
+  id: string
+  medicineType: string
+  componentMedicines: string[]
+  dosage: string
+  frequency: string
+  duration: string
+  instructions: string
+  beforeAfterFood: string
 }
 
-export function AyurvedicPrescription({ data, onChange, readOnly = false }: AyurvedicPrescriptionProps) {
-  // Ensure data is always an array
-  const safeData = Array.isArray(data) ? data : []
+interface AyurvedicPrescriptionProps {
+  prescriptions: AyurvedicMedicine[]
+  onChange: (prescriptions: AyurvedicMedicine[]) => void
+}
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingPrescription, setEditingPrescription] = useState(null)
-  const [showInitialOptions, setShowInitialOptions] = useState(safeData.length === 0)
+export function AyurvedicPrescription({ prescriptions = [], onChange }: AyurvedicPrescriptionProps) {
+  const [localPrescriptions, setLocalPrescriptions] = useState<AyurvedicMedicine[]>(prescriptions)
+  const [isAddingNew, setIsAddingNew] = useState(false)
+  const [newPrescription, setNewPrescription] = useState<Partial<AyurvedicMedicine>>({
+    medicineType: "",
+    componentMedicines: [],
+    dosage: "",
+    frequency: "",
+    duration: "",
+    instructions: "",
+    beforeAfterFood: "after",
+  })
 
-  // Overall prescription-level pathya/apathya
-  const [overallPathya, setOverallPathya] = useState<string[]>([])
-  const [overallApathya, setOverallApathya] = useState<string[]>([])
-  const [newPathya, setNewPathya] = useState("")
-  const [newApathya, setNewApathya] = useState("")
-
-  const commonPathya = [
-    "Light food",
-    "Warm water",
-    "Rest",
-    "Fruits",
-    "Vegetables",
-    "Milk",
-    "Honey",
-    "Rice",
-    "Moong dal",
-    "Ghee",
-    "Buttermilk",
-    "Ginger tea",
+  // Ayurvedic medicine types
+  const medicineTypes = [
+    "Churna (Powder)",
+    "Vati (Tablet)",
+    "Kashayam (Decoction)",
+    "Ghrita (Ghee preparation)",
+    "Taila (Oil)",
+    "Asava/Arishta (Fermented)",
+    "Avaleha (Jam/Paste)",
+    "Bhasma (Ash)",
+    "Rasa (Mercury preparation)",
+    "Guggulu (Resin preparation)",
+    "Kwatha (Decoction)",
+    "Swarasa (Fresh juice)",
+    "Kalka (Paste)",
+    "Leha (Linctus)",
+    "Pishti (Fine powder)",
   ]
 
-  const commonApathya = [
-    "Cold food",
-    "Heavy meals",
-    "Stress",
-    "Spicy food",
-    "Fried food",
-    "Alcohol",
-    "Smoking",
-    "Late night meals",
-    "Processed food",
-    "Ice cream",
-    "Cold drinks",
-    "Non-veg",
+  // Comprehensive list of Ayurvedic herbs and medicines
+  const ayurvedicHerbs = [
+    { label: "Ashwagandha", value: "Ashwagandha" },
+    { label: "Brahmi", value: "Brahmi" },
+    { label: "Shankhpushpi", value: "Shankhpushpi" },
+    { label: "Mandukaparni", value: "Mandukaparni" },
+    { label: "Jatamansi", value: "Jatamansi" },
+    { label: "Triphala", value: "Triphala" },
+    { label: "Amalaki", value: "Amalaki" },
+    { label: "Bibhitaki", value: "Bibhitaki" },
+    { label: "Haritaki", value: "Haritaki" },
+    { label: "Trikatu", value: "Trikatu" },
+    { label: "Shunthi", value: "Shunthi" },
+    { label: "Maricha", value: "Maricha" },
+    { label: "Pippali", value: "Pippali" },
+    { label: "Guduchi", value: "Guduchi" },
+    { label: "Neem", value: "Neem" },
+    { label: "Turmeric", value: "Turmeric" },
+    { label: "Arjuna", value: "Arjuna" },
+    { label: "Punarnava", value: "Punarnava" },
+    { label: "Gokshura", value: "Gokshura" },
+    { label: "Shatavari", value: "Shatavari" },
+    { label: "Vidari", value: "Vidari" },
+    { label: "Bala", value: "Bala" },
+    { label: "Atibala", value: "Atibala" },
+    { label: "Nagbala", value: "Nagbala" },
+    { label: "Dashmool", value: "Dashmool" },
+    { label: "Saraswatarishta", value: "Saraswatarishta" },
+    { label: "Draksharishta", value: "Draksharishta" },
+    { label: "Kumaryasava", value: "Kumaryasava" },
+    { label: "Chandanasava", value: "Chandanasava" },
+    { label: "Chitrakadi Vati", value: "Chitrakadi Vati" },
+    { label: "Hingvastak Churna", value: "Hingvastak Churna" },
+    { label: "Avipattikar Churna", value: "Avipattikar Churna" },
+    { label: "Sitopaladi Churna", value: "Sitopaladi Churna" },
+    { label: "Talisadi Churna", value: "Talisadi Churna" },
+    { label: "Lavangadi Vati", value: "Lavangadi Vati" },
+    { label: "Khadiradi Vati", value: "Khadiradi Vati" },
+    { label: "Vyoshadi Vati", value: "Vyoshadi Vati" },
+    { label: "Chandraprabha Vati", value: "Chandraprabha Vati" },
+    { label: "Kanchanar Guggulu", value: "Kanchanar Guggulu" },
+    { label: "Triphala Guggulu", value: "Triphala Guggulu" },
+    { label: "Yograj Guggulu", value: "Yograj Guggulu" },
+    { label: "Mahayograj Guggulu", value: "Mahayograj Guggulu" },
+    { label: "Punarnavadi Guggulu", value: "Punarnavadi Guggulu" },
+    { label: "Gokshuradi Guggulu", value: "Gokshuradi Guggulu" },
+    { label: "Brahmi Ghrita", value: "Brahmi Ghrita" },
+    { label: "Saraswata Ghrita", value: "Saraswata Ghrita" },
+    { label: "Kalyanaka Ghrita", value: "Kalyanaka Ghrita" },
+    { label: "Mahanarayan Taila", value: "Mahanarayan Taila" },
+    { label: "Ksheerabala Taila", value: "Ksheerabala Taila" },
+    { label: "Dhanwantaram Taila", value: "Dhanwantaram Taila" },
+    { label: "Chyawanprash", value: "Chyawanprash" },
+    { label: "Brahma Rasayana", value: "Brahma Rasayana" },
+    { label: "Medhya Rasayana", value: "Medhya Rasayana" },
+    { label: "Swarna Bhasma", value: "Swarna Bhasma" },
+    { label: "Rajata Bhasma", value: "Rajata Bhasma" },
+    { label: "Abhrak Bhasma", value: "Abhrak Bhasma" },
+    { label: "Loha Bhasma", value: "Loha Bhasma" },
+    { label: "Mandur Bhasma", value: "Mandur Bhasma" },
+    { label: "Praval Bhasma", value: "Praval Bhasma" },
+    { label: "Mukta Bhasma", value: "Mukta Bhasma" },
+    { label: "Kapardika Bhasma", value: "Kapardika Bhasma" },
+    { label: "Godanti Bhasma", value: "Godanti Bhasma" },
+    { label: "Shankha Bhasma", value: "Shankha Bhasma" },
   ]
 
-  const handleAddPrescription = (prescriptionData: any) => {
-    if (editingPrescription) {
-      onChange(
-        safeData.map((item) =>
-          item.id === editingPrescription.id ? { ...prescriptionData, id: editingPrescription.id } : item,
-        ),
-      )
-    } else {
-      const newPrescription = { ...prescriptionData, id: Date.now().toString() }
-      onChange([...safeData, newPrescription])
+  const frequencies = [
+    "Once daily",
+    "Twice daily",
+    "Three times daily",
+    "Before sunrise",
+    "After sunset",
+    "Before meals",
+    "After meals",
+    "With meals",
+    "Empty stomach",
+    "At bedtime",
+    "As needed",
+  ]
+
+  const durations = [
+    "7 days",
+    "14 days",
+    "21 days",
+    "30 days",
+    "45 days",
+    "60 days",
+    "90 days",
+    "Until symptoms resolve",
+    "As prescribed",
+    "Continuous",
+  ]
+
+  useEffect(() => {
+    setLocalPrescriptions(prescriptions)
+  }, [prescriptions])
+
+  useEffect(() => {
+    onChange(localPrescriptions)
+  }, [localPrescriptions, onChange])
+
+  const addPrescription = () => {
+    if (
+      !newPrescription.medicineType ||
+      !newPrescription.componentMedicines?.length ||
+      !newPrescription.dosage ||
+      !newPrescription.frequency
+    ) {
+      toast.error("Please fill in required fields")
+      return
     }
-    setEditingPrescription(null)
-    setIsModalOpen(false)
-    setShowInitialOptions(false)
-  }
 
-  const handleEditPrescription = (prescription: any) => {
-    setEditingPrescription(prescription)
-    setIsModalOpen(true)
-  }
-
-  const handleDeletePrescription = (id: string) => {
-    onChange(safeData.filter((item) => item.id !== id))
-  }
-
-  const openAddModal = () => {
-    setEditingPrescription(null)
-    setIsModalOpen(true)
-    setShowInitialOptions(false)
-  }
-
-  const addPathya = (pathya: string) => {
-    if (pathya.trim() && !overallPathya.includes(pathya.trim())) {
-      setOverallPathya([...overallPathya, pathya.trim()])
+    const prescription: AyurvedicMedicine = {
+      id: Date.now().toString(),
+      medicineType: newPrescription.medicineType!,
+      componentMedicines: newPrescription.componentMedicines!,
+      dosage: newPrescription.dosage!,
+      frequency: newPrescription.frequency!,
+      duration: newPrescription.duration || "",
+      instructions: newPrescription.instructions || "",
+      beforeAfterFood: newPrescription.beforeAfterFood || "after",
     }
+
+    setLocalPrescriptions((prev) => [...prev, prescription])
+    setNewPrescription({
+      medicineType: "",
+      componentMedicines: [],
+      dosage: "",
+      frequency: "",
+      duration: "",
+      instructions: "",
+      beforeAfterFood: "after",
+    })
+    setIsAddingNew(false)
+    toast.success("Ayurvedic medicine added to prescription")
   }
 
-  const removePathya = (pathya: string) => {
-    setOverallPathya(overallPathya.filter((p) => p !== pathya))
-  }
-
-  const addApathya = (apathya: string) => {
-    if (apathya.trim() && !overallApathya.includes(apathya.trim())) {
-      setOverallApathya([...overallApathya, apathya.trim()])
-    }
-  }
-
-  const removeApathya = (apathya: string) => {
-    setOverallApathya(overallApathya.filter((a) => a !== apathya))
-  }
-
-  const handleAddCustomPathya = () => {
-    if (newPathya.trim()) {
-      addPathya(newPathya)
-      setNewPathya("")
-    }
-  }
-
-  const handleAddCustomApathya = () => {
-    if (newApathya.trim()) {
-      addApathya(newApathya)
-      setNewApathya("")
-    }
+  const removePrescription = (id: string) => {
+    setLocalPrescriptions((prev) => prev.filter((p) => p.id !== id))
+    toast.success("Medicine removed from prescription")
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Pill className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold">Ayurvedic Prescriptions</h3>
-          {safeData.length > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {safeData.length} prescription{safeData.length !== 1 ? "s" : ""}
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Overall Pathya/Apathya Section - Only show if there are prescriptions */}
-      {safeData.length > 0 && !readOnly && (
-        <Card className="border-green-200 bg-green-50/50">
-          <CardContent className="p-4">
-            <h4 className="font-medium text-green-800 mb-4">Overall Prescription Guidelines</h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Pathya Section */}
-              <div className="space-y-3">
-                <Label className="text-green-700">Pathya (Things to have)</Label>
-
-                {/* Common Pathya Options */}
-                <div>
-                  <Label className="text-sm text-muted-foreground">Common Options:</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {commonPathya
-                      .filter((item) => !overallPathya.includes(item))
-                      .map((item) => (
-                        <Button
-                          key={item}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => addPathya(item)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {item}
-                        </Button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Custom Pathya Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add custom pathya"
-                    value={newPathya}
-                    onChange={(e) => setNewPathya(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomPathya())}
-                    className="text-sm"
-                  />
-                  <Button type="button" onClick={handleAddCustomPathya} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Selected Pathya */}
-                {overallPathya.length > 0 && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Selected:</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {overallPathya.map((item: string, idx: number) => (
-                        <Badge key={idx} variant="default" className="text-xs bg-green-100 text-green-800">
-                          {item}
-                          <button
-                            type="button"
-                            onClick={() => removePathya(item)}
-                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2 w-2" />
-                          </button>
-                        </Badge>
-                      ))}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Leaf className="h-5 w-5 text-green-600" />
+          Ayurvedic Prescription
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Existing Prescriptions */}
+        {localPrescriptions.length > 0 && (
+          <div className="space-y-4">
+            {localPrescriptions.map((prescription) => (
+              <div key={prescription.id} className="p-4 border rounded-lg bg-green-50/50">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {prescription.medicineType}
+                      </Badge>
+                      <Badge variant="outline">{prescription.dosage}</Badge>
+                      <Badge variant="outline">{prescription.frequency}</Badge>
+                      {prescription.duration && <Badge variant="outline">{prescription.duration}</Badge>}
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-sm font-medium text-gray-700">Components: </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {prescription.componentMedicines.map((component, index) => (
+                          <Badge key={index} variant="outline" className="text-xs bg-green-50 text-green-700">
+                            {component}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <strong>Take:</strong> {prescription.beforeAfterFood} food
+                      </p>
+                      {prescription.instructions && (
+                        <p>
+                          <strong>Instructions:</strong> {prescription.instructions}
+                        </p>
+                      )}
                     </div>
                   </div>
-                )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePrescription(prescription.id)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add New Prescription Form */}
+        {isAddingNew ? (
+          <div className="p-4 border rounded-lg bg-gray-50">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="medicineType">Medicine Type *</Label>
+                  <Select
+                    value={newPrescription.medicineType}
+                    onValueChange={(value) => setNewPrescription({ ...newPrescription, medicineType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select medicine type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {medicineTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dosage">Dosage *</Label>
+                  <Input
+                    value={newPrescription.dosage}
+                    onChange={(e) => setNewPrescription({ ...newPrescription, dosage: e.target.value })}
+                    placeholder="e.g., 1 tsp, 2 tablets, 10ml"
+                  />
+                </div>
               </div>
 
-              {/* Apathya Section */}
-              <div className="space-y-3">
-                <Label className="text-green-700">Apathya (Things to avoid)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="componentMedicines">Component Medicines *</Label>
+                <MultiSelect
+                  options={ayurvedicHerbs}
+                  selected={newPrescription.componentMedicines || []}
+                  onChange={(selected) => setNewPrescription({ ...newPrescription, componentMedicines: selected })}
+                  placeholder="Select component medicines/herbs"
+                />
+              </div>
 
-                {/* Common Apathya Options */}
-                <div>
-                  <Label className="text-sm text-muted-foreground">Common Options:</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {commonApathya
-                      .filter((item) => !overallApathya.includes(item))
-                      .map((item) => (
-                        <Button
-                          key={item}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => addApathya(item)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {item}
-                        </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="frequency">Frequency *</Label>
+                  <Select
+                    value={newPrescription.frequency}
+                    onValueChange={(value) => setNewPrescription({ ...newPrescription, frequency: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {frequencies.map((freq) => (
+                        <SelectItem key={freq} value={freq}>
+                          {freq}
+                        </SelectItem>
                       ))}
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Custom Apathya Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add custom apathya"
-                    value={newApathya}
-                    onChange={(e) => setNewApathya(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomApathya())}
-                    className="text-sm"
-                  />
-                  <Button type="button" onClick={handleAddCustomApathya} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Selected Apathya */}
-                {overallApathya.length > 0 && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Selected:</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {overallApathya.map((item: string, idx: number) => (
-                        <Badge key={idx} variant="destructive" className="text-xs">
-                          {item}
-                          <button
-                            type="button"
-                            onClick={() => removeApathya(item)}
-                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2 w-2" />
-                          </button>
-                        </Badge>
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration</Label>
+                  <Select
+                    value={newPrescription.duration}
+                    onValueChange={(value) => setNewPrescription({ ...newPrescription, duration: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {durations.map((duration) => (
+                        <SelectItem key={duration} value={duration}>
+                          {duration}
+                        </SelectItem>
                       ))}
-                    </div>
-                  </div>
-                )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="beforeAfterFood">Take with food</Label>
+                <Select
+                  value={newPrescription.beforeAfterFood}
+                  onValueChange={(value) => setNewPrescription({ ...newPrescription, beforeAfterFood: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="before">Before food</SelectItem>
+                    <SelectItem value="after">After food</SelectItem>
+                    <SelectItem value="with">With food</SelectItem>
+                    <SelectItem value="empty">Empty stomach</SelectItem>
+                    <SelectItem value="anytime">Anytime</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instructions">Special Instructions</Label>
+                <Textarea
+                  value={newPrescription.instructions}
+                  onChange={(e) => setNewPrescription({ ...newPrescription, instructions: e.target.value })}
+                  placeholder="Any special instructions, anupana (vehicle), or preparation method..."
+                  rows={2}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {safeData.length === 0 && showInitialOptions ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Pill className="h-12 w-12 text-muted-foreground mb-4" />
-            <h4 className="text-lg font-medium text-muted-foreground mb-2">No Ayurvedic Prescriptions</h4>
-            <p className="text-sm text-muted-foreground mb-6 text-center">Choose how you'd like to start prescribing</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={openAddModal} className="bg-secondary hover:bg-secondary/90" disabled={readOnly}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Prescription
+            <div className="flex gap-2 mt-4">
+              <Button onClick={addPrescription} className="bg-green-600 hover:bg-green-700">
+                <Save className="h-4 w-4 mr-2" />
+                Add Medicine
+              </Button>
+              <Button variant="outline" onClick={() => setIsAddingNew(false)}>
+                Cancel
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {safeData.length > 0 && (
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">#</TableHead>
-                      <TableHead>Medicine</TableHead>
-                      <TableHead>Dosage</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Instructions</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {safeData.map((prescription, index) => (
-                      <TableRow key={prescription.id}>
-                        <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                        <TableCell className="font-medium">{prescription.medicine || "N/A"}</TableCell>
-                        <TableCell>{prescription.dosage || "N/A"}</TableCell>
-                        <TableCell>{prescription.duration || "N/A"}</TableCell>
-                        <TableCell>{prescription.instructions || "N/A"}</TableCell>
-                        <TableCell>
-                          {!readOnly && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditPrescription(prescription)}>
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePrescription(prescription.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
+          </div>
+        ) : (
+          <Button onClick={() => setIsAddingNew(true)} variant="outline" className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Ayurvedic Medicine
+          </Button>
+        )}
 
-          {/* Add Prescription Box */}
-          {!readOnly && (
-            <Card
-              className="border-secondary/20 bg-secondary/5 hover:bg-secondary/10 cursor-pointer border-dashed"
-              onClick={openAddModal}
-            >
-              <CardContent className="flex items-center justify-center py-6">
-                <div className="flex items-center gap-3 text-secondary">
-                  <div className="rounded-full bg-secondary/10 p-2">
-                    <Plus className="h-4 w-4" />
-                  </div>
-                  <span className="font-medium">Add Another Ayurvedic Medicine</span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-
-      <AddAyurvedicPrescriptionModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingPrescription(null)
-        }}
-        onSubmit={handleAddPrescription}
-        editData={editingPrescription}
-      />
-    </div>
+        {localPrescriptions.length === 0 && !isAddingNew && (
+          <div className="text-center py-8 text-gray-500">
+            <Leaf className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>No Ayurvedic medicines prescribed yet</p>
+            <p className="text-sm">Click "Add Ayurvedic Medicine" to start prescribing</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

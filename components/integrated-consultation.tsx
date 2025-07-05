@@ -158,37 +158,29 @@ export function IntegratedConsultation({
       {/* Prescriptions Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Allopathic Prescriptions */}
-        <Card>
-          <CardContent className="p-6">
-            <AllopathicPrescription
-              department={department}
-              data={activeConsultation.prescriptions?.allopathic || []}
-              onChange={(data) => {
-                const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
-                handleSectionChange("prescriptions", {
-                  ...currentPrescriptions,
-                  allopathic: data,
-                })
-              }}
-            />
-          </CardContent>
-        </Card>
+        <AllopathicPrescription
+          department={department}
+          data={activeConsultation.prescriptions?.allopathic || []}
+          onChange={(data) => {
+            const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
+            handleSectionChange("prescriptions", {
+              ...currentPrescriptions,
+              allopathic: data,
+            })
+          }}
+        />
 
         {/* Ayurvedic Prescriptions */}
-        <Card>
-          <CardContent className="p-6">
-            <AyurvedicPrescription
-              data={activeConsultation.prescriptions?.ayurvedic || []}
-              onChange={(data) => {
-                const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
-                handleSectionChange("prescriptions", {
-                  ...currentPrescriptions,
-                  ayurvedic: data,
-                })
-              }}
-            />
-          </CardContent>
-        </Card>
+        <AyurvedicPrescription
+          data={activeConsultation.prescriptions?.ayurvedic || []}
+          onChange={(data) => {
+            const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
+            handleSectionChange("prescriptions", {
+              ...currentPrescriptions,
+              ayurvedic: data,
+            })
+          }}
+        />
       </div>
 
       {/* Complete Visit Button */}

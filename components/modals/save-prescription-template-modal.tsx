@@ -9,21 +9,29 @@ import { Textarea } from "@/components/ui/textarea"
 import { Save, Package } from "lucide-react"
 import { toast } from "sonner"
 
+interface Medicine {
+  id: string
+  medicine: string
+  dosage: string
+  frequency: string
+  duration: string
+  instructions: string
+  beforeAfterFood: string
+}
+
 interface SavePrescriptionTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (templateData: any) => void
-  ayurvedicPrescriptions: any[]
-  allopathicPrescriptions: any[]
+  prescriptionData: Medicine[]
+  prescriptionType: "ayurvedic" | "allopathic"
   department: string
 }
 
 export function SavePrescriptionTemplateModal({
   isOpen,
   onClose,
-  onSave,
-  ayurvedicPrescriptions,
-  allopathicPrescriptions,
+  prescriptionData = [],
+  prescriptionType,
   department,
 }: SavePrescriptionTemplateModalProps) {
   const [templateName, setTemplateName] = useState("")
@@ -35,29 +43,36 @@ export function SavePrescriptionTemplateModal({
       return
     }
 
+    if (!prescriptionData || prescriptionData.length === 0) {
+      toast.error("No prescription data to save")
+      return
+    }
+
+    // Here you would typically save to a backend or local storage
+    // For now, we'll just show a success message
     const templateData = {
+      id: `template_${Date.now()}`,
       name: templateName.trim(),
       description: description.trim(),
       department,
-      ayurvedicPrescriptions,
-      allopathicPrescriptions,
-      type:
-        ayurvedicPrescriptions.length > 0 && allopathicPrescriptions.length > 0
-          ? "mixed"
-          : ayurvedicPrescriptions.length > 0
-            ? "ayurvedic"
-            : "allopathic",
+      type: prescriptionType,
+      prescriptionData,
+      createdAt: new Date(),
       createdBy: "Current Doctor", // This would come from auth context
     }
 
-    onSave(templateData)
+    // Save to localStorage for demo purposes
+    const existingTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
+    existingTemplates.push(templateData)
+    localStorage.setItem("prescriptionTemplates", JSON.stringify(existingTemplates))
+
     toast.success("Template saved successfully!")
     setTemplateName("")
     setDescription("")
     onClose()
   }
 
-  const totalPrescriptions = ayurvedicPrescriptions.length + allopathicPrescriptions.length
+  const totalPrescriptions = prescriptionData?.length || 0
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -65,7 +80,7 @@ export function SavePrescriptionTemplateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Save Prescription Template
+            Save {prescriptionType === "ayurvedic" ? "Ayurvedic" : "Allopathic"} Template
           </DialogTitle>
         </DialogHeader>
 
@@ -78,13 +93,10 @@ export function SavePrescriptionTemplateModal({
                 Department: <span className="font-medium">{department}</span>
               </p>
               <p>
-                Ayurvedic Medicines: <span className="font-medium">{ayurvedicPrescriptions.length}</span>
+                Type: <span className="font-medium capitalize">{prescriptionType}</span>
               </p>
               <p>
-                Allopathic Medicines: <span className="font-medium">{allopathicPrescriptions.length}</span>
-              </p>
-              <p>
-                Total Prescriptions: <span className="font-medium">{totalPrescriptions}</span>
+                Total Medicines: <span className="font-medium">{totalPrescriptions}</span>
               </p>
             </div>
           </div>
@@ -94,7 +106,7 @@ export function SavePrescriptionTemplateModal({
             <Label htmlFor="templateName">Template Name *</Label>
             <Input
               id="templateName"
-              placeholder="e.g., Diabetes Management Protocol"
+              placeholder={`e.g., ${prescriptionType === "ayurvedic" ? "Digestive Health Protocol" : "Diabetes Management Protocol"}`}
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
             />

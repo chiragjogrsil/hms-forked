@@ -1,577 +1,416 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import {
-  CheckCircle,
-  AlertTriangle,
-  IndianRupee,
-  FileText,
-  Calendar,
-  User,
-  Stethoscope,
-  TestTube,
-  Pill,
-  Activity,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { PaymentConfirmationDialog } from "./payment-confirmation-dialog"
-import { formatCurrency } from "@/lib/utils"
-
-const completeVisitSchema = z.object({
-  visitSummary: z.string().min(10, "Please provide a visit summary (minimum 10 characters)"),
-  followUpRequired: z.enum(["yes", "no"], {
-    required_error: "Please specify if follow-up is required",
-  }),
-  followUpDate: z.string().optional(),
-  followUpInstructions: z.string().optional(),
-  additionalNotes: z.string().optional(),
-})
-
-type CompleteVisitFormValues = z.infer<typeof completeVisitSchema>
+import { CalendarDays, FileText, TestTube, Scan, Stethoscope, CheckCircle2, Calculator } from "lucide-react"
+import { toast } from "sonner"
 
 interface CompleteVisitModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  visitData: any
-  onVisitCompleted: (completedVisitData: any) => void
+  patientName: string
+  patientId: string
+  department: string
+  onComplete: (data: any) => void
 }
 
-export function CompleteVisitModal({ open, onOpenChange, visitData, onVisitCompleted }: CompleteVisitModalProps) {
-  const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPaymentPrompt, setShowPaymentPrompt] = useState(false)
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [completedVisitData, setCompletedVisitData] = useState<any>(null)
+export function CompleteVisitModal({
+  open,
+  onOpenChange,
+  patientName,
+  patientId,
+  department,
+  onComplete,
+}: CompleteVisitModalProps) {
+  const [selectedLabTests, setSelectedLabTests] = useState<string[]>([])
+  const [selectedRadiology, setSelectedRadiology] = useState<string[]>([])
+  const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
+  const [followUpDate, setFollowUpDate] = useState("")
+  const [followUpTime, setFollowUpTime] = useState("")
+  const [followUpNotes, setFollowUpNotes] = useState("")
+  const [nextStepsNotes, setNextStepsNotes] = useState("")
+  const [urgentTests, setUrgentTests] = useState<string[]>([])
 
-  const form = useForm<CompleteVisitFormValues>({
-    resolver: zodResolver(completeVisitSchema),
-    defaultValues: {
-      visitSummary: "",
-      followUpRequired: "no",
-      followUpDate: "",
-      followUpInstructions: "",
-      additionalNotes: "",
-    },
-  })
+  const labTests = [
+    "Complete Blood Count (CBC)",
+    "Basic Metabolic Panel",
+    "Lipid Profile",
+    "Liver Function Tests",
+    "Kidney Function Tests",
+    "Thyroid Function Tests",
+    "HbA1c",
+    "Vitamin D",
+    "Vitamin B12",
+    "Iron Studies",
+    "Inflammatory Markers (ESR, CRP)",
+    "Cardiac Enzymes",
+  ]
 
-  const followUpRequired = form.watch("followUpRequired")
+  const radiologyTests = [
+    "Chest X-Ray",
+    "Abdominal X-Ray",
+    "CT Scan - Head",
+    "CT Scan - Chest",
+    "CT Scan - Abdomen",
+    "MRI - Brain",
+    "MRI - Spine",
+    "Ultrasound - Abdomen",
+    "Ultrasound - Pelvis",
+    "Echocardiogram",
+    "ECG",
+    "Stress Test",
+  ]
 
-  // Calculate total cost
-  const calculateTotalCost = () => {
-    let total = 0
+  const procedures = [
+    "Endoscopy",
+    "Colonoscopy",
+    "Biopsy",
+    "Minor Surgery",
+    "Physiotherapy",
+    "Counseling Session",
+    "Vaccination",
+    "Wound Care",
+    "Injection",
+    "Dressing Change",
+  ]
 
-    // Consultation fee
-    total += visitData?.consultationFee || 500
-
-    // Prescriptions
-    if (visitData?.prescriptions?.length > 0) {
-      visitData.prescriptions.forEach((prescription: any) => {
-        if (prescription.medications) {
-          prescription.medications.forEach((med: any) => {
-            total += med.cost || 0
-          })
-        }
-      })
+  const handleTestSelection = (test: string, category: "lab" | "radiology" | "procedures") => {
+    const setters = {
+      lab: setSelectedLabTests,
+      radiology: setSelectedRadiology,
+      procedures: setSelectedProcedures,
     }
 
-    // Lab tests
-    if (visitData?.labTests?.length > 0) {
-      visitData.labTests.forEach((test: any) => {
-        total += test.cost || 0
-      })
+    const getters = {
+      lab: selectedLabTests,
+      radiology: selectedRadiology,
+      procedures: selectedProcedures,
     }
 
-    // Radiology
-    if (visitData?.radiologyTests?.length > 0) {
-      visitData.radiologyTests.forEach((test: any) => {
-        total += test.cost || 0
-      })
-    }
+    const currentSelection = getters[category]
+    const setter = setters[category]
 
-    // Procedures
-    if (visitData?.procedures?.length > 0) {
-      visitData.procedures.forEach((procedure: any) => {
-        total += procedure.cost || 0
-      })
-    }
-
-    // Physiotherapy
-    if (visitData?.physiotherapy?.length > 0) {
-      visitData.physiotherapy.forEach((treatment: any) => {
-        total += treatment.cost || 0
-      })
-    }
-
-    // Panchkarma
-    if (visitData?.panchkarma?.length > 0) {
-      visitData.panchkarma.forEach((treatment: any) => {
-        total += treatment.cost || 0
-      })
-    }
-
-    return total
-  }
-
-  const totalAmount = calculateTotalCost()
-  const isUnpaid = visitData?.paymentStatus !== "paid" && totalAmount > 0
-
-  const onSubmit = async (data: CompleteVisitFormValues) => {
-    const visitCompletionData = {
-      ...data,
-      visitId: visitData?.id,
-      patientId: visitData?.patientId,
-      completedAt: new Date().toISOString(),
-      totalAmount,
-      paymentStatus: visitData?.paymentStatus || "unpaid",
-    }
-
-    setCompletedVisitData(visitCompletionData)
-
-    // If visit is unpaid and has amount due, show payment prompt
-    if (isUnpaid) {
-      setShowPaymentPrompt(true)
+    if (currentSelection.includes(test)) {
+      setter(currentSelection.filter((t) => t !== test))
     } else {
-      // Complete visit directly if already paid or no amount due
-      await completeVisit(visitCompletionData)
+      setter([...currentSelection, test])
     }
   }
 
-  const completeVisit = async (data: any) => {
-    setIsSubmitting(true)
-
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Call the callback
-      onVisitCompleted(data)
-
-      // Close modal
-      onOpenChange(false)
-
-      // Show success toast
-      toast({
-        title: "Visit completed successfully",
-        description: `Visit for ${visitData?.patientName} has been completed.`,
-      })
-
-      // Reset form
-      form.reset()
-    } catch (error) {
-      toast({
-        title: "Failed to complete visit",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmitting(false)
+  const handleUrgentTestToggle = (test: string) => {
+    if (urgentTests.includes(test)) {
+      setUrgentTests(urgentTests.filter((t) => t !== test))
+    } else {
+      setUrgentTests([...urgentTests, test])
     }
   }
 
-  const handleCompleteWithoutPayment = async () => {
-    setShowPaymentPrompt(false)
-    await completeVisit(completedVisitData)
+  const calculateEstimatedCost = () => {
+    const labCost = selectedLabTests.length * 500 // ₹500 per lab test
+    const radiologyCost = selectedRadiology.length * 1500 // ₹1500 per radiology test
+    const procedureCost = selectedProcedures.length * 2000 // ₹2000 per procedure
+    const urgentCost = urgentTests.length * 200 // ₹200 extra for urgent tests
+    return labCost + radiologyCost + procedureCost + urgentCost
   }
 
-  const handleCollectPayment = () => {
-    setShowPaymentPrompt(false)
-    setShowPaymentDialog(true)
-  }
-
-  const handlePaymentCompleted = async (paymentData: any) => {
-    setShowPaymentDialog(false)
-
-    // Update visit data with payment information
-    const updatedVisitData = {
-      ...completedVisitData,
-      paymentStatus: "paid",
-      paymentMethod: paymentData.paymentMethod,
-      paymentDate: new Date().toISOString(),
-      amountPaid: totalAmount,
+  const handleComplete = () => {
+    const nextStepsData = {
+      labTests: selectedLabTests,
+      radiology: selectedRadiology,
+      procedures: selectedProcedures,
+      followUp: followUpDate
+        ? {
+            date: new Date(followUpDate),
+            time: followUpTime,
+            notes: followUpNotes,
+          }
+        : null,
+      nextStepsNotes,
+      urgentTests,
+      totalCost: calculateEstimatedCost(),
     }
 
-    await completeVisit(updatedVisitData)
-  }
-
-  const handleCancel = () => {
+    onComplete(nextStepsData)
     onOpenChange(false)
-    form.reset()
+
+    // Show success message
+    toast.success("Visit completed successfully!", {
+      description: `All consultation data has been saved for ${patientName}`,
+    })
+
+    // Reset form
+    setSelectedLabTests([])
+    setSelectedRadiology([])
+    setSelectedProcedures([])
+    setFollowUpDate("")
+    setFollowUpTime("")
+    setFollowUpNotes("")
+    setNextStepsNotes("")
+    setUrgentTests([])
   }
 
-  // Get minimum date for follow-up (tomorrow)
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const minFollowUpDate = tomorrow.toISOString().split("T")[0]
+  const totalSelectedTests = selectedLabTests.length + selectedRadiology.length + selectedProcedures.length
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Complete Visit
-            </DialogTitle>
-            <DialogDescription>
-              Complete the visit for {visitData?.patientName} and provide summary details.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            Complete Visit - {patientName}
+          </DialogTitle>
+        </DialogHeader>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Visit Information Card */}
-              <Card className="bg-gradient-to-r from-blue-50 to-teal-50 border-blue-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-5 w-5 text-blue-600" />
-                    Visit Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">Patient:</span>
-                      <p className="font-semibold text-gray-800">{visitData?.patientName}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Visit ID:</span>
-                      <p className="font-semibold text-gray-800">{visitData?.id}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Doctor:</span>
-                      <p className="font-semibold text-gray-800">{visitData?.doctor}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Date:</span>
-                      <p className="font-semibold text-gray-800">
-                        {visitData?.date ? new Date(visitData.date).toLocaleDateString() : "Today"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        <div className="space-y-6">
+          {/* Summary Card */}
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-green-800">Visit Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-green-600 font-medium">Patient:</span>
+                  <p className="font-semibold">{patientName}</p>
+                </div>
+                <div>
+                  <span className="text-green-600 font-medium">Department:</span>
+                  <p className="font-semibold capitalize">{department}</p>
+                </div>
+                <div>
+                  <span className="text-green-600 font-medium">Date:</span>
+                  <p className="font-semibold">{new Date().toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <span className="text-green-600 font-medium">Time:</span>
+                  <p className="font-semibold">{new Date().toLocaleTimeString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Treatment Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-teal-600" />
-                    Treatment Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Consultation */}
-                  <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Consultation Fee</span>
-                    </div>
-                    <span className="font-semibold">{formatCurrency(visitData?.consultationFee || 500)}</span>
-                  </div>
-
-                  {/* Prescriptions */}
-                  {visitData?.prescriptions?.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Pill className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">Prescriptions</span>
-                        </div>
-                        {visitData.prescriptions.map((prescription: any, index: number) => (
-                          <div key={index} className="ml-6 space-y-1">
-                            {prescription.medications?.map((med: any, medIndex: number) => (
-                              <div key={medIndex} className="flex justify-between text-sm">
-                                <span>
-                                  {med.name} - {med.dosage}
-                                </span>
-                                <span>{formatCurrency(med.cost || 0)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Lab Tests */}
-                  {visitData?.labTests?.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <TestTube className="h-4 w-4 text-purple-600" />
-                          <span className="font-medium">Lab Tests</span>
-                        </div>
-                        <div className="ml-6 space-y-1">
-                          {visitData.labTests.map((test: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{test.name}</span>
-                              <span>{formatCurrency(test.cost || 0)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Radiology */}
-                  {visitData?.radiologyTests?.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Activity className="h-4 w-4 text-orange-600" />
-                          <span className="font-medium">Radiology</span>
-                        </div>
-                        <div className="ml-6 space-y-1">
-                          {visitData.radiologyTests.map((test: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{test.name}</span>
-                              <span>{formatCurrency(test.cost || 0)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Procedures */}
-                  {visitData?.procedures?.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-red-600" />
-                          <span className="font-medium">Procedures</span>
-                        </div>
-                        <div className="ml-6 space-y-1">
-                          {visitData.procedures.map((procedure: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{procedure.name}</span>
-                              <span>{formatCurrency(procedure.cost || 0)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Total */}
-                  <Separator />
-                  <div className="flex items-center justify-between py-2 bg-gray-50 px-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <IndianRupee className="h-5 w-5 text-green-600" />
-                      <span className="font-bold text-lg">Total Amount</span>
-                    </div>
-                    <span className="font-bold text-xl text-green-600">{formatCurrency(totalAmount)}</span>
-                  </div>
-
-                  {/* Payment Status */}
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Payment Status:</span>
-                    <Badge variant={visitData?.paymentStatus === "paid" ? "default" : "destructive"}>
-                      {visitData?.paymentStatus === "paid" ? "Paid" : "Unpaid"}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Visit Summary */}
-              <FormField
-                control={form.control}
-                name="visitSummary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Visit Summary *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide a comprehensive summary of the visit, including diagnosis, treatment provided, and patient response..."
-                        className="min-h-[100px] resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Follow-up Required */}
-              <FormField
-                control={form.control}
-                name="followUpRequired"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Follow-up Required *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select if follow-up is required" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no">No Follow-up Required</SelectItem>
-                        <SelectItem value="yes">Follow-up Required</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Follow-up Details (conditional) */}
-              {followUpRequired === "yes" && (
-                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Follow-up Details
-                  </h4>
-
-                  <FormField
-                    control={form.control}
-                    name="followUpDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Follow-up Date</FormLabel>
-                        <FormControl>
-                          <input
-                            type="date"
-                            min={minFollowUpDate}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            {...field}
+          {/* Next Steps Planning */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Lab Tests */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TestTube className="h-4 w-4 text-blue-600" />
+                  Lab Tests
+                  {selectedLabTests.length > 0 && <Badge variant="secondary">{selectedLabTests.length}</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-60 overflow-y-auto">
+                {labTests.map((test) => (
+                  <div key={test} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`lab-${test}`}
+                      checked={selectedLabTests.includes(test)}
+                      onCheckedChange={() => handleTestSelection(test, "lab")}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`lab-${test}`} className="text-sm cursor-pointer">
+                        {test}
+                      </Label>
+                      {selectedLabTests.includes(test) && (
+                        <div className="mt-1">
+                          <Checkbox
+                            id={`urgent-${test}`}
+                            checked={urgentTests.includes(test)}
+                            onCheckedChange={() => handleUrgentTestToggle(test)}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <Label htmlFor={`urgent-${test}`} className="text-xs text-orange-600 ml-2">
+                            Urgent
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-                  <FormField
-                    control={form.control}
-                    name="followUpInstructions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Follow-up Instructions</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Specific instructions for the follow-up visit..."
-                            className="resize-none"
-                            {...field}
+            {/* Radiology */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Scan className="h-4 w-4 text-purple-600" />
+                  Radiology
+                  {selectedRadiology.length > 0 && <Badge variant="secondary">{selectedRadiology.length}</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-60 overflow-y-auto">
+                {radiologyTests.map((test) => (
+                  <div key={test} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`radio-${test}`}
+                      checked={selectedRadiology.includes(test)}
+                      onCheckedChange={() => handleTestSelection(test, "radiology")}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`radio-${test}`} className="text-sm cursor-pointer">
+                        {test}
+                      </Label>
+                      {selectedRadiology.includes(test) && (
+                        <div className="mt-1">
+                          <Checkbox
+                            id={`urgent-radio-${test}`}
+                            checked={urgentTests.includes(test)}
+                            onCheckedChange={() => handleUrgentTestToggle(test)}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                          <Label htmlFor={`urgent-radio-${test}`} className="text-xs text-orange-600 ml-2">
+                            Urgent
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Procedures */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Stethoscope className="h-4 w-4 text-green-600" />
+                  Procedures
+                  {selectedProcedures.length > 0 && <Badge variant="secondary">{selectedProcedures.length}</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-60 overflow-y-auto">
+                {procedures.map((procedure) => (
+                  <div key={procedure} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`proc-${procedure}`}
+                      checked={selectedProcedures.includes(procedure)}
+                      onCheckedChange={() => handleTestSelection(procedure, "procedures")}
+                    />
+                    <Label htmlFor={`proc-${procedure}`} className="text-sm cursor-pointer">
+                      {procedure}
+                    </Label>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Follow-up Appointment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarDays className="h-4 w-4 text-blue-600" />
+                Follow-up Appointment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="followUpDate">Follow-up Date</Label>
+                  <Input
+                    id="followUpDate"
+                    type="date"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
                   />
                 </div>
-              )}
+                <div>
+                  <Label htmlFor="followUpTime">Preferred Time</Label>
+                  <Input
+                    id="followUpTime"
+                    type="time"
+                    value={followUpTime}
+                    onChange={(e) => setFollowUpTime(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="followUpNotes">Follow-up Notes</Label>
+                  <Input
+                    id="followUpNotes"
+                    placeholder="e.g., Review test results"
+                    value={followUpNotes}
+                    onChange={(e) => setFollowUpNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Additional Notes */}
-              <FormField
-                control={form.control}
-                name="additionalNotes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Additional Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Any additional notes or observations..."
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          {/* Additional Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileText className="h-4 w-4 text-gray-600" />
+                Additional Instructions & Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                placeholder="Any additional instructions for the patient or next steps..."
+                value={nextStepsNotes}
+                onChange={(e) => setNextStepsNotes(e.target.value)}
+                rows={4}
               />
+            </CardContent>
+          </Card>
 
-              <DialogFooter className="gap-2">
-                <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Completing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Complete Visit
-                    </>
+          {/* Cost Estimation */}
+          {totalSelectedTests > 0 && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base text-orange-800">
+                  <Calculator className="h-4 w-4" />
+                  Estimated Cost
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Lab Tests ({selectedLabTests.length}):</span>
+                    <span>₹{selectedLabTests.length * 500}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Radiology ({selectedRadiology.length}):</span>
+                    <span>₹{selectedRadiology.length * 1500}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Procedures ({selectedProcedures.length}):</span>
+                    <span>₹{selectedProcedures.length * 2000}</span>
+                  </div>
+                  {urgentTests.length > 0 && (
+                    <div className="flex justify-between text-orange-600">
+                      <span>Urgent Processing ({urgentTests.length}):</span>
+                      <span>₹{urgentTests.length * 200}</span>
+                    </div>
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                  <div className="border-t pt-2 flex justify-between font-semibold text-orange-800">
+                    <span>Total Estimated Cost:</span>
+                    <span>₹{calculateEstimatedCost()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Payment Prompt Dialog */}
-      <AlertDialog open={showPaymentPrompt} onOpenChange={setShowPaymentPrompt}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              Payment Collection Required
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                This visit has an unpaid amount of{" "}
-                <strong className="text-amber-600">{formatCurrency(totalAmount)}</strong>.
-              </p>
-              <p>Would you like to collect the payment now or complete the visit without payment?</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel onClick={handleCompleteWithoutPayment}>Complete Without Payment</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCollectPayment} className="bg-green-600 hover:bg-green-700">
-              <IndianRupee className="h-4 w-4 mr-2" />
-              Collect Payment
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Payment Collection Dialog */}
-      {showPaymentDialog && (
-        <PaymentConfirmationDialog
-          open={showPaymentDialog}
-          onOpenChange={setShowPaymentDialog}
-          amount={totalAmount}
-          patientName={visitData?.patientName}
-          onPaymentConfirmed={handlePaymentCompleted}
-        />
-      )}
-    </>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleComplete} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Complete Visit
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

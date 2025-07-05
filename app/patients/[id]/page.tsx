@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   User,
   Calendar,
@@ -26,6 +27,10 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Waves,
+  Eye,
+  Brain,
+  Pill,
 } from "lucide-react"
 import { IntegratedConsultation } from "@/components/integrated-consultation"
 import { useConsultation } from "@/contexts/consultation-context"
@@ -33,6 +38,8 @@ import { toast } from "sonner"
 import { LaboratorySection } from "@/components/laboratory-section"
 import { RadiologySection } from "@/components/radiology-section"
 import { ProceduresSection } from "@/components/procedures-section"
+import { PhysiotherapySection } from "@/components/physiotherapy-section"
+import { PanchkarmaSection } from "@/components/panchkarma-section"
 import {
   Dialog,
   DialogContent,
@@ -41,7 +48,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { StreamlinedFollowUp } from "@/components/streamlined-follow-up"
 
@@ -65,54 +71,109 @@ const mockPatient = {
   currentMedications: ["Metformin 500mg twice daily", "Lisinopril 10mg once daily"],
 }
 
-const mockInvoices = [
-  {
-    id: "INV-2024-001",
-    date: "2024-05-15",
-    amount: 1250.0,
-    description: "Consultation and Lab Tests",
-    status: "paid",
-    items: [
-      { name: "General Consultation", amount: 500 },
-      { name: "Complete Blood Count", amount: 350 },
-      { name: "Lipid Profile", amount: 400 },
-    ],
-  },
-  {
-    id: "INV-2024-002",
-    date: "2024-04-22",
-    amount: 3500.0,
-    description: "Physiotherapy Sessions (5)",
-    status: "paid",
-    items: [
-      { name: "Initial Assessment", amount: 700 },
-      { name: "Therapy Sessions (4)", amount: 2800 },
-    ],
-  },
-  {
-    id: "INV-2024-003",
-    date: "2024-06-01",
-    amount: 1800.0,
-    description: "Radiology Services",
-    status: "pending",
-    items: [
-      { name: "X-Ray (Chest)", amount: 800 },
-      { name: "Ultrasound (Abdomen)", amount: 1000 },
-    ],
-  },
-  {
-    id: "INV-2024-004",
-    date: "2024-06-05",
-    amount: 2500.0,
-    description: "Panchkarma Treatment",
-    status: "overdue",
-    items: [
-      { name: "Consultation", amount: 500 },
-      { name: "Abhyanga", amount: 1200 },
-      { name: "Shirodhara", amount: 800 },
-    ],
-  },
-]
+// Medical services configuration based on departments
+const medicalServices = {
+  general: [
+    {
+      id: "laboratory",
+      name: "Laboratory Tests",
+      icon: TestTube,
+      description: "Blood tests, urine analysis, and diagnostic tests",
+    },
+    { id: "radiology", name: "Radiology", icon: Zap, description: "X-rays, CT scans, MRI, and ultrasound" },
+  ],
+  cardiology: [
+    {
+      id: "laboratory",
+      name: "Cardiac Lab Tests",
+      icon: TestTube,
+      description: "Cardiac enzymes, lipid profile, and heart markers",
+    },
+    {
+      id: "radiology",
+      name: "Cardiac Imaging",
+      icon: Zap,
+      description: "ECG, echocardiogram, cardiac CT, and angiography",
+    },
+  ],
+  orthopedics: [
+    { id: "laboratory", name: "Orthopedic Lab Tests", icon: TestTube, description: "Bone markers, inflammation tests" },
+    {
+      id: "radiology",
+      name: "Orthopedic Imaging",
+      icon: Zap,
+      description: "X-rays, MRI, CT scans for bones and joints",
+    },
+    { id: "physiotherapy", name: "Physiotherapy", icon: Waves, description: "Physical therapy and rehabilitation" },
+  ],
+  neurology: [
+    { id: "laboratory", name: "Neurological Tests", icon: TestTube, description: "CSF analysis, neurological markers" },
+    { id: "radiology", name: "Neuroimaging", icon: Brain, description: "Brain MRI, CT, PET scans, and angiography" },
+  ],
+  pediatrics: [
+    {
+      id: "laboratory",
+      name: "Pediatric Lab Tests",
+      icon: TestTube,
+      description: "Age-appropriate blood tests and screenings",
+    },
+    {
+      id: "radiology",
+      name: "Pediatric Imaging",
+      icon: Zap,
+      description: "Child-friendly imaging with minimal radiation",
+    },
+  ],
+  gynecology: [
+    {
+      id: "laboratory",
+      name: "Gynecological Tests",
+      icon: TestTube,
+      description: "Hormonal tests, pregnancy tests, PAP smears",
+    },
+    { id: "radiology", name: "Gynecological Imaging", icon: Zap, description: "Pelvic ultrasound, mammography, MRI" },
+  ],
+  ophthalmology: [
+    { id: "laboratory", name: "Eye Tests", icon: TestTube, description: "Tear film analysis, allergy tests" },
+    { id: "radiology", name: "Eye Imaging", icon: Eye, description: "OCT, fundus photography, angiography" },
+  ],
+  ayurveda: [
+    {
+      id: "laboratory",
+      name: "Ayurvedic Diagnostics",
+      icon: TestTube,
+      description: "Pulse diagnosis, constitutional analysis",
+    },
+    {
+      id: "panchkarma",
+      name: "Panchkarma Treatments",
+      icon: Heart,
+      description: "Detoxification and rejuvenation therapies",
+    },
+  ],
+  dermatology: [
+    {
+      id: "laboratory",
+      name: "Dermatological Tests",
+      icon: TestTube,
+      description: "Allergy tests, skin biopsies, cultures",
+    },
+    {
+      id: "radiology",
+      name: "Dermatological Imaging",
+      icon: Zap,
+      description: "Dermoscopy, skin imaging, UV photography",
+    },
+  ],
+  psychiatry: [
+    {
+      id: "laboratory",
+      name: "Psychiatric Assessments",
+      icon: TestTube,
+      description: "Psychological tests, cognitive assessments",
+    },
+  ],
+}
 
 // Department mapping for display
 const departmentLabels = {
@@ -142,6 +203,8 @@ export default function PatientDetailsPage() {
   const params = useParams()
   const patientId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
+  const [selectedDepartment, setSelectedDepartment] = useState("general")
+  const [selectedService, setSelectedService] = useState("")
   const [consultationKey, setConsultationKey] = useState(0)
   const {
     activeConsultation,
@@ -186,6 +249,14 @@ export default function PatientDetailsPage() {
     }
   }, [])
 
+  // Set default service when department changes
+  useEffect(() => {
+    const services = medicalServices[selectedDepartment as keyof typeof medicalServices] || medicalServices.general
+    if (services.length > 0) {
+      setSelectedService(services[0].id)
+    }
+  }, [selectedDepartment])
+
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState("google-meet")
   const [meetingLink, setMeetingLink] = useState("")
@@ -209,6 +280,32 @@ export default function PatientDetailsPage() {
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
   const [showFollowUpMode, setShowFollowUpMode] = useState(false)
+
+  // Get available services for selected department
+  const availableServices =
+    medicalServices[selectedDepartment as keyof typeof medicalServices] || medicalServices.general
+
+  // Render service content based on selected service
+  const renderServiceContent = () => {
+    switch (selectedService) {
+      case "laboratory":
+        return <LaboratorySection patientId={patientId} patientName={mockPatient.name} />
+      case "radiology":
+        return <RadiologySection patientId={patientId} patientName={mockPatient.name} />
+      case "physiotherapy":
+        return <PhysiotherapySection />
+      case "panchkarma":
+        return <PanchkarmaSection />
+      default:
+        return (
+          <div className="text-center py-12">
+            <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Service Not Available</h3>
+            <p className="text-muted-foreground">The selected service is not yet implemented.</p>
+          </div>
+        )
+    }
+  }
 
   const handleScheduleMeeting = () => {
     const generatedLink =
@@ -641,7 +738,7 @@ export default function PatientDetailsPage() {
                   {/* Current Medications Section */}
                   <div className="p-4 bg-green-50/50 rounded-lg border border-green-100">
                     <div className="flex items-center gap-2 mb-3">
-                      <TestTube className="h-5 w-5 text-green-600" />
+                      <Pill className="h-5 w-5 text-green-600" />
                       <span className="text-sm font-semibold text-green-800">Current Medications</span>
                     </div>
                     <div className="space-y-2">
@@ -882,7 +979,11 @@ export default function PatientDetailsPage() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                                >
                                   <FileTextIcon className="h-4 w-4 mr-2" />
                                   View Details
                                 </Button>
@@ -983,7 +1084,11 @@ export default function PatientDetailsPage() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                                >
                                   <FileTextIcon className="h-4 w-4 mr-2" />
                                   View Details
                                 </Button>
@@ -1008,64 +1113,115 @@ export default function PatientDetailsPage() {
           )}
         </TabsContent>
 
-        {/* Services, Telemedicine, Invoices, and Reports tabs remain the same as before */}
+        {/* Enhanced Services Tab with Department-based Service Selection */}
         <TabsContent value="services" className="space-y-6">
-          <div className="bg-gradient-to-br from-teal-50 via-white to-blue-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                <Activity className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">Medical Services</h3>
-                <p className="text-sm text-slate-600">Laboratory tests and radiology services</p>
-              </div>
-            </div>
-            <Tabs defaultValue="laboratory" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-100/50 p-1 rounded-lg">
-                <TabsTrigger
-                  value="laboratory"
-                  className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <TestTube className="h-4 w-4 text-blue-600" />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold">Medical Services</h3>
+                  <p className="text-sm text-muted-foreground">Select department and service type</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="department-select" className="text-sm font-medium">
+                      Department:
+                    </Label>
+                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(departmentLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <span className="hidden sm:inline">Laboratory</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="radiology"
-                  className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-purple-600" />
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="service-select" className="text-sm font-medium">
+                      Service:
+                    </Label>
+                    <Select value={selectedService} onValueChange={setSelectedService}>
+                      <SelectTrigger className="w-64">
+                        <SelectValue placeholder="Select service" />
+                      </SelectTrigger>
+                      <SelectContent className="max-w-80">
+                        {availableServices.map((service) => {
+                          const IconComponent = service.icon
+                          return (
+                            <SelectItem key={service.id} value={service.id} className="py-3">
+                              <div className="flex items-center gap-3 w-full">
+                                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <IconComponent className="h-4 w-4 text-slate-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">{service.name}</div>
+                                  <div className="text-xs text-muted-foreground line-clamp-2">
+                                    {service.description}
+                                  </div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <span className="hidden sm:inline">Radiology</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="laboratory" className="mt-6">
-                <LaboratorySection />
-              </TabsContent>
-
-              <TabsContent value="radiology" className="mt-6">
-                <RadiologySection patientId={patientId} patientName={mockPatient.name} />
-              </TabsContent>
-            </Tabs>
-          </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Service Content */}
+              <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50/30 rounded-xl p-6 border border-slate-200">
+                {renderServiceContent()}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="procedures" className="space-y-6">
-          <div className="bg-gradient-to-br from-green-50 via-white to-orange-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
-                <Heart className="h-6 w-6 text-white" />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold">Medical Procedures & Treatments</h3>
+                  <p className="text-sm text-muted-foreground">Select department and procedure type</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="procedure-department-select" className="text-sm font-medium">
+                      Department:
+                    </Label>
+                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(departmentLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">Medical Procedures & Treatments</h3>
-                <p className="text-sm text-slate-600">Specialized therapeutic procedures</p>
+            </CardHeader>
+            <CardContent>
+              {/* Procedure Content */}
+              <div className="bg-gradient-to-br from-green-50 via-white to-orange-50/30 rounded-xl p-6 border border-slate-200">
+                <ProceduresSection
+                  patientId={patientId}
+                  patientName={mockPatient.name}
+                  selectedDepartment={selectedDepartment}
+                />
               </div>
-            </div>
-            <ProceduresSection patientId={patientId} patientName={mockPatient.name} />
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Remaining tabs content (telemedicine, invoices, reports) and modals remain the same */}

@@ -1,126 +1,230 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Download, Package, Calendar, Pill, Leaf } from "lucide-react"
-import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { Separator } from "@/components/ui/separator"
+import { Download, Search, Trash2, Calendar, User } from "lucide-react"
+import { toast } from "sonner"
+
+interface Medicine {
+  id: string
+  medicine: string
+  dosage: string
+  frequency: string
+  duration: string
+  instructions: string
+  beforeAfterFood: string
+}
+
+interface Template {
+  id: string
+  name: string
+  description: string
+  department: string
+  type: "ayurvedic" | "allopathic"
+  prescriptionData: Medicine[]
+  createdAt: string
+  createdBy: string
+}
 
 interface LoadPrescriptionTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  onLoad: (template: any) => void
+  prescriptionType: "ayurvedic" | "allopathic"
   department: string
+  onLoadTemplate: (medicines: Medicine[]) => void
 }
 
 export function LoadPrescriptionTemplateModal({
   isOpen,
   onClose,
-  onLoad,
+  prescriptionType,
   department,
+  onLoadTemplate,
 }: LoadPrescriptionTemplateModalProps) {
-  const { getTemplatesByDepartment } = usePrescriptionTemplates()
-  const templates = getTemplatesByDepartment(department)
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
-  const handleLoadTemplate = (template: any) => {
-    onLoad(template)
+  useEffect(() => {
+    if (isOpen) {
+      loadTemplates()
+    }
+  }, [isOpen, prescriptionType, department])
+
+  const loadTemplates = () => {
+    try {
+      const savedTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
+      const filteredTemplates = savedTemplates.filter(
+        (template: Template) => template.type === prescriptionType && template.department === department,
+      )
+      setTemplates(filteredTemplates)
+    } catch (error) {
+      console.error("Error loading templates:", error)
+      setTemplates([])
+    }
+  }
+
+  const handleLoadTemplate = (template: Template) => {
+    if (!template.prescriptionData || template.prescriptionData.length === 0) {
+      toast.error("This template has no prescription data")
+      return
+    }
+
+    onLoadTemplate(template.prescriptionData)
+    toast.success(`Template "${template.name}" loaded successfully`)
     onClose()
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "ayurvedic":
-        return <Leaf className="h-4 w-4 text-green-600" />
-      case "allopathic":
-        return <Pill className="h-4 w-4 text-blue-600" />
-      case "mixed":
-        return <Package className="h-4 w-4 text-purple-600" />
-      default:
-        return <Package className="h-4 w-4 text-gray-600" />
+  const handleDeleteTemplate = (templateId: string) => {
+    try {
+      const savedTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
+      const updatedTemplates = savedTemplates.filter((t: Template) => t.id !== templateId)
+      localStorage.setItem("prescriptionTemplates", JSON.stringify(updatedTemplates))
+      loadTemplates()
+      toast.success("Template deleted successfully")
+    } catch (error) {
+      toast.error("Error deleting template")
     }
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "ayurvedic":
-        return "bg-green-100 text-green-700"
-      case "allopathic":
-        return "bg-blue-100 text-blue-700"
-      case "mixed":
-        return "bg-purple-100 text-purple-700"
-      default:
-        return "bg-gray-100 text-gray-700"
-    }
-  }
+  const filteredTemplates = templates.filter(
+    (template) =>
+      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Load Prescription Template
+            Load {prescriptionType === "ayurvedic" ? "Ayurvedic" : "Allopathic"} Template
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {templates.length === 0 ? (
-            <div className="text-center py-8">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Templates Found</h3>
-              <p className="text-gray-600">No prescription templates available for the {department} department.</p>
+        <div className="space-y-4 flex-1 overflow-hidden">
+          {/* Search */}
+          <div className="space-y-2">
+            <Label htmlFor="search">Search Templates</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="search"
+                placeholder="Search by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          ) : (
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {getTypeIcon(template.type)}
-                            <h4 className="font-medium">{template.name}</h4>
-                            <Badge className={getTypeColor(template.type)}>{template.type}</Badge>
-                          </div>
-
-                          {template.description && <p className="text-sm text-gray-600 mb-3">{template.description}</p>}
-
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>{new Date(template.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Leaf className="h-3 w-3" />
-                              <span>{template.ayurvedicPrescriptions?.length || 0} Ayurvedic</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Pill className="h-3 w-3" />
-                              <span>{template.allopathicPrescriptions?.length || 0} Allopathic</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button size="sm" onClick={() => handleLoadTemplate(template)} className="ml-4">
-                          <Download className="h-4 w-4 mr-2" />
-                          Load
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
           </div>
+
+          {/* Templates List */}
+          <div className="flex-1 overflow-y-auto space-y-3">
+            {filteredTemplates.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Download className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium">No templates found</p>
+                <p className="text-xs mt-1">
+                  {searchTerm
+                    ? "Try adjusting your search terms"
+                    : `No ${prescriptionType} templates available for ${department} department`}
+                </p>
+              </div>
+            ) : (
+              filteredTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    selectedTemplate?.id === template.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                  onClick={() => setSelectedTemplate(template)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium text-sm">{template.name}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {template.prescriptionData?.length || 0} medicines
+                        </Badge>
+                      </div>
+
+                      {template.description && <p className="text-xs text-gray-600 mb-2">{template.description}</p>}
+
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(template.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {template.createdBy}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteTemplate(template.id)
+                      }}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Template Preview */}
+          {selectedTemplate && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Template Preview</h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {selectedTemplate.prescriptionData?.map((medicine, index) => (
+                    <div key={medicine.id} className="text-xs p-2 bg-gray-50 rounded">
+                      <span className="font-medium">
+                        {index + 1}. {medicine.medicine}
+                      </span>
+                      <span className="text-gray-600 ml-2">
+                        {medicine.dosage} - {medicine.frequency} - {medicine.duration}
+                      </span>
+                    </div>
+                  )) || <p className="text-xs text-gray-500">No medicines in this template</p>}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => selectedTemplate && handleLoadTemplate(selectedTemplate)}
+            disabled={!selectedTemplate}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Load Template
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
