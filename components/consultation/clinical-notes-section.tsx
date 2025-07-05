@@ -189,14 +189,14 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
   }
 
   const addMedicalHistory = () => {
-    if (newMedicalHistory) {
+    if (newMedicalHistory && newMedicalHistory !== "default") {
       addToArray("pastMedicalHistory", newMedicalHistory)
       setNewMedicalHistory("")
     }
   }
 
   const addAllergy = () => {
-    if (newAllergy) {
+    if (newAllergy && newAllergy !== "default") {
       addToArray("allergies", newAllergy)
       setNewAllergy("")
     }
@@ -264,6 +264,9 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
                 <SelectValue placeholder="Select common condition or type custom..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="default" disabled>
+                  Select a condition...
+                </SelectItem>
                 {commonMedicalHistory.map((condition) => (
                   <SelectItem key={condition} value={condition}>
                     {condition}
@@ -273,7 +276,7 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
             </Select>
             <Input
               placeholder="Or type custom condition..."
-              value={newMedicalHistory}
+              value={newMedicalHistory === "default" ? "" : newMedicalHistory}
               onChange={(e) => setNewMedicalHistory(e.target.value)}
               className="flex-1"
             />
@@ -312,6 +315,9 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
                 <SelectValue placeholder="Select common allergy or type custom..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="default" disabled>
+                  Select an allergy...
+                </SelectItem>
                 {commonAllergies.map((allergy) => (
                   <SelectItem key={allergy} value={allergy}>
                     {allergy}
@@ -321,7 +327,7 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
             </Select>
             <Input
               placeholder="Or type custom allergy..."
-              value={newAllergy}
+              value={newAllergy === "default" ? "" : newAllergy}
               onChange={(e) => setNewAllergy(e.target.value)}
               className="flex-1"
             />
@@ -389,14 +395,14 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
               <div key={system} className="space-y-2">
                 <Label className="capitalize font-medium">{system.replace(/([A-Z])/g, " $1").trim()}</Label>
                 <Select
-                  value={localData.systemReview?.[system as keyof typeof localData.systemReview] || "default"}
-                  onValueChange={(value) => updateSystemReview(system, value)}
+                  value={localData.systemReview?.[system as keyof typeof localData.systemReview] || "no_symptoms"}
+                  onValueChange={(value) => updateSystemReview(system, value === "no_symptoms" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select symptoms..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No symptoms</SelectItem>
+                    <SelectItem value="no_symptoms">No symptoms</SelectItem>
                     {symptoms.map((symptom) => (
                       <SelectItem key={symptom} value={symptom}>
                         {symptom}
