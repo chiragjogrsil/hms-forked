@@ -4,405 +4,355 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Plus, X, FileText, AlertTriangle, CheckCircle } from "lucide-react"
-
-interface DiagnosisData {
-  primaryDiagnosis: string[]
-  secondaryDiagnosis: string[]
-  differentialDiagnosis: string[]
-  clinicalImpression: string
-  prognosis: string
-  icdCodes: { diagnosis: string; code: string }[]
-}
+import { Badge } from "@/components/ui/badge"
+import { Plus, X, Stethoscope, AlertTriangle, Search } from "lucide-react"
+import { toast } from "sonner"
 
 interface DiagnosisSectionProps {
   department: string
-  data: DiagnosisData
-  onChange: (data: DiagnosisData) => void
+  data: string[]
+  onChange: (data: string[]) => void
+}
+
+// Department-specific common diagnoses
+const commonDiagnoses = {
+  general: [
+    "Upper Respiratory Tract Infection",
+    "Viral Fever",
+    "Gastroenteritis",
+    "Hypertension",
+    "Type 2 Diabetes Mellitus",
+    "Hyperlipidemia",
+    "Migraine",
+    "Tension Headache",
+    "Allergic Rhinitis",
+    "Urinary Tract Infection",
+    "Gastroesophageal Reflux Disease",
+    "Irritable Bowel Syndrome",
+    "Anxiety Disorder",
+    "Depression",
+    "Insomnia",
+  ],
+  cardiology: [
+    "Essential Hypertension",
+    "Coronary Artery Disease",
+    "Myocardial Infarction",
+    "Atrial Fibrillation",
+    "Heart Failure",
+    "Angina Pectoris",
+    "Arrhythmia",
+    "Valvular Heart Disease",
+    "Cardiomyopathy",
+    "Pericarditis",
+    "Deep Vein Thrombosis",
+    "Pulmonary Embolism",
+    "Hyperlipidemia",
+    "Peripheral Artery Disease",
+  ],
+  orthopedics: [
+    "Osteoarthritis",
+    "Rheumatoid Arthritis",
+    "Lower Back Pain",
+    "Cervical Spondylosis",
+    "Lumbar Spondylosis",
+    "Frozen Shoulder",
+    "Tennis Elbow",
+    "Carpal Tunnel Syndrome",
+    "Fracture",
+    "Sprain",
+    "Strain",
+    "Osteoporosis",
+    "Sciatica",
+    "Herniated Disc",
+    "Plantar Fasciitis",
+    "Rotator Cuff Injury",
+  ],
+  neurology: [
+    "Migraine",
+    "Tension Headache",
+    "Epilepsy",
+    "Stroke",
+    "Parkinson's Disease",
+    "Alzheimer's Disease",
+    "Multiple Sclerosis",
+    "Neuropathy",
+    "Vertigo",
+    "Bell's Palsy",
+    "Trigeminal Neuralgia",
+    "Seizure Disorder",
+    "Memory Loss",
+    "Dementia",
+    "Peripheral Neuropathy",
+  ],
+  dermatology: [
+    "Atopic Dermatitis",
+    "Psoriasis",
+    "Acne Vulgaris",
+    "Urticaria",
+    "Contact Dermatitis",
+    "Seborrheic Dermatitis",
+    "Fungal Infection",
+    "Bacterial Skin Infection",
+    "Viral Skin Infection",
+    "Skin Cancer",
+    "Melanoma",
+    "Vitiligo",
+    "Alopecia",
+    "Rosacea",
+    "Eczema",
+  ],
+  ophthalmology: [
+    "Refractive Error",
+    "Cataract",
+    "Glaucoma",
+    "Diabetic Retinopathy",
+    "Dry Eye Syndrome",
+    "Conjunctivitis",
+    "Stye",
+    "Chalazion",
+    "Macular Degeneration",
+    "Retinal Detachment",
+    "Uveitis",
+    "Corneal Ulcer",
+    "Pterygium",
+    "Floaters",
+    "Night Blindness",
+  ],
+  pediatrics: [
+    "Upper Respiratory Infection",
+    "Gastroenteritis",
+    "Fever of Unknown Origin",
+    "Asthma",
+    "Allergic Rhinitis",
+    "Otitis Media",
+    "Pneumonia",
+    "Bronchiolitis",
+    "Hand, Foot and Mouth Disease",
+    "Chickenpox",
+    "Measles",
+    "Growth Retardation",
+    "Nutritional Deficiency",
+    "Developmental Delay",
+  ],
+  gynecology: [
+    "Menstrual Irregularities",
+    "PCOS",
+    "Endometriosis",
+    "Uterine Fibroids",
+    "Ovarian Cysts",
+    "Pelvic Inflammatory Disease",
+    "Urinary Tract Infection",
+    "Vaginal Infection",
+    "Cervical Dysplasia",
+    "Menopause",
+    "Infertility",
+    "Pregnancy",
+    "Gestational Diabetes",
+    "Preeclampsia",
+  ],
+  ayurveda: [
+    "Vata Dosha Imbalance",
+    "Pitta Dosha Imbalance",
+    "Kapha Dosha Imbalance",
+    "Ajirna (Indigestion)",
+    "Amlapitta (Hyperacidity)",
+    "Grahani (IBS)",
+    "Arsha (Hemorrhoids)",
+    "Prameha (Diabetes)",
+    "Hridroga (Heart Disease)",
+    "Sandhivata (Arthritis)",
+    "Kasa (Cough)",
+    "Swasa (Asthma)",
+    "Jwara (Fever)",
+    "Shirahshula (Headache)",
+    "Anidra (Insomnia)",
+    "Chinta (Anxiety)",
+  ],
 }
 
 export function DiagnosisSection({ department, data, onChange }: DiagnosisSectionProps) {
-  // Initialize with default empty arrays to prevent undefined errors
-  const [localData, setLocalData] = useState<DiagnosisData>({
-    primaryDiagnosis: [],
-    secondaryDiagnosis: [],
-    differentialDiagnosis: [],
-    clinicalImpression: "",
-    prognosis: "",
-    icdCodes: [],
-    ...data,
-  })
+  const [diagnoses, setDiagnoses] = useState<string[]>(data || [])
+  const [newDiagnosis, setNewDiagnosis] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [diagnosisType, setDiagnosisType] = useState<"primary" | "secondary" | "differential">("primary")
 
-  const [newPrimaryDiagnosis, setNewPrimaryDiagnosis] = useState("")
-  const [newSecondaryDiagnosis, setNewSecondaryDiagnosis] = useState("")
-  const [newDifferentialDiagnosis, setNewDifferentialDiagnosis] = useState("")
+  // Get diagnoses for current department
+  const availableDiagnoses = commonDiagnoses[department as keyof typeof commonDiagnoses] || commonDiagnoses.general
 
-  // Department-specific diagnosis options
-  const departmentDiagnoses = {
-    general: [
-      "Upper Respiratory Tract Infection",
-      "Viral Fever",
-      "Gastroenteritis",
-      "Hypertension",
-      "Diabetes Mellitus Type 2",
-      "Migraine",
-      "Tension Headache",
-      "Acid Peptic Disease",
-      "Irritable Bowel Syndrome",
-      "Urinary Tract Infection",
-      "Bronchitis",
-      "Pneumonia",
-      "Allergic Rhinitis",
-      "Sinusitis",
-      "Pharyngitis",
-    ],
-    cardiology: [
-      "Coronary Artery Disease",
-      "Myocardial Infarction",
-      "Heart Failure",
-      "Atrial Fibrillation",
-      "Hypertension",
-      "Valvular Heart Disease",
-      "Cardiomyopathy",
-      "Pericarditis",
-      "Angina Pectoris",
-      "Ventricular Tachycardia",
-      "Bradycardia",
-      "Aortic Stenosis",
-      "Mitral Regurgitation",
-      "Pulmonary Embolism",
-      "Deep Vein Thrombosis",
-    ],
-    orthopedics: [
-      "Osteoarthritis",
-      "Rheumatoid Arthritis",
-      "Fracture",
-      "Sprain",
-      "Strain",
-      "Disc Prolapse",
-      "Sciatica",
-      "Frozen Shoulder",
-      "Tennis Elbow",
-      "Carpal Tunnel Syndrome",
-      "Osteoporosis",
-      "Fibromyalgia",
-      "Bursitis",
-      "Tendinitis",
-      "Spondylosis",
-    ],
-    neurology: [
-      "Migraine",
-      "Tension Headache",
-      "Epilepsy",
-      "Stroke",
-      "Parkinson's Disease",
-      "Alzheimer's Disease",
-      "Multiple Sclerosis",
-      "Neuropathy",
-      "Bell's Palsy",
-      "Trigeminal Neuralgia",
-      "Vertigo",
-      "Seizure Disorder",
-      "Dementia",
-      "Peripheral Neuropathy",
-      "Myasthenia Gravis",
-    ],
-  }
-
-  const currentDiagnoses =
-    departmentDiagnoses[department as keyof typeof departmentDiagnoses] || departmentDiagnoses.general
-
-  const prognosisOptions = [
-    "Excellent",
-    "Good",
-    "Fair",
-    "Guarded",
-    "Poor",
-    "Depends on compliance",
-    "Depends on early intervention",
-    "Chronic condition - manageable",
-    "Progressive condition",
-    "Self-limiting condition",
-  ]
+  // Filter diagnoses based on search term
+  const filteredDiagnoses = availableDiagnoses.filter((diagnosis) =>
+    diagnosis.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   useEffect(() => {
-    const safeData = {
-      primaryDiagnosis: [],
-      secondaryDiagnosis: [],
-      differentialDiagnosis: [],
-      clinicalImpression: "",
-      prognosis: "",
-      icdCodes: [],
-      ...data,
-    }
-    setLocalData(safeData)
+    setDiagnoses(data || [])
   }, [data])
 
   useEffect(() => {
-    onChange(localData)
-  }, [localData, onChange])
+    onChange(diagnoses)
+  }, [diagnoses, onChange])
 
-  const addPrimaryDiagnosis = () => {
-    if (newPrimaryDiagnosis.trim() && !localData.primaryDiagnosis.includes(newPrimaryDiagnosis.trim())) {
-      setLocalData((prev) => ({
-        ...prev,
-        primaryDiagnosis: [...prev.primaryDiagnosis, newPrimaryDiagnosis.trim()],
-      }))
-      setNewPrimaryDiagnosis("")
+  const addDiagnosis = () => {
+    if (!newDiagnosis.trim()) {
+      toast.error("Please enter a diagnosis")
+      return
     }
-  }
 
-  const addSecondaryDiagnosis = () => {
-    if (newSecondaryDiagnosis.trim() && !localData.secondaryDiagnosis.includes(newSecondaryDiagnosis.trim())) {
-      setLocalData((prev) => ({
-        ...prev,
-        secondaryDiagnosis: [...prev.secondaryDiagnosis, newSecondaryDiagnosis.trim()],
-      }))
-      setNewSecondaryDiagnosis("")
+    if (diagnoses.includes(newDiagnosis.trim())) {
+      toast.error("This diagnosis is already added")
+      return
     }
+
+    setDiagnoses((prev) => [...prev, newDiagnosis.trim()])
+    setNewDiagnosis("")
+    setSearchTerm("")
+    toast.success("Diagnosis added successfully")
   }
 
-  const addDifferentialDiagnosis = () => {
-    if (newDifferentialDiagnosis.trim() && !localData.differentialDiagnosis.includes(newDifferentialDiagnosis.trim())) {
-      setLocalData((prev) => ({
-        ...prev,
-        differentialDiagnosis: [...prev.differentialDiagnosis, newDifferentialDiagnosis.trim()],
-      }))
-      setNewDifferentialDiagnosis("")
+  const removeDiagnosis = (index: number) => {
+    setDiagnoses((prev) => prev.filter((_, i) => i !== index))
+    toast.success("Diagnosis removed")
+  }
+
+  const addFromCommon = (diagnosis: string) => {
+    if (diagnoses.includes(diagnosis)) {
+      toast.error("This diagnosis is already added")
+      return
     }
-  }
 
-  const removePrimaryDiagnosis = (diagnosis: string) => {
-    setLocalData((prev) => ({
-      ...prev,
-      primaryDiagnosis: prev.primaryDiagnosis.filter((d) => d !== diagnosis),
-    }))
-  }
-
-  const removeSecondaryDiagnosis = (diagnosis: string) => {
-    setLocalData((prev) => ({
-      ...prev,
-      secondaryDiagnosis: prev.secondaryDiagnosis.filter((d) => d !== diagnosis),
-    }))
-  }
-
-  const removeDifferentialDiagnosis = (diagnosis: string) => {
-    setLocalData((prev) => ({
-      ...prev,
-      differentialDiagnosis: prev.differentialDiagnosis.filter((d) => d !== diagnosis),
-    }))
+    setDiagnoses((prev) => [...prev, diagnosis])
+    toast.success("Diagnosis added successfully")
   }
 
   return (
     <div className="space-y-6">
-      {/* Primary Diagnosis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            Primary Diagnosis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={newPrimaryDiagnosis}
-              onChange={(e) => setNewPrimaryDiagnosis(e.target.value)}
-              placeholder="Enter primary diagnosis"
-              onKeyPress={(e) => e.key === "Enter" && addPrimaryDiagnosis()}
-            />
-            <Select onValueChange={(value) => setNewPrimaryDiagnosis(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Quick select" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentDiagnoses.map((diagnosis) => (
-                  <SelectItem key={diagnosis} value={diagnosis}>
-                    {diagnosis}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={addPrimaryDiagnosis} size="sm">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {localData.primaryDiagnosis.length > 0 && (
+      {/* Current Diagnoses */}
+      {diagnoses.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-blue-600" />
+              Current Diagnoses
+              <Badge variant="secondary">{diagnoses.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex flex-wrap gap-2">
-              {localData.primaryDiagnosis.map((diagnosis) => (
-                <Badge key={diagnosis} className="bg-green-100 text-green-800 flex items-center gap-1">
-                  {diagnosis}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
-                    onClick={() => removePrimaryDiagnosis(diagnosis)}
-                  >
+              {diagnoses.map((diagnosis, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="flex items-center gap-2 p-2 bg-blue-50 border-blue-200 text-blue-800"
+                >
+                  <span>{diagnosis}</span>
+                  <button onClick={() => removeDiagnosis(index)} className="hover:text-red-600 transition-colors">
                     <X className="h-3 w-3" />
-                  </Button>
+                  </button>
                 </Badge>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Secondary Diagnosis */}
+      {/* Add New Diagnosis */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            Secondary Diagnosis
+            <Plus className="h-5 w-5 text-green-600" />
+            Add Diagnosis
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={newSecondaryDiagnosis}
-              onChange={(e) => setNewSecondaryDiagnosis(e.target.value)}
-              placeholder="Enter secondary diagnosis"
-              onKeyPress={(e) => e.key === "Enter" && addSecondaryDiagnosis()}
-            />
-            <Select onValueChange={(value) => setNewSecondaryDiagnosis(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Quick select" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentDiagnoses.map((diagnosis) => (
-                  <SelectItem key={diagnosis} value={diagnosis}>
-                    {diagnosis}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={addSecondaryDiagnosis} size="sm">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {localData.secondaryDiagnosis.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {localData.secondaryDiagnosis.map((diagnosis) => (
-                <Badge key={diagnosis} className="bg-blue-100 text-blue-800 flex items-center gap-1">
-                  {diagnosis}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
-                    onClick={() => removeSecondaryDiagnosis(diagnosis)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Differential Diagnosis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Differential Diagnosis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={newDifferentialDiagnosis}
-              onChange={(e) => setNewDifferentialDiagnosis(e.target.value)}
-              placeholder="Enter differential diagnosis"
-              onKeyPress={(e) => e.key === "Enter" && addDifferentialDiagnosis()}
-            />
-            <Select onValueChange={(value) => setNewDifferentialDiagnosis(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Quick select" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentDiagnoses.map((diagnosis) => (
-                  <SelectItem key={diagnosis} value={diagnosis}>
-                    {diagnosis}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={addDifferentialDiagnosis} size="sm">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {localData.differentialDiagnosis.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {localData.differentialDiagnosis.map((diagnosis) => (
-                <Badge key={diagnosis} className="bg-orange-100 text-orange-800 flex items-center gap-1">
-                  {diagnosis}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-transparent"
-                    onClick={() => removeDifferentialDiagnosis(diagnosis)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Clinical Impression */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-purple-600" />
-            Clinical Impression
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={localData.clinicalImpression}
-            onChange={(e) => setLocalData((prev) => ({ ...prev, clinicalImpression: e.target.value }))}
-            placeholder="Describe your clinical impression and assessment..."
-            rows={4}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Prognosis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-teal-600" />
-            Prognosis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          {/* Search and Add Custom */}
           <div className="space-y-2">
-            <Label htmlFor="prognosis">Expected Outcome</Label>
-            <Select
-              value={localData.prognosis}
-              onValueChange={(value) => setLocalData((prev) => ({ ...prev, prognosis: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select prognosis" />
-              </SelectTrigger>
-              <SelectContent>
-                {prognosisOptions.map((prognosis) => (
-                  <SelectItem key={prognosis} value={prognosis}>
-                    {prognosis}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Search or Add Custom Diagnosis</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search diagnoses or type custom..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value)
+                    setNewDiagnosis(e.target.value)
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={addDiagnosis} className="bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            </div>
           </div>
+
+          {/* Common Diagnoses for Department */}
+          <div className="space-y-2">
+            <Label>Common {department.charAt(0).toUpperCase() + department.slice(1)} Diagnoses</Label>
+            <div className="max-h-40 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+              <div className="grid grid-cols-1 gap-1">
+                {filteredDiagnoses.map((diagnosis, index) => (
+                  <button
+                    key={index}
+                    onClick={() => addFromCommon(diagnosis)}
+                    className="text-left p-2 hover:bg-white hover:shadow-sm rounded border-transparent border hover:border-gray-200 transition-all text-sm"
+                    disabled={diagnoses.includes(diagnosis)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={diagnoses.includes(diagnosis) ? "text-gray-400" : "text-gray-700"}>
+                        {diagnosis}
+                      </span>
+                      {diagnoses.includes(diagnosis) && (
+                        <Badge variant="secondary" className="text-xs">
+                          Added
+                        </Badge>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Add Buttons for Most Common */}
+          <div className="space-y-2">
+            <Label>Quick Add (Most Common)</Label>
+            <div className="flex flex-wrap gap-2">
+              {availableDiagnoses.slice(0, 6).map((diagnosis, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addFromCommon(diagnosis)}
+                  disabled={diagnoses.includes(diagnosis)}
+                  className="text-xs"
+                >
+                  {diagnosis}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Diagnosis Guidelines */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-amber-800">
+            <AlertTriangle className="h-5 w-5" />
+            Diagnosis Guidelines
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-amber-700">
+          <ul className="space-y-1">
+            <li>• List primary diagnosis first, followed by secondary conditions</li>
+            <li>• Use specific ICD-10 codes when available</li>
+            <li>• Include differential diagnoses when uncertain</li>
+            <li>• Document severity and stage when applicable</li>
+            <li>• Consider comorbidities and their interactions</li>
+          </ul>
         </CardContent>
       </Card>
     </div>

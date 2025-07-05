@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { Plus, X, Leaf, Save } from "lucide-react"
+import { Plus, X, Leaf, Search } from "lucide-react"
 import { toast } from "sonner"
 
 interface AyurvedicMedicine {
@@ -21,16 +21,245 @@ interface AyurvedicMedicine {
   duration: string
   instructions: string
   beforeAfterFood: string
+  anupana?: string // Vehicle for administration
 }
 
 interface AyurvedicPrescriptionProps {
-  prescriptions: AyurvedicMedicine[]
-  onChange: (prescriptions: AyurvedicMedicine[]) => void
+  data: AyurvedicMedicine[]
+  onChange: (data: AyurvedicMedicine[]) => void
 }
 
-export function AyurvedicPrescription({ prescriptions = [], onChange }: AyurvedicPrescriptionProps) {
-  const [localPrescriptions, setLocalPrescriptions] = useState<AyurvedicMedicine[]>(prescriptions)
+// Ayurvedic medicine types
+const medicineTypes = [
+  { value: "churna", label: "Churna (Powder)" },
+  { value: "vati", label: "Vati/Gutika (Tablet)" },
+  { value: "kashayam", label: "Kashayam (Decoction)" },
+  { value: "ghrita", label: "Ghrita (Medicated Ghee)" },
+  { value: "taila", label: "Taila (Medicated Oil)" },
+  { value: "asava", label: "Asava (Fermented Medicine)" },
+  { value: "aristha", label: "Aristha (Fermented Medicine)" },
+  { value: "rasa", label: "Rasa Aushadhi (Mineral Medicine)" },
+  { value: "bhasma", label: "Bhasma (Calcined Medicine)" },
+  { value: "avaleha", label: "Avaleha/Lehyam (Paste)" },
+  { value: "kwatha", label: "Kwatha (Decoction)" },
+  { value: "swarasa", label: "Swarasa (Fresh Juice)" },
+]
+
+// Comprehensive Ayurvedic component medicines database
+const componentMedicines = [
+  // Classical Single Herbs (Ekadravya)
+  "Ashwagandha",
+  "Brahmi",
+  "Shankhpushpi",
+  "Mandukaparni",
+  "Jatamansi",
+  "Vacha",
+  "Guduchi",
+  "Amla",
+  "Haritaki",
+  "Bibhitaki",
+  "Vibhitaki",
+  "Triphala",
+  "Turmeric",
+  "Ginger",
+  "Black Pepper",
+  "Long Pepper",
+  "Cinnamon",
+  "Cardamom",
+  "Neem",
+  "Tulsi",
+  "Arjuna",
+  "Punarnava",
+  "Gokshura",
+  "Shatavari",
+  "Safed Musli",
+  "Kaunch Beej",
+  "Vidari Kand",
+  "Bala",
+  "Atibala",
+  "Nagbala",
+
+  // Classical Formulations - Churnas
+  "Triphala Churna",
+  "Trikatu Churna",
+  "Hingvastak Churna",
+  "Lavanbhaskar Churna",
+  "Sitopaladi Churna",
+  "Talishadi Churna",
+  "Avipattikara Churna",
+  "Gangadhara Churna",
+  "Chitrakadi Churna",
+  "Jiraka Churna",
+  "Panchakola Churna",
+  "Vyoshadi Churna",
+
+  // Classical Formulations - Vatis/Tablets
+  "Yograj Guggulu",
+  "Kanchanar Guggulu",
+  "Triphala Guggulu",
+  "Medohar Guggulu",
+  "Punarnavadi Guggulu",
+  "Gokshuradi Guggulu",
+  "Chandraprabha Vati",
+  "Arogyavardhini Vati",
+  "Kutajarishta Vati",
+  "Bilwadi Churna",
+  "Mahasudarshan Churna",
+  "Sanjivani Vati",
+  "Laxmivilas Ras",
+  "Tribhuvankirti Ras",
+  "Godanti Mishran",
+  "Praval Pishti",
+
+  // Classical Formulations - Ghrita
+  "Brahmi Ghrita",
+  "Saraswatarishta",
+  "Kalyanaka Ghrita",
+  "Panchatikta Ghrita",
+  "Triphala Ghrita",
+  "Mahatikta Ghrita",
+  "Dadimadi Ghrita",
+  "Indukanta Ghrita",
+
+  // Classical Formulations - Kashayam/Kwatha
+  "Dashamoola Kwatha",
+  "Punarnavadi Kwatha",
+  "Gokshuradi Kwatha",
+  "Pathyadi Kwatha",
+  "Sarivadi Kwatha",
+  "Chandanadi Kwatha",
+  "Usiradi Kwatha",
+  "Parpatadi Kwatha",
+
+  // Classical Formulations - Asava/Aristha
+  "Dashamoolarishta",
+  "Saraswatarishta",
+  "Kutajarishta",
+  "Jirakadyarishta",
+  "Punarnavasava",
+  "Drakshasava",
+  "Kumaryasava",
+  "Lohasava",
+  "Abhayarishta",
+
+  // Rasa Aushadhis (Mineral Medicines)
+  "Swarna Bhasma",
+  "Rajata Bhasma",
+  "Tamra Bhasma",
+  "Loha Bhasma",
+  "Yashada Bhasma",
+  "Mandura Bhasma",
+  "Pravala Bhasma",
+  "Mukta Bhasma",
+  "Shankha Bhasma",
+  "Kaparda Bhasma",
+  "Godanti Bhasma",
+  "Shilajatu",
+  "Kasturi",
+  "Hingula",
+  "Gandhaka",
+
+  // Avaleha/Lehyam
+  "Chyawanprash",
+  "Brahma Rasayana",
+  "Medhya Rasayana",
+  "Narasimha Rasayana",
+  "Agastya Haritaki",
+  "Vyaghri Haritaki",
+  "Drakshadi Lehyam",
+  "Vasavaleha",
+
+  // Modern Ayurvedic Preparations
+  "Liv 52",
+  "Tentex Forte",
+  "Confido",
+  "Himcolin",
+  "Septilin",
+  "Immunol",
+  "Diabecon",
+  "Karela",
+  "Meshashringi",
+  "Bitter Gourd",
+  "Fenugreek",
+  "Jamun",
+
+  // Regional/Traditional Medicines
+  "Khadirarishta",
+  "Manjisthadi Kwatha",
+  "Saribadyasava",
+  "Chandanasava",
+  "Pippalyasava",
+  "Madhumehari Churna",
+  "Nishamalaki Churna",
+  "Kalmegh",
+
+  // Specialized Preparations
+  "Makaradhwaja",
+  "Vasant Kusumakar Ras",
+  "Hridayarnava Ras",
+  "Suvarna Vasant Malati",
+  "Brihat Vata Chintamani",
+  "Ekangveer Ras",
+  "Sameer Pannag Ras",
+  "Yogendra Ras",
+]
+
+const frequencyOptions = [
+  "Once daily",
+  "Twice daily",
+  "Three times daily",
+  "Four times daily",
+  "Before sunrise",
+  "After sunset",
+  "With meals",
+  "Between meals",
+  "Empty stomach",
+  "As needed",
+  "During symptoms",
+]
+
+const durationOptions = [
+  "3 days",
+  "7 days",
+  "15 days",
+  "21 days",
+  "30 days",
+  "45 days",
+  "2 months",
+  "3 months",
+  "6 months",
+  "Until symptoms resolve",
+  "As per Acharya's advice",
+  "Continue as tolerated",
+]
+
+const beforeAfterFoodOptions = [
+  { value: "before", label: "Before food" },
+  { value: "after", label: "After food" },
+  { value: "with", label: "With food" },
+  { value: "empty_stomach", label: "Empty stomach" },
+  { value: "anytime", label: "Anytime" },
+]
+
+const anupanaOptions = [
+  "Warm water",
+  "Honey",
+  "Ghee",
+  "Milk",
+  "Buttermilk",
+  "Ginger juice",
+  "Lemon juice",
+  "Rose water",
+  "Coconut water",
+  "Sesame oil",
+  "Castor oil",
+]
+
+export function AyurvedicPrescription({ data, onChange }: AyurvedicPrescriptionProps) {
+  const [prescriptions, setPrescriptions] = useState<AyurvedicMedicine[]>(data || [])
   const [isAddingNew, setIsAddingNew] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+
   const [newPrescription, setNewPrescription] = useState<Partial<AyurvedicMedicine>>({
     medicineType: "",
     componentMedicines: [],
@@ -39,137 +268,31 @@ export function AyurvedicPrescription({ prescriptions = [], onChange }: Ayurvedi
     duration: "",
     instructions: "",
     beforeAfterFood: "after",
+    anupana: "",
   })
 
-  // Ayurvedic medicine types
-  const medicineTypes = [
-    "Churna (Powder)",
-    "Vati (Tablet)",
-    "Kashayam (Decoction)",
-    "Ghrita (Ghee preparation)",
-    "Taila (Oil)",
-    "Asava/Arishta (Fermented)",
-    "Avaleha (Jam/Paste)",
-    "Bhasma (Ash)",
-    "Rasa (Mercury preparation)",
-    "Guggulu (Resin preparation)",
-    "Kwatha (Decoction)",
-    "Swarasa (Fresh juice)",
-    "Kalka (Paste)",
-    "Leha (Linctus)",
-    "Pishti (Fine powder)",
-  ]
-
-  // Comprehensive list of Ayurvedic herbs and medicines
-  const ayurvedicHerbs = [
-    { label: "Ashwagandha", value: "Ashwagandha" },
-    { label: "Brahmi", value: "Brahmi" },
-    { label: "Shankhpushpi", value: "Shankhpushpi" },
-    { label: "Mandukaparni", value: "Mandukaparni" },
-    { label: "Jatamansi", value: "Jatamansi" },
-    { label: "Triphala", value: "Triphala" },
-    { label: "Amalaki", value: "Amalaki" },
-    { label: "Bibhitaki", value: "Bibhitaki" },
-    { label: "Haritaki", value: "Haritaki" },
-    { label: "Trikatu", value: "Trikatu" },
-    { label: "Shunthi", value: "Shunthi" },
-    { label: "Maricha", value: "Maricha" },
-    { label: "Pippali", value: "Pippali" },
-    { label: "Guduchi", value: "Guduchi" },
-    { label: "Neem", value: "Neem" },
-    { label: "Turmeric", value: "Turmeric" },
-    { label: "Arjuna", value: "Arjuna" },
-    { label: "Punarnava", value: "Punarnava" },
-    { label: "Gokshura", value: "Gokshura" },
-    { label: "Shatavari", value: "Shatavari" },
-    { label: "Vidari", value: "Vidari" },
-    { label: "Bala", value: "Bala" },
-    { label: "Atibala", value: "Atibala" },
-    { label: "Nagbala", value: "Nagbala" },
-    { label: "Dashmool", value: "Dashmool" },
-    { label: "Saraswatarishta", value: "Saraswatarishta" },
-    { label: "Draksharishta", value: "Draksharishta" },
-    { label: "Kumaryasava", value: "Kumaryasava" },
-    { label: "Chandanasava", value: "Chandanasava" },
-    { label: "Chitrakadi Vati", value: "Chitrakadi Vati" },
-    { label: "Hingvastak Churna", value: "Hingvastak Churna" },
-    { label: "Avipattikar Churna", value: "Avipattikar Churna" },
-    { label: "Sitopaladi Churna", value: "Sitopaladi Churna" },
-    { label: "Talisadi Churna", value: "Talisadi Churna" },
-    { label: "Lavangadi Vati", value: "Lavangadi Vati" },
-    { label: "Khadiradi Vati", value: "Khadiradi Vati" },
-    { label: "Vyoshadi Vati", value: "Vyoshadi Vati" },
-    { label: "Chandraprabha Vati", value: "Chandraprabha Vati" },
-    { label: "Kanchanar Guggulu", value: "Kanchanar Guggulu" },
-    { label: "Triphala Guggulu", value: "Triphala Guggulu" },
-    { label: "Yograj Guggulu", value: "Yograj Guggulu" },
-    { label: "Mahayograj Guggulu", value: "Mahayograj Guggulu" },
-    { label: "Punarnavadi Guggulu", value: "Punarnavadi Guggulu" },
-    { label: "Gokshuradi Guggulu", value: "Gokshuradi Guggulu" },
-    { label: "Brahmi Ghrita", value: "Brahmi Ghrita" },
-    { label: "Saraswata Ghrita", value: "Saraswata Ghrita" },
-    { label: "Kalyanaka Ghrita", value: "Kalyanaka Ghrita" },
-    { label: "Mahanarayan Taila", value: "Mahanarayan Taila" },
-    { label: "Ksheerabala Taila", value: "Ksheerabala Taila" },
-    { label: "Dhanwantaram Taila", value: "Dhanwantaram Taila" },
-    { label: "Chyawanprash", value: "Chyawanprash" },
-    { label: "Brahma Rasayana", value: "Brahma Rasayana" },
-    { label: "Medhya Rasayana", value: "Medhya Rasayana" },
-    { label: "Swarna Bhasma", value: "Swarna Bhasma" },
-    { label: "Rajata Bhasma", value: "Rajata Bhasma" },
-    { label: "Abhrak Bhasma", value: "Abhrak Bhasma" },
-    { label: "Loha Bhasma", value: "Loha Bhasma" },
-    { label: "Mandur Bhasma", value: "Mandur Bhasma" },
-    { label: "Praval Bhasma", value: "Praval Bhasma" },
-    { label: "Mukta Bhasma", value: "Mukta Bhasma" },
-    { label: "Kapardika Bhasma", value: "Kapardika Bhasma" },
-    { label: "Godanti Bhasma", value: "Godanti Bhasma" },
-    { label: "Shankha Bhasma", value: "Shankha Bhasma" },
-  ]
-
-  const frequencies = [
-    "Once daily",
-    "Twice daily",
-    "Three times daily",
-    "Before sunrise",
-    "After sunset",
-    "Before meals",
-    "After meals",
-    "With meals",
-    "Empty stomach",
-    "At bedtime",
-    "As needed",
-  ]
-
-  const durations = [
-    "7 days",
-    "14 days",
-    "21 days",
-    "30 days",
-    "45 days",
-    "60 days",
-    "90 days",
-    "Until symptoms resolve",
-    "As prescribed",
-    "Continuous",
-  ]
+  // Filter component medicines based on search term
+  const filteredComponentMedicines = componentMedicines
+    .filter((medicine) => medicine.toLowerCase().includes(searchTerm.toLowerCase()))
+    .map((medicine) => ({ value: medicine, label: medicine }))
 
   useEffect(() => {
-    setLocalPrescriptions(prescriptions)
-  }, [prescriptions])
+    setPrescriptions(data || [])
+  }, [data])
 
   useEffect(() => {
-    onChange(localPrescriptions)
-  }, [localPrescriptions, onChange])
+    onChange(prescriptions)
+  }, [prescriptions, onChange])
 
   const addPrescription = () => {
     if (
       !newPrescription.medicineType ||
       !newPrescription.componentMedicines?.length ||
       !newPrescription.dosage ||
-      !newPrescription.frequency
+      !newPrescription.frequency ||
+      !newPrescription.duration
     ) {
-      toast.error("Please fill in required fields")
+      toast.error("Please fill in all required fields")
       return
     }
 
@@ -179,12 +302,13 @@ export function AyurvedicPrescription({ prescriptions = [], onChange }: Ayurvedi
       componentMedicines: newPrescription.componentMedicines!,
       dosage: newPrescription.dosage!,
       frequency: newPrescription.frequency!,
-      duration: newPrescription.duration || "",
+      duration: newPrescription.duration!,
       instructions: newPrescription.instructions || "",
       beforeAfterFood: newPrescription.beforeAfterFood || "after",
+      anupana: newPrescription.anupana || "",
     }
 
-    setLocalPrescriptions((prev) => [...prev, prescription])
+    setPrescriptions((prev) => [...prev, prescription])
     setNewPrescription({
       medicineType: "",
       componentMedicines: [],
@@ -193,13 +317,15 @@ export function AyurvedicPrescription({ prescriptions = [], onChange }: Ayurvedi
       duration: "",
       instructions: "",
       beforeAfterFood: "after",
+      anupana: "",
     })
     setIsAddingNew(false)
+    setSearchTerm("")
     toast.success("Ayurvedic medicine added to prescription")
   }
 
   const removePrescription = (id: string) => {
-    setLocalPrescriptions((prev) => prev.filter((p) => p.id !== id))
+    setPrescriptions((prev) => prev.filter((p) => p.id !== id))
     toast.success("Medicine removed from prescription")
   }
 
@@ -209,42 +335,56 @@ export function AyurvedicPrescription({ prescriptions = [], onChange }: Ayurvedi
         <CardTitle className="flex items-center gap-2">
           <Leaf className="h-5 w-5 text-green-600" />
           Ayurvedic Prescription
+          {prescriptions.length > 0 && <Badge variant="secondary">{prescriptions.length} medicines</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Existing Prescriptions */}
-        {localPrescriptions.length > 0 && (
-          <div className="space-y-4">
-            {localPrescriptions.map((prescription) => (
-              <div key={prescription.id} className="p-4 border rounded-lg bg-green-50/50">
+        {prescriptions.length > 0 && (
+          <div className="space-y-3">
+            {prescriptions.map((prescription) => (
+              <div key={prescription.id} className="p-4 border rounded-lg bg-green-50/50 border-green-200">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <h4 className="font-semibold text-green-900">
+                        {medicineTypes.find((type) => type.value === prescription.medicineType)?.label}
+                      </h4>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
                         {prescription.medicineType}
                       </Badge>
-                      <Badge variant="outline">{prescription.dosage}</Badge>
-                      <Badge variant="outline">{prescription.frequency}</Badge>
-                      {prescription.duration && <Badge variant="outline">{prescription.duration}</Badge>}
                     </div>
-                    <div className="mb-2">
-                      <span className="text-sm font-medium text-gray-700">Components: </span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {prescription.componentMedicines.map((component, index) => (
-                          <Badge key={index} variant="outline" className="text-xs bg-green-50 text-green-700">
+
+                    {/* Component Medicines */}
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-green-800 mb-1">Components:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {prescription.componentMedicines.map((component, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs bg-white border-green-200">
                             {component}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>
-                        <strong>Take:</strong> {prescription.beforeAfterFood} food
-                      </p>
-                      {prescription.instructions && (
-                        <p>
-                          <strong>Instructions:</strong> {prescription.instructions}
-                        </p>
+
+                    {/* Dosage and Instructions */}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <Badge variant="outline" className="bg-white">
+                        {prescription.dosage}
+                      </Badge>
+                      <Badge variant="outline" className="bg-white">
+                        {prescription.frequency}
+                      </Badge>
+                      <Badge variant="outline" className="bg-white">
+                        {prescription.duration}
+                      </Badge>
+                      <Badge variant="outline" className="bg-white">
+                        {beforeAfterFoodOptions.find((opt) => opt.value === prescription.beforeAfterFood)?.label}
+                      </Badge>
+                      {prescription.anupana && (
+                        <Badge variant="outline" className="bg-white">
+                          With {prescription.anupana}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -257,147 +397,218 @@ export function AyurvedicPrescription({ prescriptions = [], onChange }: Ayurvedi
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
+
+                {prescription.instructions && (
+                  <div className="text-sm text-green-700 bg-white/60 p-2 rounded border">
+                    <strong>Instructions:</strong> {prescription.instructions}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* Add New Prescription Form */}
-        {isAddingNew ? (
-          <div className="p-4 border rounded-lg bg-gray-50">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="medicineType">Medicine Type *</Label>
-                  <Select
-                    value={newPrescription.medicineType}
-                    onValueChange={(value) => setNewPrescription({ ...newPrescription, medicineType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select medicine type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {medicineTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Add New Prescription */}
+        {!isAddingNew ? (
+          <Button onClick={() => setIsAddingNew(true)} className="w-full bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Ayurvedic Medicine
+          </Button>
+        ) : (
+          <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Add New Ayurvedic Medicine</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsAddingNew(false)
+                  setSearchTerm("")
+                  setNewPrescription({
+                    medicineType: "",
+                    componentMedicines: [],
+                    dosage: "",
+                    frequency: "",
+                    duration: "",
+                    instructions: "",
+                    beforeAfterFood: "after",
+                    anupana: "",
+                  })
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dosage">Dosage *</Label>
-                  <Input
-                    value={newPrescription.dosage}
-                    onChange={(e) => setNewPrescription({ ...newPrescription, dosage: e.target.value })}
-                    placeholder="e.g., 1 tsp, 2 tablets, 10ml"
-                  />
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Medicine Type */}
               <div className="space-y-2">
-                <Label htmlFor="componentMedicines">Component Medicines *</Label>
-                <MultiSelect
-                  options={ayurvedicHerbs}
-                  selected={newPrescription.componentMedicines || []}
-                  onChange={(selected) => setNewPrescription({ ...newPrescription, componentMedicines: selected })}
-                  placeholder="Select component medicines/herbs"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Frequency *</Label>
-                  <Select
-                    value={newPrescription.frequency}
-                    onValueChange={(value) => setNewPrescription({ ...newPrescription, frequency: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {frequencies.map((freq) => (
-                        <SelectItem key={freq} value={freq}>
-                          {freq}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
-                  <Select
-                    value={newPrescription.duration}
-                    onValueChange={(value) => setNewPrescription({ ...newPrescription, duration: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {durations.map((duration) => (
-                        <SelectItem key={duration} value={duration}>
-                          {duration}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="beforeAfterFood">Take with food</Label>
+                <Label>Medicine Type *</Label>
                 <Select
-                  value={newPrescription.beforeAfterFood}
-                  onValueChange={(value) => setNewPrescription({ ...newPrescription, beforeAfterFood: value })}
+                  value={newPrescription.medicineType}
+                  onValueChange={(value) => setNewPrescription((prev) => ({ ...prev, medicineType: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select medicine type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="before">Before food</SelectItem>
-                    <SelectItem value="after">After food</SelectItem>
-                    <SelectItem value="with">With food</SelectItem>
-                    <SelectItem value="empty">Empty stomach</SelectItem>
-                    <SelectItem value="anytime">Anytime</SelectItem>
+                    {medicineTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Dosage */}
               <div className="space-y-2">
-                <Label htmlFor="instructions">Special Instructions</Label>
-                <Textarea
-                  value={newPrescription.instructions}
-                  onChange={(e) => setNewPrescription({ ...newPrescription, instructions: e.target.value })}
-                  placeholder="Any special instructions, anupana (vehicle), or preparation method..."
-                  rows={2}
+                <Label>Dosage *</Label>
+                <Input
+                  placeholder="e.g., 1 tsp, 2 tablets, 10ml"
+                  value={newPrescription.dosage}
+                  onChange={(e) => setNewPrescription((prev) => ({ ...prev, dosage: e.target.value }))}
+                />
+              </div>
+
+              {/* Frequency */}
+              <div className="space-y-2">
+                <Label>Frequency *</Label>
+                <Select
+                  value={newPrescription.frequency}
+                  onValueChange={(value) => setNewPrescription((prev) => ({ ...prev, frequency: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {frequencyOptions.map((freq) => (
+                      <SelectItem key={freq} value={freq}>
+                        {freq}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label>Duration *</Label>
+                <Select
+                  value={newPrescription.duration}
+                  onValueChange={(value) => setNewPrescription((prev) => ({ ...prev, duration: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map((duration) => (
+                      <SelectItem key={duration} value={duration}>
+                        {duration}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Before/After Food */}
+              <div className="space-y-2">
+                <Label>Food Timing</Label>
+                <Select
+                  value={newPrescription.beforeAfterFood}
+                  onValueChange={(value) => setNewPrescription((prev) => ({ ...prev, beforeAfterFood: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {beforeAfterFoodOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Anupana */}
+              <div className="space-y-2">
+                <Label>Anupana (Vehicle)</Label>
+                <Select
+                  value={newPrescription.anupana}
+                  onValueChange={(value) => setNewPrescription((prev) => ({ ...prev, anupana: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select anupana" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {anupanaOptions.map((anupana) => (
+                      <SelectItem key={anupana} value={anupana}>
+                        {anupana}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Component Medicines Multi-Select */}
+            <div className="space-y-2">
+              <Label>Component Medicines *</Label>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search Ayurvedic medicines..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <MultiSelect
+                  options={filteredComponentMedicines}
+                  selected={newPrescription.componentMedicines || []}
+                  onChange={(selected) => setNewPrescription((prev) => ({ ...prev, componentMedicines: selected }))}
+                  placeholder="Select component medicines..."
+                  className="w-full"
                 />
               </div>
             </div>
 
-            <div className="flex gap-2 mt-4">
+            {/* Instructions */}
+            <div className="space-y-2">
+              <Label>Special Instructions</Label>
+              <Textarea
+                placeholder="Any special instructions for the patient..."
+                value={newPrescription.instructions}
+                onChange={(e) => setNewPrescription((prev) => ({ ...prev, instructions: e.target.value }))}
+                rows={2}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
               <Button onClick={addPrescription} className="bg-green-600 hover:bg-green-700">
-                <Save className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Add Medicine
               </Button>
-              <Button variant="outline" onClick={() => setIsAddingNew(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddingNew(false)
+                  setSearchTerm("")
+                }}
+              >
                 Cancel
               </Button>
             </div>
           </div>
-        ) : (
-          <Button onClick={() => setIsAddingNew(true)} variant="outline" className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Ayurvedic Medicine
-          </Button>
         )}
 
-        {localPrescriptions.length === 0 && !isAddingNew && (
+        {prescriptions.length === 0 && !isAddingNew && (
           <div className="text-center py-8 text-gray-500">
-            <Leaf className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <Leaf className="h-12 w-12 mx-auto mb-2 text-gray-300" />
             <p>No Ayurvedic medicines prescribed yet</p>
-            <p className="text-sm">Click "Add Ayurvedic Medicine" to start prescribing</p>
           </div>
         )}
       </CardContent>

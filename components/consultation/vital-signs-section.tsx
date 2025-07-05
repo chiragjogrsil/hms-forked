@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Heart, Thermometer, Wind, Droplets, Weight, Ruler, Calculator } from "lucide-react"
 
@@ -23,272 +22,233 @@ interface VitalSignsSectionProps {
   onChange: (data: VitalSigns) => void
 }
 
-export function VitalSignsSection({ data = {}, onChange }: VitalSignsSectionProps) {
-  const [localData, setLocalData] = useState<VitalSigns>(data)
+export function VitalSignsSection({ data, onChange }: VitalSignsSectionProps) {
+  const [vitals, setVitals] = useState<VitalSigns>(data || {})
 
   useEffect(() => {
-    setLocalData(data)
+    setVitals(data || {})
   }, [data])
 
   useEffect(() => {
-    onChange(localData)
-  }, [localData, onChange])
+    onChange(vitals)
+  }, [vitals, onChange])
 
   const updateVital = (field: keyof VitalSigns, value: string) => {
-    const updatedData = { ...localData, [field]: value }
+    const newVitals = { ...vitals, [field]: value }
 
-    // Auto-calculate BMI when height and weight are available
-    if ((field === "height" || field === "weight") && updatedData.height && updatedData.weight) {
-      const heightInM = Number.parseFloat(updatedData.height) / 100
-      const weightInKg = Number.parseFloat(updatedData.weight)
-      if (heightInM > 0 && weightInKg > 0) {
-        const bmi = (weightInKg / (heightInM * heightInM)).toFixed(1)
-        updatedData.bmi = bmi
+    // Auto-calculate BMI when weight and height are available
+    if ((field === "weight" || field === "height") && newVitals.weight && newVitals.height) {
+      const weightKg = Number.parseFloat(newVitals.weight)
+      const heightM = Number.parseFloat(newVitals.height) / 100 // Convert cm to m
+      if (weightKg > 0 && heightM > 0) {
+        const bmi = (weightKg / (heightM * heightM)).toFixed(1)
+        newVitals.bmi = bmi
       }
     }
 
-    setLocalData(updatedData)
+    setVitals(newVitals)
   }
 
-  const getBMICategory = (bmi: string) => {
-    const bmiValue = Number.parseFloat(bmi)
-    if (bmiValue < 18.5) return { category: "Underweight", color: "text-blue-600" }
-    if (bmiValue < 25) return { category: "Normal", color: "text-green-600" }
-    if (bmiValue < 30) return { category: "Overweight", color: "text-yellow-600" }
-    return { category: "Obese", color: "text-red-600" }
-  }
-
-  const getBloodPressureCategory = (bp: string) => {
+  const getBPStatus = (bp: string) => {
+    if (!bp) return null
     const [systolic, diastolic] = bp.split("/").map((n) => Number.parseInt(n))
-    if (systolic < 120 && diastolic < 80) return { category: "Normal", color: "text-green-600" }
-    if (systolic < 130 && diastolic < 80) return { category: "Elevated", color: "text-yellow-600" }
-    if (systolic < 140 || diastolic < 90) return { category: "Stage 1 HTN", color: "text-orange-600" }
-    return { category: "Stage 2 HTN", color: "text-red-600" }
+    if (isNaN(systolic) || isNaN(diastolic)) return null
+
+    if (systolic < 90 || diastolic < 60) return { status: "Low", color: "bg-blue-100 text-blue-800" }
+    if (systolic < 120 && diastolic < 80) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (systolic < 130 && diastolic < 80) return { status: "Elevated", color: "bg-yellow-100 text-yellow-800" }
+    if (systolic < 140 || diastolic < 90) return { status: "Stage 1", color: "bg-orange-100 text-orange-800" }
+    return { status: "Stage 2", color: "bg-red-100 text-red-800" }
   }
+
+  const getPulseStatus = (pulse: string) => {
+    if (!pulse) return null
+    const rate = Number.parseInt(pulse)
+    if (isNaN(rate)) return null
+
+    if (rate < 60) return { status: "Bradycardia", color: "bg-blue-100 text-blue-800" }
+    if (rate <= 100) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    return { status: "Tachycardia", color: "bg-red-100 text-red-800" }
+  }
+
+  const getTempStatus = (temp: string) => {
+    if (!temp) return null
+    const temperature = Number.parseFloat(temp)
+    if (isNaN(temperature)) return null
+
+    if (temperature < 36.1) return { status: "Low", color: "bg-blue-100 text-blue-800" }
+    if (temperature <= 37.2) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (temperature <= 38.0) return { status: "Low Fever", color: "bg-yellow-100 text-yellow-800" }
+    if (temperature <= 39.0) return { status: "Moderate Fever", color: "bg-orange-100 text-orange-800" }
+    return { status: "High Fever", color: "bg-red-100 text-red-800" }
+  }
+
+  const getBMIStatus = (bmi: string) => {
+    if (!bmi) return null
+    const bmiValue = Number.parseFloat(bmi)
+    if (isNaN(bmiValue)) return null
+
+    if (bmiValue < 18.5) return { status: "Underweight", color: "bg-blue-100 text-blue-800" }
+    if (bmiValue < 25) return { status: "Normal", color: "bg-green-100 text-green-800" }
+    if (bmiValue < 30) return { status: "Overweight", color: "bg-yellow-100 text-yellow-800" }
+    return { status: "Obese", color: "bg-red-100 text-red-800" }
+  }
+
+  const getSpo2Status = (spo2: string) => {
+    if (!spo2) return null
+    const oxygen = Number.parseInt(spo2)
+    if (isNaN(oxygen)) return null
+
+    if (oxygen < 90) return { status: "Critical", color: "bg-red-100 text-red-800" }
+    if (oxygen < 95) return { status: "Low", color: "bg-orange-100 text-orange-800" }
+    return { status: "Normal", color: "bg-green-100 text-green-800" }
+  }
+
+  const bpStatus = getBPStatus(vitals.bloodPressure || "")
+  const pulseStatus = getPulseStatus(vitals.pulse || "")
+  const tempStatus = getTempStatus(vitals.temperature || "")
+  const bmiStatus = getBMIStatus(vitals.bmi || "")
+  const spo2Status = getSpo2Status(vitals.spo2 || "")
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-red-600" />
-          Vital Signs
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Blood Pressure */}
-          <div className="space-y-2">
-            <Label htmlFor="bloodPressure" className="flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-500" />
-              Blood Pressure (mmHg)
-            </Label>
-            <Input
-              id="bloodPressure"
-              value={localData.bloodPressure || ""}
-              onChange={(e) => updateVital("bloodPressure", e.target.value)}
-              placeholder="120/80"
-            />
-            {localData.bloodPressure && localData.bloodPressure.includes("/") && (
-              <Badge variant="outline" className={getBloodPressureCategory(localData.bloodPressure).color}>
-                {getBloodPressureCategory(localData.bloodPressure).category}
-              </Badge>
-            )}
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Blood Pressure */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Heart className="h-4 w-4 text-red-500" />
+            Blood Pressure
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input
+            placeholder="120/80"
+            value={vitals.bloodPressure || ""}
+            onChange={(e) => updateVital("bloodPressure", e.target.value)}
+          />
+          <div className="text-xs text-gray-500">mmHg (Systolic/Diastolic)</div>
+          {bpStatus && <Badge className={bpStatus.color}>{bpStatus.status}</Badge>}
+        </CardContent>
+      </Card>
 
-          {/* Pulse */}
-          <div className="space-y-2">
-            <Label htmlFor="pulse" className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-pink-500" />
-              Pulse (bpm)
-            </Label>
-            <Input
-              id="pulse"
-              value={localData.pulse || ""}
-              onChange={(e) => updateVital("pulse", e.target.value)}
-              placeholder="72"
-              type="number"
-            />
-            {localData.pulse && (
-              <div className="text-xs text-gray-600">
-                {Number.parseInt(localData.pulse) < 60
-                  ? "Bradycardia"
-                  : Number.parseInt(localData.pulse) > 100
-                    ? "Tachycardia"
-                    : "Normal"}
-              </div>
-            )}
-          </div>
+      {/* Pulse Rate */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Activity className="h-4 w-4 text-blue-500" />
+            Pulse Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input placeholder="72" value={vitals.pulse || ""} onChange={(e) => updateVital("pulse", e.target.value)} />
+          <div className="text-xs text-gray-500">beats per minute</div>
+          {pulseStatus && <Badge className={pulseStatus.color}>{pulseStatus.status}</Badge>}
+        </CardContent>
+      </Card>
 
-          {/* Temperature */}
-          <div className="space-y-2">
-            <Label htmlFor="temperature" className="flex items-center gap-2">
-              <Thermometer className="h-4 w-4 text-orange-500" />
-              Temperature (°F)
-            </Label>
-            <Input
-              id="temperature"
-              value={localData.temperature || ""}
-              onChange={(e) => updateVital("temperature", e.target.value)}
-              placeholder="98.6"
-              type="number"
-              step="0.1"
-            />
-            {localData.temperature && (
-              <div className="text-xs text-gray-600">
-                {Number.parseFloat(localData.temperature) > 100.4
-                  ? "Fever"
-                  : Number.parseFloat(localData.temperature) < 96
-                    ? "Hypothermia"
-                    : "Normal"}
-              </div>
-            )}
-          </div>
+      {/* Temperature */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Thermometer className="h-4 w-4 text-orange-500" />
+            Temperature
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input
+            placeholder="98.6"
+            value={vitals.temperature || ""}
+            onChange={(e) => updateVital("temperature", e.target.value)}
+          />
+          <div className="text-xs text-gray-500">°F</div>
+          {tempStatus && <Badge className={tempStatus.color}>{tempStatus.status}</Badge>}
+        </CardContent>
+      </Card>
 
-          {/* Respiratory Rate */}
-          <div className="space-y-2">
-            <Label htmlFor="respiratoryRate" className="flex items-center gap-2">
-              <Wind className="h-4 w-4 text-blue-500" />
-              Respiratory Rate (/min)
-            </Label>
-            <Input
-              id="respiratoryRate"
-              value={localData.respiratoryRate || ""}
-              onChange={(e) => updateVital("respiratoryRate", e.target.value)}
-              placeholder="16"
-              type="number"
-            />
-            {localData.respiratoryRate && (
-              <div className="text-xs text-gray-600">
-                {Number.parseInt(localData.respiratoryRate) < 12
-                  ? "Bradypnea"
-                  : Number.parseInt(localData.respiratoryRate) > 20
-                    ? "Tachypnea"
-                    : "Normal"}
-              </div>
-            )}
-          </div>
+      {/* Respiratory Rate */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Wind className="h-4 w-4 text-teal-500" />
+            Respiratory Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input
+            placeholder="16"
+            value={vitals.respiratoryRate || ""}
+            onChange={(e) => updateVital("respiratoryRate", e.target.value)}
+          />
+          <div className="text-xs text-gray-500">breaths per minute</div>
+        </CardContent>
+      </Card>
 
-          {/* SpO2 */}
-          <div className="space-y-2">
-            <Label htmlFor="spo2" className="flex items-center gap-2">
-              <Droplets className="h-4 w-4 text-cyan-500" />
-              SpO2 (%)
-            </Label>
-            <Input
-              id="spo2"
-              value={localData.spo2 || ""}
-              onChange={(e) => updateVital("spo2", e.target.value)}
-              placeholder="98"
-              type="number"
-              min="0"
-              max="100"
-            />
-            {localData.spo2 && (
-              <div className="text-xs text-gray-600">{Number.parseInt(localData.spo2) < 95 ? "Low" : "Normal"}</div>
-            )}
-          </div>
+      {/* SpO2 */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Droplets className="h-4 w-4 text-cyan-500" />
+            SpO2
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input placeholder="98" value={vitals.spo2 || ""} onChange={(e) => updateVital("spo2", e.target.value)} />
+          <div className="text-xs text-gray-500">% oxygen saturation</div>
+          {spo2Status && <Badge className={spo2Status.color}>{spo2Status.status}</Badge>}
+        </CardContent>
+      </Card>
 
-          {/* Weight */}
-          <div className="space-y-2">
-            <Label htmlFor="weight" className="flex items-center gap-2">
-              <Weight className="h-4 w-4 text-purple-500" />
-              Weight (kg)
-            </Label>
-            <Input
-              id="weight"
-              value={localData.weight || ""}
-              onChange={(e) => updateVital("weight", e.target.value)}
-              placeholder="70"
-              type="number"
-              step="0.1"
-            />
-          </div>
+      {/* Weight */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Weight className="h-4 w-4 text-purple-500" />
+            Weight
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input placeholder="70" value={vitals.weight || ""} onChange={(e) => updateVital("weight", e.target.value)} />
+          <div className="text-xs text-gray-500">kg</div>
+        </CardContent>
+      </Card>
 
-          {/* Height */}
-          <div className="space-y-2">
-            <Label htmlFor="height" className="flex items-center gap-2">
-              <Ruler className="h-4 w-4 text-green-500" />
-              Height (cm)
-            </Label>
-            <Input
-              id="height"
-              value={localData.height || ""}
-              onChange={(e) => updateVital("height", e.target.value)}
-              placeholder="170"
-              type="number"
-            />
-          </div>
+      {/* Height */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Ruler className="h-4 w-4 text-indigo-500" />
+            Height
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input
+            placeholder="175"
+            value={vitals.height || ""}
+            onChange={(e) => updateVital("height", e.target.value)}
+          />
+          <div className="text-xs text-gray-500">cm</div>
+        </CardContent>
+      </Card>
 
-          {/* BMI */}
-          <div className="space-y-2">
-            <Label htmlFor="bmi" className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-indigo-500" />
-              BMI
-            </Label>
-            <Input
-              id="bmi"
-              value={localData.bmi || ""}
-              onChange={(e) => updateVital("bmi", e.target.value)}
-              placeholder="Auto-calculated"
-              readOnly={!!(localData.height && localData.weight)}
-            />
-            {localData.bmi && (
-              <Badge variant="outline" className={getBMICategory(localData.bmi).color}>
-                {getBMICategory(localData.bmi).category}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Summary */}
-        {Object.keys(localData).some((key) => localData[key as keyof VitalSigns]) && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-800 mb-2">Vital Signs Summary</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              {localData.bloodPressure && (
-                <div>
-                  <span className="font-medium">BP:</span> {localData.bloodPressure} mmHg
-                </div>
-              )}
-              {localData.pulse && (
-                <div>
-                  <span className="font-medium">Pulse:</span> {localData.pulse} bpm
-                </div>
-              )}
-              {localData.temperature && (
-                <div>
-                  <span className="font-medium">Temp:</span> {localData.temperature}°F
-                </div>
-              )}
-              {localData.spo2 && (
-                <div>
-                  <span className="font-medium">SpO2:</span> {localData.spo2}%
-                </div>
-              )}
-              {localData.weight && (
-                <div>
-                  <span className="font-medium">Weight:</span> {localData.weight} kg
-                </div>
-              )}
-              {localData.height && (
-                <div>
-                  <span className="font-medium">Height:</span> {localData.height} cm
-                </div>
-              )}
-              {localData.bmi && (
-                <div>
-                  <span className="font-medium">BMI:</span> {localData.bmi}
-                </div>
-              )}
-              {localData.respiratoryRate && (
-                <div>
-                  <span className="font-medium">RR:</span> {localData.respiratoryRate}/min
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* BMI */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Calculator className="h-4 w-4 text-green-500" />
+            BMI
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Input
+            placeholder="Auto-calculated"
+            value={vitals.bmi || ""}
+            onChange={(e) => updateVital("bmi", e.target.value)}
+            className="bg-gray-50"
+          />
+          <div className="text-xs text-gray-500">kg/m² (auto-calculated)</div>
+          {bmiStatus && <Badge className={bmiStatus.color}>{bmiStatus.status}</Badge>}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
