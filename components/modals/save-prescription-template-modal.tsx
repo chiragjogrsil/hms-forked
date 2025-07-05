@@ -1,129 +1,174 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Save, Package } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { usePrescriptionTemplate } from "@/contexts/prescription-template-context"
+import { useConsultation } from "@/contexts/consultation-context"
 import { toast } from "sonner"
 
 interface SavePrescriptionTemplateModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSave: (templateData: any) => void
-  ayurvedicPrescriptions: any[]
-  allopathicPrescriptions: any[]
-  department: string
+  trigger?: React.ReactNode
 }
 
-export function SavePrescriptionTemplateModal({
-  isOpen,
-  onClose,
-  onSave,
-  ayurvedicPrescriptions = [],
-  allopathicPrescriptions = [],
-  department,
-}: SavePrescriptionTemplateModalProps) {
+export function SavePrescriptionTemplateModal({ trigger }: SavePrescriptionTemplateModalProps) {
+  const { saveTemplate } = usePrescriptionTemplate()
+  const { currentConsultation } = useConsultation()
+
+  const [open, setOpen] = useState(false)
   const [templateName, setTemplateName] = useState("")
-  const [description, setDescription] = useState("")
+  const [templateDescription, setTemplateDescription] = useState("")
+  const [templateDepartment, setTemplateDepartment] = useState("")
+
+  const departments = [
+    "General Medicine",
+    "Cardiology",
+    "Orthopedics",
+    "Neurology",
+    "Pediatrics",
+    "Gynecology",
+    "Dermatology",
+    "Ophthalmology",
+    "Ayurveda",
+  ]
 
   const handleSave = () => {
-    if (!templateName.trim()) {
+    if (!currentConsultation || !templateName.trim()) {
       toast.error("Please enter a template name")
       return
     }
 
-    if (ayurvedicPrescriptions.length === 0 && allopathicPrescriptions.length === 0) {
-      toast.error("No prescription data to save")
+    const hasAllopathic = currentConsultation.allopathicPrescriptions.length > 0
+    const hasAyurvedic = currentConsultation.ayurvedicPrescriptions.length > 0
+
+    if (!hasAllopathic && !hasAyurvedic) {
+      toast.error("No prescriptions to save as template")
       return
     }
 
-    const templateData = {
-      name: templateName.trim(),
-      description: description.trim(),
-      department,
-      type:
-        ayurvedicPrescriptions.length > 0 && allopathicPrescriptions.length > 0
-          ? "mixed"
-          : ayurvedicPrescriptions.length > 0
-            ? "ayurvedic"
-            : "allopathic",
-      ayurvedicPrescriptions,
-      allopathicPrescriptions,
-      createdBy: "Current Doctor", // This would come from auth context
-    }
+    const templateType = hasAllopathic && hasAyurvedic ? "mixed" : hasAllopathic ? "allopathic" : "ayurvedic"
 
-    onSave(templateData)
-    toast.success("Template saved successfully!")
-    setTemplateName("")
-    setDescription("")
-    onClose()
+    try {
+      saveTemplate({
+        name: templateName,
+        description: templateDescription,
+        department: templateDepartment || currentConsultation.department,
+        type: templateType,
+        allopathicMedicines: currentConsultation.allopathicPrescriptions.map((p) => ({
+          medicine: p.medicine,
+          dosage: p.dosage,
+          frequency: p.frequency,
+          duration: p.duration,
+          instructions: p.instructions,
+          beforeFood: p.beforeFood,
+          afterFood: p.afterFood,
+        })),
+        ayurvedicMedicines: currentConsultation.ayurvedicPrescriptions.map((p) => ({
+          medicine: p.medicine,
+          dosage: p.dosage,
+          frequency: p.frequency,
+          duration: p.duration,
+          instructions: p.instructions,
+          beforeFood: p.beforeFood,
+          afterFood: p.afterFood,
+        })),
+        createdBy: "Current Doctor", // This would come from auth context
+      })
+
+      toast.success("Template saved successfully")
+
+      // Reset form
+      setTemplateName("")
+      setTemplateDescription("")
+      setTemplateDepartment("")
+      setOpen(false)
+    } catch (error) {
+      toast.error("Failed to save template")
+    }
   }
 
-  const totalPrescriptions = ayurvedicPrescriptions.length + allopathicPrescriptions.length
+  const canSave =
+    currentConsultation &&
+    (currentConsultation.allopathicPrescriptions.length > 0 || currentConsultation.ayurvedicPrescriptions.length > 0)
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button variant="outline" size="sm" disabled={!canSave} className="flex items-center gap-2 bg-transparent">
+            <Save className="h-4 w-4" />
+            Save as Template
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Save Prescription Template
-          </DialogTitle>
+          <DialogTitle>Save Prescription Template</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4">
-          {/* Template Summary */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Template Summary</h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>
-                Department: <span className="font-medium capitalize">{department}</span>
-              </p>
-              <p>
-                Total Medicines: <span className="font-medium">{totalPrescriptions}</span>
-              </p>
-              <p>
-                Ayurvedic: <span className="font-medium">{ayurvedicPrescriptions.length}</span>
-              </p>
-              <p>
-                Allopathic: <span className="font-medium">{allopathicPrescriptions.length}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Template Name */}
           <div className="space-y-2">
-            <Label htmlFor="templateName">Template Name *</Label>
+            <Label htmlFor="template-name">Template Name *</Label>
             <Input
-              id="templateName"
-              placeholder="e.g., Diabetes Management Protocol"
+              id="template-name"
+              placeholder="Enter template name"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="template-description">Description</Label>
             <Textarea
-              id="description"
-              placeholder="Brief description of when to use this template..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              id="template-description"
+              placeholder="Brief description of this template"
+              value={templateDescription}
+              onChange={(e) => setTemplateDescription(e.target.value)}
               rows={3}
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="space-y-2">
+            <Label htmlFor="template-department">Department</Label>
+            <Select value={templateDepartment} onValueChange={setTemplateDepartment}>
+              <SelectTrigger>
+                <SelectValue placeholder={currentConsultation?.department || "Select department"} />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {currentConsultation && (
+            <div className="text-sm text-muted-foreground space-y-1">
+              <div>This template will include:</div>
+              <ul className="list-disc list-inside space-y-1">
+                {currentConsultation.allopathicPrescriptions.length > 0 && (
+                  <li>{currentConsultation.allopathicPrescriptions.length} Allopathic medicine(s)</li>
+                )}
+                {currentConsultation.ayurvedicPrescriptions.length > 0 && (
+                  <li>{currentConsultation.ayurvedicPrescriptions.length} Ayurvedic medicine(s)</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-orange-600 hover:bg-orange-700">
-              <Save className="h-4 w-4 mr-2" />
+            <Button onClick={handleSave} disabled={!templateName.trim() || !canSave}>
               Save Template
             </Button>
           </div>

@@ -7,7 +7,7 @@ import { ConsultationProvider } from "@/contexts/consultation-context"
 import { PrescriptionTemplateProvider } from "@/contexts/prescription-template-context"
 import { DoctorProvider } from "@/contexts/doctor-context"
 import { VisitWorkflowProvider } from "@/contexts/visit-workflow-context"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProviderOld, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TopNavigation } from "@/components/top-navigation"
 
@@ -26,15 +26,13 @@ export default function RootLayout({
             <ConsultationProvider>
               <PrescriptionTemplateProvider>
                 <VisitWorkflowProvider>
-                  <SidebarProvider>
-                    <div className="flex h-screen bg-background">
-                      <AppSidebar />
-                      <div className="flex-1 flex flex-col overflow-hidden">
-                        <TopNavigation />
-                        <main className="flex-1 overflow-auto p-6">{children}</main>
-                      </div>
-                    </div>
-                  </SidebarProvider>
+                  <SidebarProviderOld>
+                    <AppSidebar />
+                    <SidebarInset>
+                      <TopNavigation />
+                      <main className="flex-1 overflow-auto p-6">{children}</main>
+                    </SidebarInset>
+                  </SidebarProviderOld>
                 </VisitWorkflowProvider>
               </PrescriptionTemplateProvider>
             </ConsultationProvider>
