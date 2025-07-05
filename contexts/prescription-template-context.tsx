@@ -23,7 +23,22 @@ interface PrescriptionTemplateContextType {
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
 
 export function PrescriptionTemplateProvider({ children }: { children: ReactNode }) {
-  const [templates, setTemplates] = useState<PrescriptionTemplate[]>([])
+  const [templates, setTemplates] = useState<PrescriptionTemplate[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("prescription-templates")
+      if (saved) {
+        try {
+          return JSON.parse(saved).map((t: any) => ({
+            ...t,
+            createdAt: new Date(t.createdAt),
+          }))
+        } catch {
+          return []
+        }
+      }
+    }
+    return []
+  })
 
   const saveTemplate = (templateData: Omit<PrescriptionTemplate, "id" | "createdAt">) => {
     const newTemplate: PrescriptionTemplate = {
@@ -31,7 +46,13 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
       id: `template_${Date.now()}`,
       createdAt: new Date(),
     }
-    setTemplates((prev) => [...prev, newTemplate])
+
+    const updatedTemplates = [...templates, newTemplate]
+    setTemplates(updatedTemplates)
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("prescription-templates", JSON.stringify(updatedTemplates))
+    }
   }
 
   const getTemplatesByDepartment = (department: string) => {
@@ -39,7 +60,12 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
   }
 
   const deleteTemplate = (id: string) => {
-    setTemplates((prev) => prev.filter((template) => template.id !== id))
+    const updatedTemplates = templates.filter((template) => template.id !== id)
+    setTemplates(updatedTemplates)
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("prescription-templates", JSON.stringify(updatedTemplates))
+    }
   }
 
   return (

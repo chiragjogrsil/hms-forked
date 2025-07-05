@@ -1,26 +1,17 @@
 import type React from "react"
-import type { Metadata } from "next"
-import { Poppins } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
-import { TopNavigation } from "@/components/top-navigation"
-import { DoctorProvider } from "@/contexts/doctor-context"
-import { VisitWorkflowProvider } from "@/contexts/visit-workflow-context"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 import { ConsultationProvider } from "@/contexts/consultation-context"
 import { PrescriptionTemplateProvider } from "@/contexts/prescription-template-context"
-import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider"
+import { DoctorProvider } from "@/contexts/doctor-context"
+import { VisitWorkflowProvider } from "@/contexts/visit-workflow-context"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import { TopNavigation } from "@/components/top-navigation"
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-})
-
-export const metadata: Metadata = {
-  title: "Hospital Management System",
-  description: "Comprehensive hospital management solution",
-    generator: 'v0.dev'
-}
+const inter = Inter({ subsets: ["latin"] })
 
 export default function RootLayout({
   children,
@@ -28,26 +19,33 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`${poppins.variable} font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-orange-50 min-h-screen`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="light">
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <DoctorProvider>
-            <VisitWorkflowProvider>
-              <ConsultationProvider>
-                <PrescriptionTemplateProvider>
-                  <div className="flex min-h-screen w-full flex-col">
-                    <TopNavigation />
-                    <main className="flex-1 p-6">{children}</main>
-                  </div>
-                  <Toaster />
-                </PrescriptionTemplateProvider>
-              </ConsultationProvider>
-            </VisitWorkflowProvider>
+            <ConsultationProvider>
+              <PrescriptionTemplateProvider>
+                <VisitWorkflowProvider>
+                  <SidebarProvider>
+                    <div className="flex h-screen bg-background">
+                      <AppSidebar />
+                      <div className="flex-1 flex flex-col overflow-hidden">
+                        <TopNavigation />
+                        <main className="flex-1 overflow-auto p-6">{children}</main>
+                      </div>
+                    </div>
+                  </SidebarProvider>
+                </VisitWorkflowProvider>
+              </PrescriptionTemplateProvider>
+            </ConsultationProvider>
           </DoctorProvider>
+          <Toaster position="top-right" />
         </ThemeProvider>
       </body>
     </html>
   )
 }
+
+export const metadata = {
+      generator: 'v0.dev'
+    };

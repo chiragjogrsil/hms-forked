@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,87 +9,45 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Download, Search, Trash2, Calendar, User } from "lucide-react"
 import { toast } from "sonner"
-
-interface Medicine {
-  id: string
-  medicine: string
-  dosage: string
-  frequency: string
-  duration: string
-  instructions: string
-  beforeAfterFood: string
-}
-
-interface Template {
-  id: string
-  name: string
-  description: string
-  department: string
-  type: "ayurvedic" | "allopathic"
-  prescriptionData: Medicine[]
-  createdAt: string
-  createdBy: string
-}
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
 
 interface LoadPrescriptionTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  prescriptionType: "ayurvedic" | "allopathic"
+  onLoad: (template: any) => void
   department: string
-  onLoadTemplate: (medicines: Medicine[]) => void
 }
 
 export function LoadPrescriptionTemplateModal({
   isOpen,
   onClose,
-  prescriptionType,
+  onLoad,
   department,
-  onLoadTemplate,
 }: LoadPrescriptionTemplateModalProps) {
-  const [templates, setTemplates] = useState<Template[]>([])
+  const { getTemplatesByDepartment, deleteTemplate } = usePrescriptionTemplates()
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
 
-  useEffect(() => {
-    if (isOpen) {
-      loadTemplates()
-    }
-  }, [isOpen, prescriptionType, department])
+  const templates = getTemplatesByDepartment(department)
 
-  const loadTemplates = () => {
-    try {
-      const savedTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
-      const filteredTemplates = savedTemplates.filter(
-        (template: Template) => template.type === prescriptionType && template.department === department,
-      )
-      setTemplates(filteredTemplates)
-    } catch (error) {
-      console.error("Error loading templates:", error)
-      setTemplates([])
-    }
-  }
-
-  const handleLoadTemplate = (template: Template) => {
-    if (!template.prescriptionData || template.prescriptionData.length === 0) {
+  const handleLoadTemplate = (template: any) => {
+    if (!template.ayurvedicPrescriptions && !template.allopathicPrescriptions) {
       toast.error("This template has no prescription data")
       return
     }
 
-    onLoadTemplate(template.prescriptionData)
+    onLoad({
+      ayurvedic: template.ayurvedicPrescriptions || [],
+      allopathic: template.allopathicPrescriptions || [],
+    })
     toast.success(`Template "${template.name}" loaded successfully`)
     onClose()
   }
 
   const handleDeleteTemplate = (templateId: string) => {
-    try {
-      const savedTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
-      const updatedTemplates = savedTemplates.filter((t: Template) => t.id !== templateId)
-      localStorage.setItem("prescriptionTemplates", JSON.stringify(updatedTemplates))
-      loadTemplates()
-      toast.success("Template deleted successfully")
-    } catch (error) {
-      toast.error("Error deleting template")
-    }
+    deleteTemplate(templateId)
+    setSelectedTemplate(null)
+    toast.success("Template deleted successfully")
   }
 
   const filteredTemplates = templates.filter(
@@ -104,7 +62,7 @@ export function LoadPrescriptionTemplateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Load {prescriptionType === "ayurvedic" ? "Ayurvedic" : "Allopathic"} Template
+            Load Prescription Template
           </DialogTitle>
         </DialogHeader>
 
@@ -135,7 +93,7 @@ export function LoadPrescriptionTemplateModal({
                 <p className="text-xs mt-1">
                   {searchTerm
                     ? "Try adjusting your search terms"
-                    : `No ${prescriptionType} templates available for ${department} department`}
+                    : `No prescription templates available for ${department} department`}
                 </p>
               </div>
             ) : (
@@ -154,7 +112,12 @@ export function LoadPrescriptionTemplateModal({
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-medium text-sm">{template.name}</h4>
                         <Badge variant="outline" className="text-xs">
-                          {template.prescriptionData?.length || 0} medicines
+                          {(template.ayurvedicPrescriptions?.length || 0) +
+                            (template.allopathicPrescriptions?.length || 0)}{" "}
+                          medicines
+                        </Badge>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {template.type}
                         </Badge>
                       </div>
 
@@ -196,16 +159,40 @@ export function LoadPrescriptionTemplateModal({
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Template Preview</h4>
                 <div className="max-h-32 overflow-y-auto space-y-1">
-                  {selectedTemplate.prescriptionData?.map((medicine, index) => (
-                    <div key={medicine.id} className="text-xs p-2 bg-gray-50 rounded">
-                      <span className="font-medium">
-                        {index + 1}. {medicine.medicine}
-                      </span>
-                      <span className="text-gray-600 ml-2">
-                        {medicine.dosage} - {medicine.frequency} - {medicine.duration}
-                      </span>
+                  {selectedTemplate.ayurvedicPrescriptions?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-green-700 mb-1">Ayurvedic Medicines:</p>
+                      {selectedTemplate.ayurvedicPrescriptions.map((medicine: any, index: number) => (
+                        <div key={index} className="text-xs p-2 bg-green-50 rounded mb-1">
+                          <span className="font-medium">
+                            {index + 1}. {medicine.medicineType || medicine.medicine}
+                          </span>
+                          <span className="text-gray-600 ml-2">
+                            {medicine.dosage} - {medicine.frequency} - {medicine.duration}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  )) || <p className="text-xs text-gray-500">No medicines in this template</p>}
+                  )}
+                  {selectedTemplate.allopathicPrescriptions?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-blue-700 mb-1">Allopathic Medicines:</p>
+                      {selectedTemplate.allopathicPrescriptions.map((medicine: any, index: number) => (
+                        <div key={index} className="text-xs p-2 bg-blue-50 rounded mb-1">
+                          <span className="font-medium">
+                            {index + 1}. {medicine.medicine}
+                          </span>
+                          <span className="text-gray-600 ml-2">
+                            {medicine.dosage} - {medicine.frequency} - {medicine.duration}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {!selectedTemplate.ayurvedicPrescriptions?.length &&
+                    !selectedTemplate.allopathicPrescriptions?.length && (
+                      <p className="text-xs text-gray-500">No medicines in this template</p>
+                    )}
                 </div>
               </div>
             </>

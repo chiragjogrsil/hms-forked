@@ -1,20 +1,17 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react"
 import { toast } from "sonner"
 
-interface ConsultationData {
-  id?: string
-  patientId?: string
-  patientName?: string
-  visitDate?: string
-  visitTime?: string
-  doctorId?: string
-  doctorName?: string
-  department?: string
-  consultationType?: string
-
-  // Clinical Data
+interface Consultation {
+  id: string
+  patientId: string
+  patientName: string
+  visitDate: string
+  visitTime: string
+  doctorName: string
+  department: string
+  consultationType: string
   chiefComplaint?: string
   historyOfPresentIllness?: string
   pastMedicalHistory?: string[]
@@ -22,151 +19,67 @@ interface ConsultationData {
   socialHistory?: string
   allergies?: string[]
   currentMedications?: string[]
-
-  // Physical Examination
-  vitals?: {
-    bloodPressure?: string
-    pulse?: string
-    temperature?: string
-    respiratoryRate?: string
-    spo2?: string
-    weight?: string
-    height?: string
-    bmi?: string
-  }
-
-  // System Review
-  systemReview?: {
-    cardiovascular?: string
-    respiratory?: string
-    gastrointestinal?: string
-    neurological?: string
-    musculoskeletal?: string
-    genitourinary?: string
-    endocrine?: string
-    dermatological?: string
-  }
-
-  // Clinical Assessment
   clinicalFindings?: string
-  provisionalDiagnosis?: string[]
-  differentialDiagnosis?: string[]
-
-  // Investigations
-  investigationsOrdered?: Array<{
-    id: string
-    category: string
-    test: string
-    urgency: string
-    notes?: string
-  }>
-
-  // Treatment Plan
-  prescriptions?: {
-    ayurvedic?: Array<{
-      id: string
-      medicine: string
-      dosage: string
-      frequency: string
-      duration: string
-      instructions: string
-      beforeAfterFood: string
-    }>
-    allopathic?: Array<{
-      id: string
-      medicine: string
-      dosage: string
-      frequency: string
-      duration: string
-      instructions: string
-      beforeAfterFood: string
-    }>
-  }
-
-  // Follow-up and Advice
-  advice?: string
-  followUpDate?: string
-  followUpInstructions?: string
-
-  // Administrative
-  consultationFee?: number
-  status?: "in-progress" | "completed" | "cancelled"
-  createdAt?: string
-  updatedAt?: string
-
-  // Additional Notes
   doctorNotes?: string
   privateNotes?: string
-
-  // Legacy fields for backward compatibility
-  clinicalNotes?: string
+  systemReview?: any
+  vitals?: any
+  provisionalDiagnosis?: string[]
   diagnosis?: string[]
+  prescriptions?: {
+    ayurvedic: any[]
+    allopathic: any[]
+  }
   ayurvedicAnalysis?: any
   ophthalmologyAnalysis?: any
-
-  // Additional appointment information
-  appointmentDate?: string
-  appointmentTime?: string
-
-  // Next steps data from complete visit modal
-  nextSteps?: {
-    labTests?: string[]
-    radiology?: string[]
-    procedures?: string[]
-    followUp?: {
-      date: Date
-      time: string
-      notes: string
-    }
-    nextStepsNotes?: string
-    urgentTests?: string[]
-    totalCost?: number
-  }
+  investigationsOrdered?: any[]
+  advice?: string
+  followUpInstructions?: string
+  consultationFee?: number
+  status: "in-progress" | "completed"
+  createdAt: string
+  updatedAt: string
+  nextSteps?: any
 }
 
 interface ConsultationContextType {
-  // Current consultation state
-  activeConsultation: ConsultationData | null
+  activeConsultation: Consultation | null
   isConsultationActive: boolean
   hasUnsavedChanges: boolean
-  isConsultationSaved: boolean
-
-  // Consultation management
-  startNewConsultation: (patientId: string, patientName: string, visitDate: string, consultationInfo?: any) => void
-  updateConsultationData: (updates: Partial<ConsultationData>) => void
+  consultationHistory: Consultation[]
+  startNewConsultation: (
+    patientId: string,
+    patientName: string,
+    visitDate: string,
+    options?: {
+      department?: string
+      consultationType?: string
+      doctorName?: string
+      appointmentDate?: string
+      appointmentTime?: string
+    },
+  ) => void
+  updateConsultationData: (updates: Partial<Consultation>) => void
   saveConsultation: () => Promise<boolean>
-  completeConsultation: (consultationData?: any) => void
+  completeConsultation: (finalData?: any) => Promise<boolean>
   completeVisit: () => Promise<boolean>
-  cancelConsultation: () => void
-  loadConsultation: (consultationId: string) => Promise<void>
-
-  // History management
-  consultationHistory: ConsultationData[]
-  getPatientConsultations: (patientId: string) => ConsultationData[]
-  getConsultationsByDate: (patientId: string, visitDate: string) => ConsultationData[]
-  searchConsultations: (query: string) => ConsultationData[]
-
-  // Utility functions
+  loadConsultation: (consultationId: string) => void
   resetConsultation: () => void
-  validateConsultation: () => { isValid: boolean; errors: string[] }
-  getConsultationSummary: () => string
-
-  // Visit management
-  hasInProgressConsultation: (patientId: string, visitDate: string) => boolean
-  getInProgressConsultation: (patientId: string, visitDate: string) => ConsultationData | null
-  loadInProgressConsultation: (patientId: string, visitDate: string) => Promise<void>
-  hasIncompleteVisits: (patientId: string) => ConsultationData[]
+  getPatientConsultations: (patientId: string) => Consultation[]
+  debugConsultationHistory: () => Consultation[]
+  hasInProgressConsultation: (patientId: string) => boolean
+  getInProgressConsultation: (patientId: string) => Consultation | null
+  loadInProgressConsultation: (patientId: string) => void
+  hasIncompleteVisits: (patientId: string) => Consultation[]
   completeIncompleteVisit: (consultationId: string) => Promise<boolean>
-
-  debugConsultationHistory: () => ConsultationData[]
 }
 
 const ConsultationContext = createContext<ConsultationContextType | undefined>(undefined)
 
-// Enhanced mock consultation history data with comprehensive test scenarios
-const mockConsultationHistory: ConsultationData[] = [
+// Mock consultation history with sample data
+const mockConsultationHistory: Consultation[] = [
   {
-    id: "CONS-P12345-2024-06-20-1718899200000",
+    id: "CONS-001-2024-06-20",
     patientId: "P12345",
     patientName: "John Doe",
     visitDate: "2024-06-20",
@@ -175,8 +88,8 @@ const mockConsultationHistory: ConsultationData[] = [
     department: "cardiology",
     consultationType: "followup",
     chiefComplaint: "Follow-up for hypertension management and chest discomfort",
-    clinicalNotes:
-      "Patient reports improved blood pressure control with current medication regimen. Occasional mild chest discomfort on exertion, no chest pain at rest. Compliance with medication is excellent. Patient has been following dietary recommendations and regular exercise routine. No shortness of breath or palpitations reported.",
+    clinicalFindings:
+      "Patient reports improved blood pressure control with current medication regimen. Occasional mild chest discomfort on exertion, no chest pain at rest. Compliance with medication is excellent. Patient has been following dietary recommendations and regular exercise routine. No shortness of breath or palpitations reported. Physical examination reveals normal heart sounds, no murmurs. Lungs clear bilaterally. No peripheral edema.",
     provisionalDiagnosis: ["Essential Hypertension - Well Controlled", "Atypical Chest Pain - Stable"],
     vitals: {
       bloodPressure: "128/82",
@@ -212,369 +125,250 @@ const mockConsultationHistory: ConsultationData[] = [
       ayurvedic: [],
     },
     advice:
-      "Continue current medication. Monitor blood pressure at home twice weekly. Follow low-sodium diet (<2g/day). Regular moderate exercise 30 minutes daily. Return if chest pain worsens or becomes frequent.",
+      "Continue current medication. Monitor blood pressure at home twice weekly. Follow low-sodium diet (<2g/day). Regular moderate exercise 30 minutes daily. Return if chest pain worsens.",
     followUpInstructions: "Follow-up in 4 weeks or sooner if symptoms worsen",
     status: "completed",
     createdAt: "2024-06-20T14:30:00.000Z",
     updatedAt: "2024-06-20T15:15:00.000Z",
   },
+  {
+    id: "CONS-002-2024-06-15",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-06-15",
+    visitTime: "10:15",
+    doctorName: "Dr. Priya Sharma",
+    department: "ayurveda",
+    consultationType: "routine",
+    chiefComplaint: "Digestive issues and stress management consultation",
+    clinicalFindings:
+      "Patient reports occasional indigestion, bloating after meals, and work-related stress affecting sleep quality. Seeking natural remedies for overall wellness and digestive health. Pulse examination reveals Vata-Pitta imbalance. Tongue examination shows mild coating indicating digestive fire (Agni) imbalance. Patient interested in Panchakarma therapy for detoxification.",
+    provisionalDiagnosis: [
+      "Ajirna (Digestive Imbalance)",
+      "Stress-related Vata Aggravation",
+      "Mandagni (Weak Digestive Fire)",
+    ],
+    vitals: {
+      bloodPressure: "125/80",
+      pulse: "70",
+      temperature: "98.2",
+      weight: "74.5",
+      height: "175",
+    },
+    prescriptions: {
+      allopathic: [],
+      ayurvedic: [
+        {
+          id: "1",
+          medicineType: "churna",
+          componentMedicines: ["Triphala"],
+          dosage: "1 tsp",
+          frequency: "Twice daily",
+          duration: "15 days",
+          instructions: "Mix with warm water, take on empty stomach",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "2",
+          medicineType: "ghrita",
+          componentMedicines: ["Brahmi Ghrita"],
+          dosage: "1/2 tsp",
+          frequency: "Once daily",
+          duration: "21 days",
+          instructions: "Take with warm milk before bedtime for stress relief",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "3",
+          medicineType: "churna",
+          componentMedicines: ["Hingvastak Churna"],
+          dosage: "1/4 tsp",
+          frequency: "After meals",
+          duration: "10 days",
+          instructions: "Mix with buttermilk for digestive support",
+          beforeAfterFood: "after",
+        },
+      ],
+    },
+    ayurvedicAnalysis: {
+      constitution: "Vata-Pitta",
+      currentImbalance: "Vata aggravated with Pitta secondary",
+      pulseFindings: "Vata pulse prominent, irregular rhythm",
+      tongueExamination: "Mild white coating, slightly dry",
+      digestiveFire: "Mandagni (irregular/weak)",
+      recommendations: [
+        "Follow Vata-pacifying diet",
+        "Regular meal timings",
+        "Avoid cold and raw foods",
+        "Practice Pranayama daily",
+        "Oil massage (Abhyanga) twice weekly",
+      ],
+    },
+    advice:
+      "Practice pranayama daily (Anulom-Vilom 10 minutes). Avoid spicy and fried foods. Follow regular meal timings. Warm water intake throughout the day.",
+    followUpInstructions: "Follow-up in 2 weeks to assess treatment response",
+    status: "completed",
+    createdAt: "2024-06-15T10:15:00.000Z",
+    updatedAt: "2024-06-15T11:00:00.000Z",
+  },
 ]
 
 export function ConsultationProvider({ children }: { children: ReactNode }) {
-  const [activeConsultation, setActiveConsultation] = useState<ConsultationData | null>(null)
-  const [consultationHistory, setConsultationHistory] = useState<ConsultationData[]>([])
+  const [activeConsultation, setActiveConsultation] = useState<Consultation | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [isConsultationSaved, setIsConsultationSaved] = useState(false)
+  const [consultationHistory, setConsultationHistory] = useState<Consultation[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("consultation-history")
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          return [...mockConsultationHistory, ...parsed]
+        } catch {
+          return mockConsultationHistory
+        }
+      }
+    }
+    return mockConsultationHistory
+  })
 
   // Use ref to prevent infinite loops during updates
   const isUpdatingRef = useRef(false)
 
-  // Load consultation history from localStorage on mount, with fallback to mock data
-  useEffect(() => {
-    const savedHistory = localStorage.getItem("consultation-history")
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory)
-        // Merge with mock data if no existing history for this patient
-        const hasPatientHistory = parsed.some((c: ConsultationData) => c.patientId === "P12345")
-        if (!hasPatientHistory) {
-          setConsultationHistory([...mockConsultationHistory, ...parsed])
-        } else {
-          setConsultationHistory(parsed)
-        }
-      } catch (error) {
-        console.error("Error loading consultation history:", error)
-        setConsultationHistory(mockConsultationHistory)
-      }
-    } else {
-      // First time - use mock data
-      setConsultationHistory(mockConsultationHistory)
-    }
-  }, [])
-
-  // Save consultation history to localStorage whenever it changes
-  useEffect(() => {
-    if (consultationHistory.length > 0) {
-      localStorage.setItem("consultation-history", JSON.stringify(consultationHistory))
-    }
-  }, [consultationHistory])
-
   const startNewConsultation = useCallback(
-    (patientId: string, patientName: string, visitDate: string, consultationInfo?: any) => {
-      const now = new Date()
-      const consultationDate = visitDate
-
-      // Check for existing in-progress consultation for this date
-      const existingConsultation = consultationHistory.find(
-        (consultation) =>
-          consultation.patientId === patientId &&
-          consultation.visitDate === visitDate &&
-          consultation.status === "in-progress",
-      )
-
-      if (existingConsultation) {
-        // Load existing consultation instead of creating new one
-        setActiveConsultation({ ...existingConsultation })
-        setHasUnsavedChanges(false)
-        setIsConsultationSaved(false)
-
-        toast.info("Loaded existing consultation", {
-          description: `Continuing consultation for ${new Date(visitDate).toLocaleDateString()}`,
-        })
-        return
-      }
-
-      const newConsultation: ConsultationData = {
-        id: `CONS-${patientId}-${visitDate}-${Date.now()}`,
+    (
+      patientId: string,
+      patientName: string,
+      visitDate: string,
+      options: {
+        department?: string
+        consultationType?: string
+        doctorName?: string
+        appointmentDate?: string
+        appointmentTime?: string
+      } = {},
+    ) => {
+      const newConsultation: Consultation = {
+        id: `CONS-${patientId}-${Date.now()}`,
         patientId,
         patientName,
-        visitDate: consultationDate,
-        visitTime: now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
-        doctorId: consultationInfo?.doctor || "DR001",
-        doctorName: consultationInfo?.doctorName || "Dr. Smith",
-        department: consultationInfo?.department || "general",
-        consultationType: consultationInfo?.consultationType || "routine",
-
-        // Store additional consultation info
-        chiefComplaint: consultationInfo?.chiefComplaint || "",
-        appointmentDate: consultationInfo?.appointmentDate || visitDate,
-        appointmentTime:
-          consultationInfo?.appointmentTime ||
-          now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
-
-        // Clinical Data
-        historyOfPresentIllness: "",
-        pastMedicalHistory: [],
-        familyHistory: "",
-        socialHistory: "",
-        allergies: [],
-        currentMedications: [],
-
-        // Physical Examination
-        vitals: {},
-
-        // System Review
-        systemReview: {},
-
-        // Clinical Assessment
-        clinicalFindings: "",
-        provisionalDiagnosis: [],
-        differentialDiagnosis: [],
-
-        // Investigations
-        investigationsOrdered: [],
-
-        // Treatment Plan
-        prescriptions: {
-          ayurvedic: [],
-          allopathic: [],
-        },
-
-        // Follow-up and Advice
-        advice: "",
-        followUpInstructions: "",
-
-        // Administrative
-        consultationFee: 0,
+        visitDate,
+        visitTime: options.appointmentTime || new Date().toLocaleTimeString("en-US", { hour12: false }),
+        doctorName: options.doctorName || "Dr. Smith",
+        department: options.department || "general",
+        consultationType: options.consultationType || "routine",
+        prescriptions: { ayurvedic: [], allopathic: [] },
         status: "in-progress",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-
-        // Additional Notes
-        doctorNotes: "",
-        privateNotes: "",
-
-        // Legacy fields for backward compatibility
-        clinicalNotes: "",
-        diagnosis: [],
-        ayurvedicAnalysis: {},
-        ophthalmologyAnalysis: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
 
       setActiveConsultation(newConsultation)
       setHasUnsavedChanges(false)
-      setIsConsultationSaved(false)
 
       toast.success("New consultation started", {
-        description: `Visit consultation for ${patientName} on ${new Date(consultationDate).toLocaleDateString()}`,
+        description: `Started consultation for ${patientName}`,
       })
     },
-    [consultationHistory],
+    [],
   )
 
-  const updateConsultationData = useCallback((updates: Partial<ConsultationData>) => {
-    // Prevent infinite loops during updates
+  const updateConsultationData = useCallback((updates: Partial<Consultation>) => {
     if (isUpdatingRef.current) return
 
     setActiveConsultation((prev) => {
       if (!prev) return null
 
       isUpdatingRef.current = true
-
-      const updated = {
-        ...prev,
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Reset the flag after a short delay
       setTimeout(() => {
         isUpdatingRef.current = false
       }, 100)
 
-      return updated
+      return {
+        ...prev,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      }
     })
-
     setHasUnsavedChanges(true)
-    setIsConsultationSaved(false)
   }, [])
 
   const saveConsultation = useCallback(async (): Promise<boolean> => {
     if (!activeConsultation) return false
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const updatedHistory = consultationHistory.map((c) => (c.id === activeConsultation.id ? activeConsultation : c))
 
-      const updatedConsultation = {
-        ...activeConsultation,
-        updatedAt: new Date().toISOString(),
+      if (!consultationHistory.find((c) => c.id === activeConsultation.id)) {
+        updatedHistory.push(activeConsultation)
       }
 
-      // Update or add to history (but keep as in-progress)
-      setConsultationHistory((prev) => {
-        const existingIndex = prev.findIndex((c) => c.id === updatedConsultation.id)
-        if (existingIndex >= 0) {
-          const newHistory = [...prev]
-          newHistory[existingIndex] = updatedConsultation
-          return newHistory
-        } else {
-          return [updatedConsultation, ...prev]
-        }
-      })
-
-      setActiveConsultation(updatedConsultation)
+      setConsultationHistory(updatedHistory)
+      localStorage.setItem(
+        "consultation-history",
+        JSON.stringify(updatedHistory.filter((c) => c.id !== "CONS-001-2024-06-20" && c.id !== "CONS-002-2024-06-15")),
+      )
       setHasUnsavedChanges(false)
-      setIsConsultationSaved(true)
 
       return true
     } catch (error) {
-      toast.error("Failed to save consultation", {
-        description: "Please try again",
-      })
+      console.error("Error saving consultation:", error)
+      toast.error("Failed to save consultation")
       return false
     }
-  }, [activeConsultation])
+  }, [activeConsultation, consultationHistory])
 
   const completeConsultation = useCallback(
-    (consultationData?: any) => {
-      if (!activeConsultation) return
+    async (finalData?: any): Promise<boolean> => {
+      if (!activeConsultation) return false
 
-      const completedConsultation = {
-        ...activeConsultation,
-        ...consultationData,
-        status: "completed" as const,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Update or add to history
-      setConsultationHistory((prev) => {
-        const existingIndex = prev.findIndex((c) => c.id === completedConsultation.id)
-        if (existingIndex >= 0) {
-          const newHistory = [...prev]
-          newHistory[existingIndex] = completedConsultation
-          return newHistory
-        } else {
-          return [completedConsultation, ...prev]
+      try {
+        const completedConsultation = {
+          ...activeConsultation,
+          ...finalData,
+          status: "completed" as const,
+          updatedAt: new Date().toISOString(),
         }
-      })
 
-      // Clear active consultation
-      setActiveConsultation(null)
-      setHasUnsavedChanges(false)
-      setIsConsultationSaved(false)
+        const updatedHistory = consultationHistory.map((c) =>
+          c.id === activeConsultation.id ? completedConsultation : c,
+        )
+
+        if (!consultationHistory.find((c) => c.id === activeConsultation.id)) {
+          updatedHistory.push(completedConsultation)
+        }
+
+        setConsultationHistory(updatedHistory)
+        localStorage.setItem(
+          "consultation-history",
+          JSON.stringify(
+            updatedHistory.filter((c) => c.id !== "CONS-001-2024-06-20" && c.id !== "CONS-002-2024-06-15"),
+          ),
+        )
+        setActiveConsultation(null)
+        setHasUnsavedChanges(false)
+
+        toast.success("Consultation completed successfully")
+        return true
+      } catch (error) {
+        console.error("Error completing consultation:", error)
+        toast.error("Failed to complete consultation")
+        return false
+      }
     },
-    [activeConsultation],
+    [activeConsultation, consultationHistory],
   )
 
   const completeVisit = useCallback(async (): Promise<boolean> => {
-    if (!activeConsultation) {
-      toast.error("No active consultation to complete")
-      return false
-    }
-
-    // Simple validation - just check if there's some content
-    const hasContent =
-      activeConsultation.chiefComplaint?.trim() ||
-      activeConsultation.clinicalNotes?.trim() ||
-      activeConsultation.provisionalDiagnosis?.length ||
-      activeConsultation.diagnosis?.length
-
-    if (!hasContent) {
-      toast.error("Cannot complete visit", {
-        description: "Please add some consultation details before completing",
-      })
-      return false
-    }
-
-    try {
-      // Show loading toast
-      const loadingToast = toast.loading("Completing visit...", {
-        description: "Saving consultation data and updating records",
-      })
-
-      // Simulate processing time
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Ensure the consultation is saved with all current data
-      const consultationToComplete = {
-        ...activeConsultation,
-        status: "completed" as const,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Save to history as completed
-      setConsultationHistory((prev) => {
-        const existingIndex = prev.findIndex((c) => c.id === consultationToComplete.id)
-        if (existingIndex >= 0) {
-          // Update existing consultation in history
-          const newHistory = [...prev]
-          newHistory[existingIndex] = consultationToComplete
-          return newHistory
-        } else {
-          // Add new consultation to history
-          return [consultationToComplete, ...prev]
-        }
-      })
-
-      // Clear active consultation
-      setActiveConsultation(null)
-      setHasUnsavedChanges(false)
-      setIsConsultationSaved(false)
-
-      // Dismiss loading toast
-      toast.dismiss(loadingToast)
-
-      // Show success toast with detailed information
-      toast.success("🎉 Visit completed successfully!", {
-        description: (
-          <div className="space-y-1">
-            <div className="font-medium">Consultation saved to patient history</div>
-            <div className="text-sm opacity-90">
-              Patient: {consultationToComplete.patientName}
-              <br />
-              Date: {new Date(consultationToComplete.visitDate!).toLocaleDateString()}
-              <br />
-              Department: {consultationToComplete.department}
-              <br />
-              Doctor: {consultationToComplete.doctorName}
-            </div>
-          </div>
-        ),
-        duration: 6000,
-      })
-
-      return true
-    } catch (error) {
-      console.error("Error completing visit:", error)
-      toast.error("Failed to complete visit", {
-        description: "Please try again",
-      })
-      return false
-    }
-  }, [activeConsultation])
-
-  const cancelConsultation = useCallback(() => {
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm("You have unsaved changes. Are you sure you want to cancel this consultation?")
-      if (!confirmed) return
-    }
-
-    setActiveConsultation(null)
-    setHasUnsavedChanges(false)
-    setIsConsultationSaved(false)
-
-    toast.info("Consultation cancelled")
-  }, [hasUnsavedChanges])
+    return await completeConsultation()
+  }, [completeConsultation])
 
   const loadConsultation = useCallback(
-    async (consultationId: string) => {
+    (consultationId: string) => {
       const consultation = consultationHistory.find((c) => c.id === consultationId)
       if (consultation) {
-        if (consultation.status === "completed") {
-          toast.error("Cannot edit completed visit", {
-            description: "This visit has been completed and moved to history",
-          })
-          return
-        }
-
         setActiveConsultation({ ...consultation })
         setHasUnsavedChanges(false)
-        setIsConsultationSaved(false)
-
-        toast.success("Consultation loaded", {
-          description: `Visit from ${new Date(consultation.visitDate!).toLocaleDateString()}`,
-        })
+        toast.success("Consultation loaded")
       }
     },
     [consultationHistory],
@@ -583,133 +377,47 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
   const resetConsultation = useCallback(() => {
     setActiveConsultation(null)
     setHasUnsavedChanges(false)
-    setIsConsultationSaved(false)
   }, [])
-
-  const validateConsultation = useCallback(() => {
-    if (!activeConsultation) {
-      return { isValid: false, errors: ["No active consultation"] }
-    }
-
-    const errors: string[] = []
-
-    // Make validation less strict - only require basic information
-    if (!activeConsultation.chiefComplaint?.trim() && !activeConsultation.clinicalNotes?.trim()) {
-      errors.push("Either chief complaint or clinical notes is required")
-    }
-
-    // Allow completion even without diagnosis if there are clinical notes
-    const hasAnyDiagnosis =
-      activeConsultation.provisionalDiagnosis?.length ||
-      activeConsultation.diagnosis?.length ||
-      activeConsultation.clinicalNotes?.trim()
-
-    if (!hasAnyDiagnosis) {
-      errors.push("Please add clinical notes, diagnosis, or consultation details")
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    }
-  }, [activeConsultation])
 
   const getPatientConsultations = useCallback(
     (patientId: string) => {
-      return consultationHistory
-        .filter((c) => c.patientId === patientId)
-        .sort((a, b) => new Date(b.visitDate!).getTime() - new Date(a.visitDate!).getTime())
+      return consultationHistory.filter((c) => c.patientId === patientId)
     },
     [consultationHistory],
   )
 
-  const getConsultationsByDate = useCallback(
-    (patientId: string, visitDate: string) => {
-      return consultationHistory
-        .filter((c) => c.patientId === patientId && c.visitDate === visitDate)
-        .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
-    },
-    [consultationHistory],
-  )
-
-  const searchConsultations = useCallback(
-    (query: string) => {
-      const lowercaseQuery = query.toLowerCase()
-      return consultationHistory.filter(
-        (c) =>
-          c.patientName?.toLowerCase().includes(lowercaseQuery) ||
-          c.chiefComplaint?.toLowerCase().includes(lowercaseQuery) ||
-          c.provisionalDiagnosis?.some((d) => d.toLowerCase().includes(lowercaseQuery)) ||
-          c.diagnosis?.some((d) => d.toLowerCase().includes(lowercaseQuery)) ||
-          c.visitDate?.includes(query),
-      )
-    },
-    [consultationHistory],
-  )
-
-  const getConsultationSummary = useCallback(() => {
-    if (!activeConsultation) return ""
-
-    const { patientName, visitDate, chiefComplaint, provisionalDiagnosis, diagnosis } = activeConsultation
-    const diagnosisList = provisionalDiagnosis?.length ? provisionalDiagnosis : diagnosis || []
-    return `${patientName} - ${new Date(visitDate!).toLocaleDateString()} - ${chiefComplaint} - ${diagnosisList.join(", ")}`
-  }, [activeConsultation])
+  const debugConsultationHistory = useCallback(() => {
+    return consultationHistory
+  }, [consultationHistory])
 
   const hasInProgressConsultation = useCallback(
-    (patientId: string, visitDate: string): boolean => {
-      return consultationHistory.some(
-        (consultation) =>
-          consultation.patientId === patientId &&
-          consultation.visitDate === visitDate &&
-          consultation.status === "in-progress",
-      )
+    (patientId: string) => {
+      return consultationHistory.some((c) => c.patientId === patientId && c.status === "in-progress")
     },
     [consultationHistory],
   )
 
   const getInProgressConsultation = useCallback(
-    (patientId: string, visitDate: string): ConsultationData | null => {
-      return (
-        consultationHistory.find(
-          (consultation) =>
-            consultation.patientId === patientId &&
-            consultation.visitDate === visitDate &&
-            consultation.status === "in-progress",
-        ) || null
-      )
+    (patientId: string) => {
+      return consultationHistory.find((c) => c.patientId === patientId && c.status === "in-progress") || null
     },
     [consultationHistory],
   )
 
   const loadInProgressConsultation = useCallback(
-    async (patientId: string, visitDate: string) => {
-      const consultation = consultationHistory.find(
-        (consultation) =>
-          consultation.patientId === patientId &&
-          consultation.visitDate === visitDate &&
-          consultation.status === "in-progress",
-      )
-
+    (patientId: string) => {
+      const consultation = getInProgressConsultation(patientId)
       if (consultation) {
-        setActiveConsultation({ ...consultation })
+        setActiveConsultation(consultation)
         setHasUnsavedChanges(false)
-        setIsConsultationSaved(false)
-
-        toast.success("Consultation loaded", {
-          description: `Continuing visit from ${new Date(consultation.visitDate!).toLocaleDateString()}`,
-        })
-      } else {
-        toast.error("No in-progress consultation found for this date")
       }
     },
-    [consultationHistory],
+    [getInProgressConsultation],
   )
 
   const hasIncompleteVisits = useCallback(
-    (patientId: string): ConsultationData[] => {
-      return consultationHistory.filter(
-        (consultation) => consultation.patientId === patientId && consultation.status === "in-progress",
-      )
+    (patientId: string) => {
+      return consultationHistory.filter((c) => c.patientId === patientId && c.status === "in-progress")
     },
     [consultationHistory],
   )
@@ -726,91 +434,49 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
           updatedAt: new Date().toISOString(),
         }
 
-        setConsultationHistory((prev) => {
-          const existingIndex = prev.findIndex((c) => c.id === consultationId)
-          if (existingIndex >= 0) {
-            const newHistory = [...prev]
-            newHistory[existingIndex] = completedConsultation
-            return newHistory
-          }
-          return prev
-        })
+        const updatedHistory = consultationHistory.map((c) => (c.id === consultationId ? completedConsultation : c))
 
-        toast.success("Previous visit completed", {
-          description: `Visit from ${new Date(consultation.visitDate!).toLocaleDateString()} has been completed`,
-        })
+        setConsultationHistory(updatedHistory)
+        localStorage.setItem(
+          "consultation-history",
+          JSON.stringify(
+            updatedHistory.filter((c) => c.id !== "CONS-001-2024-06-20" && c.id !== "CONS-002-2024-06-15"),
+          ),
+        )
 
+        toast.success("Visit completed successfully")
         return true
       } catch (error) {
-        toast.error("Failed to complete previous visit")
+        console.error("Error completing visit:", error)
+        toast.error("Failed to complete visit")
         return false
       }
     },
     [consultationHistory],
   )
 
-  const debugConsultationHistory = useCallback(() => {
-    console.log("Current consultation history:", consultationHistory)
-    console.log("Active consultation:", activeConsultation)
-    return consultationHistory
-  }, [consultationHistory, activeConsultation])
+  const value = {
+    activeConsultation,
+    isConsultationActive: !!activeConsultation,
+    hasUnsavedChanges,
+    consultationHistory,
+    startNewConsultation,
+    updateConsultationData,
+    saveConsultation,
+    completeConsultation,
+    completeVisit,
+    loadConsultation,
+    resetConsultation,
+    getPatientConsultations,
+    debugConsultationHistory,
+    hasInProgressConsultation,
+    getInProgressConsultation,
+    loadInProgressConsultation,
+    hasIncompleteVisits,
+    completeIncompleteVisit,
+  }
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useCallback(
-    () => ({
-      activeConsultation,
-      isConsultationActive: !!activeConsultation,
-      hasUnsavedChanges,
-      isConsultationSaved,
-      startNewConsultation,
-      updateConsultationData,
-      saveConsultation,
-      completeConsultation,
-      completeVisit,
-      cancelConsultation,
-      loadConsultation,
-      consultationHistory,
-      getPatientConsultations,
-      getConsultationsByDate,
-      searchConsultations,
-      resetConsultation,
-      validateConsultation,
-      getConsultationSummary,
-      hasInProgressConsultation,
-      getInProgressConsultation,
-      loadInProgressConsultation,
-      hasIncompleteVisits,
-      completeIncompleteVisit,
-      debugConsultationHistory,
-    }),
-    [
-      activeConsultation,
-      hasUnsavedChanges,
-      isConsultationSaved,
-      consultationHistory,
-      startNewConsultation,
-      updateConsultationData,
-      saveConsultation,
-      completeConsultation,
-      completeVisit,
-      cancelConsultation,
-      loadConsultation,
-      getPatientConsultations,
-      getConsultationsByDate,
-      searchConsultations,
-      resetConsultation,
-      validateConsultation,
-      getConsultationSummary,
-      hasInProgressConsultation,
-      getInProgressConsultation,
-      loadInProgressConsultation,
-      hasIncompleteVisits,
-      completeIncompleteVisit,
-      debugConsultationHistory,
-    ],
-  )
-
-  return <ConsultationContext.Provider value={contextValue()}>{children}</ConsultationContext.Provider>
+  return <ConsultationContext.Provider value={value}>{children}</ConsultationContext.Provider>
 }
 
 export function useConsultation() {

@@ -9,29 +9,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { Save, Package } from "lucide-react"
 import { toast } from "sonner"
 
-interface Medicine {
-  id: string
-  medicine: string
-  dosage: string
-  frequency: string
-  duration: string
-  instructions: string
-  beforeAfterFood: string
-}
-
 interface SavePrescriptionTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  prescriptionData: Medicine[]
-  prescriptionType: "ayurvedic" | "allopathic"
+  onSave: (templateData: any) => void
+  ayurvedicPrescriptions: any[]
+  allopathicPrescriptions: any[]
   department: string
 }
 
 export function SavePrescriptionTemplateModal({
   isOpen,
   onClose,
-  prescriptionData = [],
-  prescriptionType,
+  onSave,
+  ayurvedicPrescriptions = [],
+  allopathicPrescriptions = [],
   department,
 }: SavePrescriptionTemplateModalProps) {
   const [templateName, setTemplateName] = useState("")
@@ -43,36 +35,34 @@ export function SavePrescriptionTemplateModal({
       return
     }
 
-    if (!prescriptionData || prescriptionData.length === 0) {
+    if (ayurvedicPrescriptions.length === 0 && allopathicPrescriptions.length === 0) {
       toast.error("No prescription data to save")
       return
     }
 
-    // Here you would typically save to a backend or local storage
-    // For now, we'll just show a success message
     const templateData = {
-      id: `template_${Date.now()}`,
       name: templateName.trim(),
       description: description.trim(),
       department,
-      type: prescriptionType,
-      prescriptionData,
-      createdAt: new Date(),
+      type:
+        ayurvedicPrescriptions.length > 0 && allopathicPrescriptions.length > 0
+          ? "mixed"
+          : ayurvedicPrescriptions.length > 0
+            ? "ayurvedic"
+            : "allopathic",
+      ayurvedicPrescriptions,
+      allopathicPrescriptions,
       createdBy: "Current Doctor", // This would come from auth context
     }
 
-    // Save to localStorage for demo purposes
-    const existingTemplates = JSON.parse(localStorage.getItem("prescriptionTemplates") || "[]")
-    existingTemplates.push(templateData)
-    localStorage.setItem("prescriptionTemplates", JSON.stringify(existingTemplates))
-
+    onSave(templateData)
     toast.success("Template saved successfully!")
     setTemplateName("")
     setDescription("")
     onClose()
   }
 
-  const totalPrescriptions = prescriptionData?.length || 0
+  const totalPrescriptions = ayurvedicPrescriptions.length + allopathicPrescriptions.length
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -80,7 +70,7 @@ export function SavePrescriptionTemplateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Save {prescriptionType === "ayurvedic" ? "Ayurvedic" : "Allopathic"} Template
+            Save Prescription Template
           </DialogTitle>
         </DialogHeader>
 
@@ -90,13 +80,16 @@ export function SavePrescriptionTemplateModal({
             <h4 className="font-medium mb-2">Template Summary</h4>
             <div className="text-sm text-gray-600 space-y-1">
               <p>
-                Department: <span className="font-medium">{department}</span>
-              </p>
-              <p>
-                Type: <span className="font-medium capitalize">{prescriptionType}</span>
+                Department: <span className="font-medium capitalize">{department}</span>
               </p>
               <p>
                 Total Medicines: <span className="font-medium">{totalPrescriptions}</span>
+              </p>
+              <p>
+                Ayurvedic: <span className="font-medium">{ayurvedicPrescriptions.length}</span>
+              </p>
+              <p>
+                Allopathic: <span className="font-medium">{allopathicPrescriptions.length}</span>
               </p>
             </div>
           </div>
@@ -106,7 +99,7 @@ export function SavePrescriptionTemplateModal({
             <Label htmlFor="templateName">Template Name *</Label>
             <Input
               id="templateName"
-              placeholder={`e.g., ${prescriptionType === "ayurvedic" ? "Digestive Health Protocol" : "Diabetes Management Protocol"}`}
+              placeholder="e.g., Diabetes Management Protocol"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
             />
