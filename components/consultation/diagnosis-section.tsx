@@ -1,169 +1,199 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, X, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, X, Search } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useConsultation, type Diagnosis } from "@/contexts/consultation-context"
-import { Textarea } from "@/components/ui/textarea"
+import { useDoctorContext } from "@/contexts/doctor-context"
 
-// Department-specific common diagnoses
+// Common diagnoses by department
 const commonDiagnoses = {
   "General Medicine": [
-    { name: "Viral Fever", icd10Code: "R50.9" },
-    { name: "Upper Respiratory Tract Infection", icd10Code: "J06.9" },
-    { name: "Gastroenteritis", icd10Code: "K59.1" },
-    { name: "Hypertension", icd10Code: "I10" },
-    { name: "Diabetes Mellitus Type 2", icd10Code: "E11.9" },
-    { name: "Headache", icd10Code: "R51" },
-    { name: "Back Pain", icd10Code: "M54.9" },
-    { name: "Anxiety Disorder", icd10Code: "F41.9" },
+    { code: "A09", name: "Viral fever" },
+    { code: "J00", name: "Common cold" },
+    { code: "K59.1", name: "Diarrhea" },
+    { code: "G44.2", name: "Tension headache" },
+    { code: "M79.3", name: "Body aches" },
+    { code: "R50", name: "Fever" },
+    { code: "J06.9", name: "Upper respiratory infection" },
+    { code: "K30", name: "Gastritis" },
   ],
   Cardiology: [
-    { name: "Essential Hypertension", icd10Code: "I10" },
-    { name: "Coronary Artery Disease", icd10Code: "I25.9" },
-    { name: "Atrial Fibrillation", icd10Code: "I48" },
-    { name: "Heart Failure", icd10Code: "I50.9" },
-    { name: "Chest Pain", icd10Code: "R06.02" },
-    { name: "Dyslipidemia", icd10Code: "E78.5" },
-  ],
-  Orthopedics: [
-    { name: "Osteoarthritis", icd10Code: "M19.9" },
-    { name: "Fracture", icd10Code: "S72.9" },
-    { name: "Lower Back Pain", icd10Code: "M54.5" },
-    { name: "Shoulder Pain", icd10Code: "M25.511" },
-    { name: "Knee Pain", icd10Code: "M25.561" },
-    { name: "Sprain", icd10Code: "S93.4" },
-  ],
-  Neurology: [
-    { name: "Migraine", icd10Code: "G43.9" },
-    { name: "Epilepsy", icd10Code: "G40.9" },
-    { name: "Stroke", icd10Code: "I64" },
-    { name: "Peripheral Neuropathy", icd10Code: "G62.9" },
-    { name: "Parkinson Disease", icd10Code: "G20" },
-    { name: "Dementia", icd10Code: "F03.90" },
-  ],
-  Pediatrics: [
-    { name: "Viral Fever", icd10Code: "R50.9" },
-    { name: "Acute Bronchitis", icd10Code: "J20.9" },
-    { name: "Gastroenteritis", icd10Code: "K59.1" },
-    { name: "Asthma", icd10Code: "J45.9" },
-    { name: "Allergic Rhinitis", icd10Code: "J30.9" },
-    { name: "Growth Delay", icd10Code: "R62.50" },
-  ],
-  Gynecology: [
-    { name: "Menstrual Irregularities", icd10Code: "N92.6" },
-    { name: "PCOS", icd10Code: "E28.2" },
-    { name: "UTI", icd10Code: "N39.0" },
-    { name: "Pregnancy", icd10Code: "Z34.90" },
-    { name: "Menopause", icd10Code: "N95.1" },
-    { name: "Pelvic Pain", icd10Code: "R10.2" },
+    { code: "I20.9", name: "Angina pectoris" },
+    { code: "I10", name: "Hypertension" },
+    { code: "I25.9", name: "Coronary artery disease" },
+    { code: "I48", name: "Atrial fibrillation" },
+    { code: "I50.9", name: "Heart failure" },
+    { code: "I21.9", name: "Myocardial infarction" },
   ],
   Dermatology: [
-    { name: "Eczema", icd10Code: "L30.9" },
-    { name: "Acne", icd10Code: "L70.9" },
-    { name: "Psoriasis", icd10Code: "L40.9" },
-    { name: "Fungal Infection", icd10Code: "B35.9" },
-    { name: "Allergic Dermatitis", icd10Code: "L23.9" },
-    { name: "Hair Loss", icd10Code: "L65.9" },
+    { code: "L20.9", name: "Eczema" },
+    { code: "L40.9", name: "Psoriasis" },
+    { code: "L70.0", name: "Acne vulgaris" },
+    { code: "B35.9", name: "Fungal infection" },
+    { code: "L30.9", name: "Dermatitis" },
+    { code: "L50.9", name: "Urticaria" },
+  ],
+  Orthopedics: [
+    { code: "M54.5", name: "Low back pain" },
+    { code: "M25.50", name: "Joint pain" },
+    { code: "S72.9", name: "Fracture" },
+    { code: "M79.1", name: "Muscle pain" },
+    { code: "M17.9", name: "Osteoarthritis of knee" },
+    { code: "M75.3", name: "Shoulder impingement" },
+  ],
+  Pediatrics: [
+    { code: "A09", name: "Viral gastroenteritis" },
+    { code: "J00", name: "Common cold" },
+    { code: "R50", name: "Fever" },
+    { code: "L20.9", name: "Atopic dermatitis" },
+    { code: "J06.9", name: "Upper respiratory infection" },
+    { code: "K59.1", name: "Diarrhea" },
+  ],
+  Gynecology: [
+    { code: "N94.6", name: "Dysmenorrhea" },
+    { code: "N39.0", name: "Urinary tract infection" },
+    { code: "N76.0", name: "Vaginal infection" },
+    { code: "N80.9", name: "Endometriosis" },
+    { code: "N92.0", name: "Menorrhagia" },
+  ],
+  ENT: [
+    { code: "H66.9", name: "Otitis media" },
+    { code: "J02.9", name: "Pharyngitis" },
+    { code: "J32.9", name: "Sinusitis" },
+    { code: "H93.1", name: "Tinnitus" },
+    { code: "J35.9", name: "Tonsillitis" },
   ],
   Ophthalmology: [
-    { name: "Refractive Error", icd10Code: "H52.9" },
-    { name: "Conjunctivitis", icd10Code: "H10.9" },
-    { name: "Cataract", icd10Code: "H25.9" },
-    { name: "Glaucoma", icd10Code: "H40.9" },
-    { name: "Dry Eyes", icd10Code: "H04.12" },
-    { name: "Diabetic Retinopathy", icd10Code: "E11.319" },
+    { code: "H52.4", name: "Refractive error" },
+    { code: "H10.9", name: "Conjunctivitis" },
+    { code: "H40.9", name: "Glaucoma" },
+    { code: "H25.9", name: "Cataract" },
+    { code: "H35.9", name: "Retinal disorder" },
   ],
   Ayurveda: [
-    { name: "Vata Dosha Imbalance", icd10Code: "Z51.89" },
-    { name: "Pitta Dosha Imbalance", icd10Code: "Z51.89" },
-    { name: "Kapha Dosha Imbalance", icd10Code: "Z51.89" },
-    { name: "Ama (Toxins)", icd10Code: "Z51.89" },
-    { name: "Agni Mandya (Weak Digestion)", icd10Code: "K30" },
-    { name: "Stress Related Disorders", icd10Code: "F43.9" },
+    { code: "AY001", name: "Vata Dosha Imbalance" },
+    { code: "AY002", name: "Pitta Dosha Imbalance" },
+    { code: "AY003", name: "Kapha Dosha Imbalance" },
+    { code: "AY004", name: "Ama (Toxins)" },
+    { code: "AY005", name: "Agni Mandya (Weak Digestion)" },
+    { code: "AY006", name: "Ojas Kshaya (Low Immunity)" },
   ],
 }
 
 export function DiagnosisSection() {
-  const { currentConsultation, updateConsultation } = useConsultation()
+  const { consultationData, updateConsultationData } = useConsultation()
+  const { selectedDoctor } = useDoctorContext()
   const [searchTerm, setSearchTerm] = useState("")
-  const [customDiagnosis, setCustomDiagnosis] = useState("")
-  const [customIcd10, setCustomIcd10] = useState("")
-  const [customNotes, setCustomNotes] = useState("")
+  const [newDiagnosis, setNewDiagnosis] = useState({
+    code: "",
+    name: "",
+    type: "primary" as "primary" | "secondary",
+    notes: "",
+  })
 
-  if (!currentConsultation) return null
-
-  const department = currentConsultation.department
-  const departmentDiagnoses = commonDiagnoses[department as keyof typeof commonDiagnoses] || []
+  const currentDepartment = selectedDoctor?.department || "General Medicine"
+  const departmentDiagnoses =
+    commonDiagnoses[currentDepartment as keyof typeof commonDiagnoses] || commonDiagnoses["General Medicine"]
 
   const filteredDiagnoses = departmentDiagnoses.filter(
     (diagnosis) =>
       diagnosis.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      diagnosis.icd10Code.toLowerCase().includes(searchTerm.toLowerCase()),
+      diagnosis.code.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const addDiagnosis = (diagnosis: { name: string; icd10Code?: string }, notes?: string) => {
-    const newDiagnosis: Diagnosis = {
-      id: `diag-${Date.now()}`,
+  const addDiagnosis = (diagnosis: { code?: string; name: string }) => {
+    const newDiag: Diagnosis = {
+      id: Date.now().toString(),
+      code: diagnosis.code,
       name: diagnosis.name,
-      icd10Code: diagnosis.icd10Code,
-      notes,
+      type: consultationData.diagnoses.length === 0 ? "primary" : "secondary",
     }
 
-    const updatedDiagnoses = [...currentConsultation.diagnoses, newDiagnosis]
-    updateConsultation({ diagnoses: updatedDiagnoses })
-  }
-
-  const removeDiagnosis = (diagnosisId: string) => {
-    const updatedDiagnoses = currentConsultation.diagnoses.filter((d) => d.id !== diagnosisId)
-    updateConsultation({ diagnoses: updatedDiagnoses })
+    updateConsultationData({
+      diagnoses: [...consultationData.diagnoses, newDiag],
+    })
   }
 
   const addCustomDiagnosis = () => {
-    if (!customDiagnosis.trim()) return
+    if (!newDiagnosis.name.trim()) return
 
-    addDiagnosis({ name: customDiagnosis, icd10Code: customIcd10 || undefined }, customNotes || undefined)
+    const diagnosis: Diagnosis = {
+      id: Date.now().toString(),
+      code: newDiagnosis.code || undefined,
+      name: newDiagnosis.name,
+      type: newDiagnosis.type,
+      notes: newDiagnosis.notes || undefined,
+    }
 
-    setCustomDiagnosis("")
-    setCustomIcd10("")
-    setCustomNotes("")
+    updateConsultationData({
+      diagnoses: [...consultationData.diagnoses, diagnosis],
+    })
+
+    setNewDiagnosis({
+      code: "",
+      name: "",
+      type: "primary",
+      notes: "",
+    })
   }
 
-  const isAlreadyAdded = (diagnosisName: string) => {
-    return currentConsultation.diagnoses.some((d) => d.name === diagnosisName)
+  const removeDiagnosis = (id: string) => {
+    updateConsultationData({
+      diagnoses: consultationData.diagnoses.filter((d) => d.id !== id),
+    })
+  }
+
+  const updateDiagnosisType = (id: string, type: "primary" | "secondary") => {
+    updateConsultationData({
+      diagnoses: consultationData.diagnoses.map((d) => (d.id === id ? { ...d, type } : d)),
+    })
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <span>Diagnosis</span>
-          <Badge variant="secondary">{currentConsultation.diagnoses.length}</Badge>
-        </CardTitle>
+        <CardTitle>Diagnosis</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Current Diagnoses */}
-        {currentConsultation.diagnoses.length > 0 && (
-          <div className="space-y-2">
+        {consultationData.diagnoses.length > 0 && (
+          <div className="space-y-3">
             <Label className="text-sm font-medium">Current Diagnoses</Label>
-            <div className="flex flex-wrap gap-2">
-              {currentConsultation.diagnoses.map((diagnosis) => (
-                <Badge key={diagnosis.id} variant="default" className="flex items-center gap-1">
-                  <span>{diagnosis.name}</span>
-                  {diagnosis.icd10Code && <span className="text-xs opacity-75">({diagnosis.icd10Code})</span>}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => removeDiagnosis(diagnosis.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
+            <div className="space-y-2">
+              {consultationData.diagnoses.map((diagnosis) => (
+                <div key={diagnosis.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={diagnosis.type === "primary" ? "default" : "secondary"}>{diagnosis.type}</Badge>
+                      <span className="font-medium">{diagnosis.name}</span>
+                      {diagnosis.code && <span className="text-sm text-muted-foreground">({diagnosis.code})</span>}
+                    </div>
+                    {diagnosis.notes && <p className="text-sm text-muted-foreground mt-1">{diagnosis.notes}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={diagnosis.type}
+                      onValueChange={(value: "primary" | "secondary") => updateDiagnosisType(diagnosis.id, value)}
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Primary</SelectItem>
+                        <SelectItem value="secondary">Secondary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="sm" onClick={() => removeDiagnosis(diagnosis.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -171,81 +201,89 @@ export function DiagnosisSection() {
 
         {/* Common Diagnoses for Department */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Common Diagnoses - {department}</Label>
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search diagnoses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
+          <Label className="text-sm font-medium">Common Diagnoses - {currentDepartment}</Label>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search diagnoses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-            {filteredDiagnoses.map((diagnosis, index) => (
+            {filteredDiagnoses.map((diagnosis) => (
               <Button
-                key={index}
+                key={`${diagnosis.code}-${diagnosis.name}`}
                 variant="outline"
-                size="sm"
-                className={`justify-start h-auto p-3 ${
-                  isAlreadyAdded(diagnosis.name) ? "bg-green-50 border-green-200 text-green-700" : "hover:bg-muted"
-                }`}
-                onClick={() => !isAlreadyAdded(diagnosis.name) && addDiagnosis(diagnosis)}
-                disabled={isAlreadyAdded(diagnosis.name)}
+                className="justify-start h-auto p-3 text-left bg-transparent"
+                onClick={() => addDiagnosis(diagnosis)}
               >
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{diagnosis.name}</span>
-                  <span className="text-xs text-muted-foreground">{diagnosis.icd10Code}</span>
+                <div>
+                  <div className="font-medium">{diagnosis.name}</div>
+                  <div className="text-sm text-muted-foreground">{diagnosis.code}</div>
                 </div>
-                {!isAlreadyAdded(diagnosis.name) && <Plus className="h-4 w-4 ml-auto" />}
               </Button>
             ))}
           </div>
         </div>
 
         {/* Add Custom Diagnosis */}
-        <div className="space-y-3 border-t pt-4">
+        <div className="space-y-3">
           <Label className="text-sm font-medium">Add Custom Diagnosis</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="custom-diagnosis" className="text-xs">
-                Diagnosis Name *
-              </Label>
+              <Label htmlFor="diagnosis-code">ICD-10 Code (Optional)</Label>
               <Input
-                id="custom-diagnosis"
+                id="diagnosis-code"
+                placeholder="e.g., A09"
+                value={newDiagnosis.code}
+                onChange={(e) => setNewDiagnosis((prev) => ({ ...prev, code: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="diagnosis-name">Diagnosis Name *</Label>
+              <Input
+                id="diagnosis-name"
                 placeholder="Enter diagnosis name"
-                value={customDiagnosis}
-                onChange={(e) => setCustomDiagnosis(e.target.value)}
+                value={newDiagnosis.name}
+                onChange={(e) => setNewDiagnosis((prev) => ({ ...prev, name: e.target.value }))}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="diagnosis-type">Type</Label>
+              <Select
+                value={newDiagnosis.type}
+                onValueChange={(value: "primary" | "secondary") =>
+                  setNewDiagnosis((prev) => ({ ...prev, type: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="primary">Primary</SelectItem>
+                  <SelectItem value="secondary">Secondary</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="custom-icd10" className="text-xs">
-                ICD-10 Code
-              </Label>
+              <Label htmlFor="diagnosis-notes">Notes (Optional)</Label>
               <Input
-                id="custom-icd10"
-                placeholder="Enter ICD-10 code"
-                value={customIcd10}
-                onChange={(e) => setCustomIcd10(e.target.value)}
+                id="diagnosis-notes"
+                placeholder="Additional notes"
+                value={newDiagnosis.notes}
+                onChange={(e) => setNewDiagnosis((prev) => ({ ...prev, notes: e.target.value }))}
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="custom-notes" className="text-xs">
-              Notes
-            </Label>
-            <Textarea
-              id="custom-notes"
-              placeholder="Additional notes for this diagnosis"
-              value={customNotes}
-              onChange={(e) => setCustomNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
-          <Button onClick={addCustomDiagnosis} disabled={!customDiagnosis.trim()} className="w-full">
+
+          <Button onClick={addCustomDiagnosis} disabled={!newDiagnosis.name.trim()} className="w-full">
             <Plus className="h-4 w-4 mr-2" />
             Add Custom Diagnosis
           </Button>

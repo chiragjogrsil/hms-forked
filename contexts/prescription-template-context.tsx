@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import { toast } from "sonner"
+import type { Prescription } from "@/contexts/consultation-context"
 
 export interface PrescriptionTemplate {
   id: string
@@ -9,37 +11,20 @@ export interface PrescriptionTemplate {
   description?: string
   department: string
   type: "allopathic" | "ayurvedic" | "mixed"
-  allopathicMedicines: Array<{
-    medicine: string
-    dosage: string
-    frequency: string
-    duration: string
-    instructions?: string
-    beforeFood?: boolean
-    afterFood?: boolean
-  }>
-  ayurvedicMedicines: Array<{
-    medicine: string
-    dosage: string
-    frequency: string
-    duration: string
-    instructions?: string
-    beforeFood?: boolean
-    afterFood?: boolean
-  }>
+  prescriptions: Prescription[]
   createdAt: string
   updatedAt: string
   createdBy: string
+  tags?: string[]
 }
 
 interface PrescriptionTemplateContextType {
   templates: PrescriptionTemplate[]
-  saveTemplate: (template: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => void
-  loadTemplate: (templateId: string) => PrescriptionTemplate | null
-  deleteTemplate: (templateId: string) => void
-  searchTemplates: (query: string, department?: string, type?: string) => PrescriptionTemplate[]
+  saveTemplate: (template: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => Promise<void>
+  loadTemplate: (templateId: string) => Promise<PrescriptionTemplate | null>
+  deleteTemplate: (templateId: string) => Promise<void>
+  searchTemplates: (query: string, filters?: { department?: string; type?: string }) => PrescriptionTemplate[]
   isLoading: boolean
-  error: string | null
 }
 
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
@@ -47,164 +32,188 @@ const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextTyp
 // Mock templates data
 const mockTemplates: PrescriptionTemplate[] = [
   {
-    id: "template-001",
-    name: "Hypertension Management",
-    description: "Standard treatment for essential hypertension",
-    department: "Cardiology",
-    type: "allopathic",
-    allopathicMedicines: [
-      {
-        medicine: "Amlodipine 5mg",
-        dosage: "5mg",
-        frequency: "OD",
-        duration: "30 days",
-        instructions: "Take in morning",
-        beforeFood: true,
-      },
-      {
-        medicine: "Metoprolol 25mg",
-        dosage: "25mg",
-        frequency: "BD",
-        duration: "30 days",
-        instructions: "Monitor heart rate",
-        afterFood: true,
-      },
-    ],
-    ayurvedicMedicines: [],
-    createdAt: "2024-01-01T10:00:00Z",
-    updatedAt: "2024-01-01T10:00:00Z",
-    createdBy: "Dr. Smith",
-  },
-  {
-    id: "template-002",
-    name: "Diabetes Type 2 - Initial",
-    description: "Initial management for newly diagnosed Type 2 diabetes",
+    id: "1",
+    name: "Common Cold Treatment",
+    description: "Standard treatment for viral upper respiratory infections",
     department: "General Medicine",
     type: "allopathic",
-    allopathicMedicines: [
+    prescriptions: [
       {
-        medicine: "Metformin 500mg",
-        dosage: "500mg",
-        frequency: "BD",
-        duration: "30 days",
-        instructions: "Start with 500mg once daily, increase gradually",
-        afterFood: true,
-      },
-    ],
-    ayurvedicMedicines: [],
-    createdAt: "2024-01-02T10:00:00Z",
-    updatedAt: "2024-01-02T10:00:00Z",
-    createdBy: "Dr. Johnson",
-  },
-  {
-    id: "template-003",
-    name: "Vata Dosha Imbalance",
-    description: "Ayurvedic treatment for Vata disorders",
-    department: "Ayurveda",
-    type: "ayurvedic",
-    allopathicMedicines: [],
-    ayurvedicMedicines: [
-      {
-        medicine: "Dashamoola Kwath",
-        dosage: "20ml",
-        frequency: "BD",
-        duration: "15 days",
-        instructions: "Mix with equal amount of warm water",
-        beforeFood: true,
-      },
-      {
-        medicine: "Ashwagandha Churna",
-        dosage: "3g",
-        frequency: "BD",
-        duration: "30 days",
-        instructions: "Take with warm milk",
-        afterFood: true,
-      },
-    ],
-    createdAt: "2024-01-03T10:00:00Z",
-    updatedAt: "2024-01-03T10:00:00Z",
-    createdBy: "Dr. Sharma",
-  },
-  {
-    id: "template-004",
-    name: "Upper Respiratory Infection",
-    description: "Common cold and flu treatment",
-    department: "General Medicine",
-    type: "mixed",
-    allopathicMedicines: [
-      {
-        medicine: "Paracetamol 500mg",
+        id: "1",
+        type: "allopathic",
+        medication: "Paracetamol",
         dosage: "500mg",
         frequency: "TID",
         duration: "5 days",
-        instructions: "For fever and body ache",
+        instructions: "Take after meals",
         afterFood: true,
       },
-    ],
-    ayurvedicMedicines: [
       {
-        medicine: "Sitopaladi Churna",
-        dosage: "3g",
-        frequency: "TID",
-        duration: "7 days",
-        instructions: "Mix with honey",
-        beforeFood: false,
+        id: "2",
+        type: "allopathic",
+        medication: "Cetirizine",
+        dosage: "10mg",
+        frequency: "OD",
+        duration: "5 days",
+        instructions: "Take at bedtime",
         afterFood: false,
       },
     ],
-    createdAt: "2024-01-04T10:00:00Z",
-    updatedAt: "2024-01-04T10:00:00Z",
-    createdBy: "Dr. Patel",
+    createdAt: "2024-01-10T10:00:00Z",
+    updatedAt: "2024-01-10T10:00:00Z",
+    createdBy: "Dr. Smith",
+    tags: ["viral", "fever", "cold"],
   },
   {
-    id: "template-005",
-    name: "Arthritis Pain Management",
-    description: "Joint pain and inflammation treatment",
-    department: "Orthopedics",
+    id: "2",
+    name: "Hypertension Management",
+    description: "Standard antihypertensive therapy",
+    department: "Cardiology",
     type: "allopathic",
-    allopathicMedicines: [
+    prescriptions: [
       {
-        medicine: "Diclofenac 50mg",
-        dosage: "50mg",
+        id: "3",
+        type: "allopathic",
+        medication: "Amlodipine",
+        dosage: "5mg",
+        frequency: "OD",
+        duration: "30 days",
+        instructions: "Take in the morning",
+        beforeFood: true,
+      },
+      {
+        id: "4",
+        type: "allopathic",
+        medication: "Metoprolol",
+        dosage: "25mg",
         frequency: "BD",
-        duration: "10 days",
-        instructions: "Take with food to avoid gastric irritation",
+        duration: "30 days",
+        instructions: "Take with meals",
+        afterFood: true,
+      },
+    ],
+    createdAt: "2024-01-12T14:30:00Z",
+    updatedAt: "2024-01-12T14:30:00Z",
+    createdBy: "Dr. Johnson",
+    tags: ["hypertension", "cardiovascular"],
+  },
+  {
+    id: "3",
+    name: "Vata Dosha Balance",
+    description: "Ayurvedic treatment for Vata imbalance",
+    department: "Ayurveda",
+    type: "ayurvedic",
+    prescriptions: [
+      {
+        id: "5",
+        type: "ayurvedic",
+        medication: "Ashwagandha Churna",
+        dosage: "3g",
+        frequency: "BD",
+        duration: "30 days",
+        instructions: "Mix with warm milk",
         afterFood: true,
       },
       {
-        medicine: "Pantoprazole 40mg",
-        dosage: "40mg",
-        frequency: "OD",
-        duration: "10 days",
-        instructions: "Gastric protection",
+        id: "6",
+        type: "ayurvedic",
+        medication: "Dashamoola Kwath",
+        dosage: "15ml",
+        frequency: "BD",
+        duration: "15 days",
+        instructions: "Mix with equal amount of water",
         beforeFood: true,
       },
     ],
-    ayurvedicMedicines: [],
-    createdAt: "2024-01-05T10:00:00Z",
-    updatedAt: "2024-01-05T10:00:00Z",
+    createdAt: "2024-01-08T09:15:00Z",
+    updatedAt: "2024-01-08T09:15:00Z",
+    createdBy: "Dr. Sharma",
+    tags: ["vata", "dosha", "nervousness"],
+  },
+  {
+    id: "4",
+    name: "Diabetes Management",
+    description: "Comprehensive diabetes treatment plan",
+    department: "Endocrinology",
+    type: "allopathic",
+    prescriptions: [
+      {
+        id: "7",
+        type: "allopathic",
+        medication: "Metformin",
+        dosage: "500mg",
+        frequency: "BD",
+        duration: "30 days",
+        instructions: "Take with meals",
+        afterFood: true,
+      },
+      {
+        id: "8",
+        type: "allopathic",
+        medication: "Glimepiride",
+        dosage: "1mg",
+        frequency: "OD",
+        duration: "30 days",
+        instructions: "Take before breakfast",
+        beforeFood: true,
+      },
+    ],
+    createdAt: "2024-01-14T16:45:00Z",
+    updatedAt: "2024-01-14T16:45:00Z",
+    createdBy: "Dr. Patel",
+    tags: ["diabetes", "blood sugar", "endocrine"],
+  },
+  {
+    id: "5",
+    name: "Integrated Pain Management",
+    description: "Combined allopathic and ayurvedic approach for chronic pain",
+    department: "Pain Management",
+    type: "mixed",
+    prescriptions: [
+      {
+        id: "9",
+        type: "allopathic",
+        medication: "Diclofenac",
+        dosage: "50mg",
+        frequency: "BD",
+        duration: "7 days",
+        instructions: "Take after meals",
+        afterFood: true,
+      },
+      {
+        id: "10",
+        type: "ayurvedic",
+        medication: "Mahanarayana Taila",
+        dosage: "5ml",
+        frequency: "BD",
+        duration: "21 days",
+        instructions: "Apply externally and massage gently",
+        afterFood: false,
+      },
+    ],
+    createdAt: "2024-01-11T11:20:00Z",
+    updatedAt: "2024-01-11T11:20:00Z",
     createdBy: "Dr. Kumar",
+    tags: ["pain", "inflammation", "integrated"],
   },
 ]
 
 export function PrescriptionTemplateProvider({ children }: { children: React.ReactNode }) {
   const [templates, setTemplates] = useState<PrescriptionTemplate[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // Load templates from localStorage on mount
   useEffect(() => {
-    try {
-      const savedTemplates = localStorage.getItem("prescription-templates")
-      if (savedTemplates) {
-        setTemplates(JSON.parse(savedTemplates))
-      } else {
-        // Initialize with mock data
+    const savedTemplates = localStorage.getItem("prescription-templates")
+    if (savedTemplates) {
+      try {
+        const parsed = JSON.parse(savedTemplates)
+        setTemplates([...mockTemplates, ...parsed])
+      } catch (error) {
+        console.error("Failed to parse saved templates:", error)
         setTemplates(mockTemplates)
-        localStorage.setItem("prescription-templates", JSON.stringify(mockTemplates))
       }
-    } catch (err) {
-      console.error("Error loading templates:", err)
+    } else {
       setTemplates(mockTemplates)
     }
   }, [])
@@ -212,62 +221,100 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
   // Save templates to localStorage whenever templates change
   useEffect(() => {
     if (templates.length > 0) {
-      try {
-        localStorage.setItem("prescription-templates", JSON.stringify(templates))
-      } catch (err) {
-        console.error("Error saving templates:", err)
-      }
+      const customTemplates = templates.filter((t) => !mockTemplates.find((mt) => mt.id === t.id))
+      localStorage.setItem("prescription-templates", JSON.stringify(customTemplates))
     }
   }, [templates])
 
-  const saveTemplate = useCallback((templateData: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => {
-    setIsLoading(true)
-    setError(null)
-
+  const saveTemplate = async (templateData: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => {
     try {
+      setIsLoading(true)
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       const newTemplate: PrescriptionTemplate = {
         ...templateData,
-        id: `template-${Date.now()}`,
+        id: Date.now().toString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
 
       setTemplates((prev) => [...prev, newTemplate])
-      setIsLoading(false)
-    } catch (err) {
-      setError("Failed to save template")
+      toast.success("Prescription template saved successfully")
+    } catch (error) {
+      toast.error("Failed to save prescription template")
+      throw error
+    } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
-  const loadTemplate = useCallback(
-    (templateId: string): PrescriptionTemplate | null => {
+  const loadTemplate = async (templateId: string): Promise<PrescriptionTemplate | null> => {
+    try {
+      setIsLoading(true)
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
       const template = templates.find((t) => t.id === templateId)
-      return template || null
-    },
-    [templates],
-  )
+      if (!template) {
+        toast.error("Template not found")
+        return null
+      }
 
-  const deleteTemplate = useCallback((templateId: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== templateId))
-  }, [])
+      return template
+    } catch (error) {
+      toast.error("Failed to load prescription template")
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const searchTemplates = useCallback(
-    (query: string, department?: string, type?: string): PrescriptionTemplate[] => {
-      return templates.filter((template) => {
-        const matchesQuery =
-          !query ||
-          template.name.toLowerCase().includes(query.toLowerCase()) ||
-          template.description?.toLowerCase().includes(query.toLowerCase())
+  const deleteTemplate = async (templateId: string) => {
+    try {
+      setIsLoading(true)
 
-        const matchesDepartment = !department || template.department === department
-        const matchesType = !type || template.type === type
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
-        return matchesQuery && matchesDepartment && matchesType
-      })
-    },
-    [templates],
-  )
+      setTemplates((prev) => prev.filter((t) => t.id !== templateId))
+      toast.success("Template deleted successfully")
+    } catch (error) {
+      toast.error("Failed to delete template")
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const searchTemplates = (query: string, filters?: { department?: string; type?: string }): PrescriptionTemplate[] => {
+    let filtered = templates
+
+    // Apply text search
+    if (query.trim()) {
+      const searchTerm = query.toLowerCase()
+      filtered = filtered.filter(
+        (template) =>
+          template.name.toLowerCase().includes(searchTerm) ||
+          template.description?.toLowerCase().includes(searchTerm) ||
+          template.tags?.some((tag) => tag.toLowerCase().includes(searchTerm)) ||
+          template.prescriptions.some((p) => p.medication.toLowerCase().includes(searchTerm)),
+      )
+    }
+
+    // Apply filters
+    if (filters?.department) {
+      filtered = filtered.filter((template) => template.department === filters.department)
+    }
+
+    if (filters?.type) {
+      filtered = filtered.filter((template) => template.type === filters.type)
+    }
+
+    return filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  }
 
   const value: PrescriptionTemplateContextType = {
     templates,
@@ -276,16 +323,15 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
     deleteTemplate,
     searchTemplates,
     isLoading,
-    error,
   }
 
   return <PrescriptionTemplateContext.Provider value={value}>{children}</PrescriptionTemplateContext.Provider>
 }
 
-export function usePrescriptionTemplate() {
+export function usePrescriptionTemplates() {
   const context = useContext(PrescriptionTemplateContext)
   if (context === undefined) {
-    throw new Error("usePrescriptionTemplate must be used within a PrescriptionTemplateProvider")
+    throw new Error("usePrescriptionTemplates must be used within a PrescriptionTemplateProvider")
   }
   return context
 }
