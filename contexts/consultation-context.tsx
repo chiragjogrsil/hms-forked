@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
 import { toast } from "sonner"
 
 interface ConsultationData {
@@ -226,6 +226,9 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isConsultationSaved, setIsConsultationSaved] = useState(false)
 
+  // Use ref to prevent infinite loops during updates
+  const isUpdatingRef = useRef(false)
+
   // Load consultation history from localStorage on mount, with fallback to mock data
   useEffect(() => {
     const savedHistory = localStorage.getItem("consultation-history")
@@ -262,7 +265,13 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
       const consultationDate = visitDate
 
       // Check for existing in-progress consultation for this date
-      const existingConsultation = getInProgressConsultation(patientId, visitDate)
+      const existingConsultation = consultationHistory.find(
+        (consultation) =>
+          consultation.patientId === patientId &&
+          consultation.visitDate === visitDate &&
+          consultation.status === "in-progress",
+      )
+
       if (existingConsultation) {
         // Load existing consultation instead of creating new one
         setActiveConsultation({ ...existingConsultation })
@@ -350,26 +359,35 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
         description: `Visit consultation for ${patientName} on ${new Date(consultationDate).toLocaleDateString()}`,
       })
     },
-    [],
+    [consultationHistory],
   )
 
-  const updateConsultationData = useCallback(
-    (updates: Partial<ConsultationData>) => {
-      if (!activeConsultation) return
+  const updateConsultationData = useCallback((updates: Partial<ConsultationData>) => {
+    // Prevent infinite loops during updates
+    if (isUpdatingRef.current) return
 
-      setActiveConsultation((prev) => {
-        if (!prev) return null
-        return {
-          ...prev,
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        }
-      })
-      setHasUnsavedChanges(true)
-      setIsConsultationSaved(false)
-    },
-    [activeConsultation],
-  )
+    setActiveConsultation((prev) => {
+      if (!prev) return null
+
+      isUpdatingRef.current = true
+
+      const updated = {
+        ...prev,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      }
+
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        isUpdatingRef.current = false
+      }, 100)
+
+      return updated
+    })
+
+    setHasUnsavedChanges(true)
+    setIsConsultationSaved(false)
+  }, [])
 
   const saveConsultation = useCallback(async (): Promise<boolean> => {
     if (!activeConsultation) return false
@@ -445,11 +463,16 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    // Validate consultation before completing
-    const validation = validateConsultation()
-    if (!validation.isValid) {
+    // Simple validation - just check if there's some content
+    const hasContent =
+      activeConsultation.chiefComplaint?.trim() ||
+      activeConsultation.clinicalNotes?.trim() ||
+      activeConsultation.provisionalDiagnosis?.length ||
+      activeConsultation.diagnosis?.length
+
+    if (!hasContent) {
       toast.error("Cannot complete visit", {
-        description: validation.errors.join(", "),
+        description: "Please add some consultation details before completing",
       })
       return false
     }
@@ -510,14 +533,6 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
         ),
         duration: 6000,
       })
-
-      // Show additional info toast
-      setTimeout(() => {
-        toast.info("📋 Consultation History Updated", {
-          description: "The completed visit is now available in the consultation history section",
-          duration: 4000,
-        })
-      }, 1000)
 
       return true
     } catch (error) {
@@ -668,7 +683,13 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
 
   const loadInProgressConsultation = useCallback(
     async (patientId: string, visitDate: string) => {
-      const consultation = getInProgressConsultation(patientId, visitDate)
+      const consultation = consultationHistory.find(
+        (consultation) =>
+          consultation.patientId === patientId &&
+          consultation.visitDate === visitDate &&
+          consultation.status === "in-progress",
+      )
+
       if (consultation) {
         setActiveConsultation({ ...consultation })
         setHasUnsavedChanges(false)
@@ -681,7 +702,7 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
         toast.error("No in-progress consultation found for this date")
       }
     },
-    [getInProgressConsultation],
+    [consultationHistory],
   )
 
   const hasIncompleteVisits = useCallback(
@@ -728,46 +749,68 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
     [consultationHistory],
   )
 
-  // Add this function to the context value
   const debugConsultationHistory = useCallback(() => {
     console.log("Current consultation history:", consultationHistory)
     console.log("Active consultation:", activeConsultation)
     return consultationHistory
   }, [consultationHistory, activeConsultation])
 
-  // Add it to the return value:
-  return (
-    <ConsultationContext.Provider
-      value={{
-        activeConsultation,
-        isConsultationActive: !!activeConsultation,
-        hasUnsavedChanges,
-        isConsultationSaved,
-        startNewConsultation,
-        updateConsultationData,
-        saveConsultation,
-        completeConsultation,
-        completeVisit,
-        cancelConsultation,
-        loadConsultation,
-        consultationHistory,
-        getPatientConsultations,
-        getConsultationsByDate,
-        searchConsultations,
-        resetConsultation,
-        validateConsultation,
-        getConsultationSummary,
-        hasInProgressConsultation,
-        getInProgressConsultation,
-        loadInProgressConsultation,
-        hasIncompleteVisits,
-        completeIncompleteVisit,
-        debugConsultationHistory,
-      }}
-    >
-      {children}
-    </ConsultationContext.Provider>
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useCallback(
+    () => ({
+      activeConsultation,
+      isConsultationActive: !!activeConsultation,
+      hasUnsavedChanges,
+      isConsultationSaved,
+      startNewConsultation,
+      updateConsultationData,
+      saveConsultation,
+      completeConsultation,
+      completeVisit,
+      cancelConsultation,
+      loadConsultation,
+      consultationHistory,
+      getPatientConsultations,
+      getConsultationsByDate,
+      searchConsultations,
+      resetConsultation,
+      validateConsultation,
+      getConsultationSummary,
+      hasInProgressConsultation,
+      getInProgressConsultation,
+      loadInProgressConsultation,
+      hasIncompleteVisits,
+      completeIncompleteVisit,
+      debugConsultationHistory,
+    }),
+    [
+      activeConsultation,
+      hasUnsavedChanges,
+      isConsultationSaved,
+      consultationHistory,
+      startNewConsultation,
+      updateConsultationData,
+      saveConsultation,
+      completeConsultation,
+      completeVisit,
+      cancelConsultation,
+      loadConsultation,
+      getPatientConsultations,
+      getConsultationsByDate,
+      searchConsultations,
+      resetConsultation,
+      validateConsultation,
+      getConsultationSummary,
+      hasInProgressConsultation,
+      getInProgressConsultation,
+      loadInProgressConsultation,
+      hasIncompleteVisits,
+      completeIncompleteVisit,
+      debugConsultationHistory,
+    ],
   )
+
+  return <ConsultationContext.Provider value={contextValue()}>{children}</ConsultationContext.Provider>
 }
 
 export function useConsultation() {

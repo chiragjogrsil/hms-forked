@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,11 +9,11 @@ import { Activity, Heart, Thermometer, Wind, Droplets, Weight, Ruler, Calculator
 import { useConsultation } from "@/contexts/consultation-context"
 
 interface VitalSignsSectionProps {
-  patientId: string
-  patientName: string
+  data?: any
+  onChange?: (data: any) => void
 }
 
-export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionProps) {
+export function VitalSignsSection({ data, onChange }: VitalSignsSectionProps) {
   const { activeConsultation, updateConsultationData } = useConsultation()
 
   const [vitals, setVitals] = useState({
@@ -27,25 +27,39 @@ export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionP
     bmi: "",
   })
 
+  // Use ref to track if we're loading data to prevent auto-save during load
+  const isLoadingRef = useRef(false)
+  const consultationIdRef = useRef<string | null>(null)
+
   // Load vitals from active consultation only when consultation ID changes
   useEffect(() => {
-    if (activeConsultation?.vitals) {
-      setVitals({
-        bloodPressure: activeConsultation.vitals.bloodPressure || "",
-        pulse: activeConsultation.vitals.pulse || "",
-        temperature: activeConsultation.vitals.temperature || "",
-        respiratoryRate: activeConsultation.vitals.respiratoryRate || "",
-        spo2: activeConsultation.vitals.spo2 || "",
-        weight: activeConsultation.vitals.weight || "",
-        height: activeConsultation.vitals.height || "",
-        bmi: activeConsultation.vitals.bmi || "",
-      })
+    if (activeConsultation && activeConsultation.id !== consultationIdRef.current) {
+      isLoadingRef.current = true
+      consultationIdRef.current = activeConsultation.id || null
+
+      if (activeConsultation.vitals) {
+        setVitals({
+          bloodPressure: activeConsultation.vitals.bloodPressure || "",
+          pulse: activeConsultation.vitals.pulse || "",
+          temperature: activeConsultation.vitals.temperature || "",
+          respiratoryRate: activeConsultation.vitals.respiratoryRate || "",
+          spo2: activeConsultation.vitals.spo2 || "",
+          weight: activeConsultation.vitals.weight || "",
+          height: activeConsultation.vitals.height || "",
+          bmi: activeConsultation.vitals.bmi || "",
+        })
+      }
+
+      // Reset loading flag after a short delay
+      setTimeout(() => {
+        isLoadingRef.current = false
+      }, 100)
     }
-  }, [activeConsultation?.id]) // Only depend on consultation ID
+  }, [activeConsultation]) // Updated to use activeConsultation directly
 
   // Auto-calculate BMI when weight or height changes
   useEffect(() => {
-    if (vitals.weight && vitals.height) {
+    if (vitals.weight && vitals.height && !isLoadingRef.current) {
       const weightKg = Number.parseFloat(vitals.weight)
       const heightM = Number.parseFloat(vitals.height) / 100 // Convert cm to m
       if (weightKg > 0 && heightM > 0) {
@@ -55,23 +69,24 @@ export function VitalSignsSection({ patientId, patientName }: VitalSignsSectionP
     }
   }, [vitals.weight, vitals.height])
 
-  // Memoized auto-save function
-  const autoSave = useCallback(() => {
-    if (activeConsultation) {
-      updateConsultationData({ vitals })
-    }
-  }, [activeConsultation, vitals, updateConsultationData]) // Updated dependency
-
-  // Debounced auto-save
-  useEffect(() => {
-    if (!activeConsultation) return
+  // Debounced auto-save function
+  const debouncedSave = useCallback(() => {
+    if (!activeConsultation || isLoadingRef.current) return
 
     const timer = setTimeout(() => {
-      autoSave()
-    }, 2000) // 2 second delay
+      updateConsultationData({ vitals })
+    }, 2000)
 
     return () => clearTimeout(timer)
-  }, [autoSave])
+  }, [activeConsultation, vitals, updateConsultationData]) // Updated to use activeConsultation directly
+
+  // Auto-save when vitals change
+  useEffect(() => {
+    if (!isLoadingRef.current) {
+      const cleanup = debouncedSave()
+      return cleanup
+    }
+  }, [debouncedSave])
 
   const handleVitalChange = useCallback((field: string, value: string) => {
     setVitals((prev) => ({ ...prev, [field]: value }))

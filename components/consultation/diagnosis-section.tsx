@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +12,9 @@ import { Search, Plus, X, Stethoscope, AlertTriangle } from "lucide-react"
 import { useConsultation } from "@/contexts/consultation-context"
 
 interface DiagnosisSectionProps {
-  patientId: string
-  patientName: string
+  department?: string
+  data?: string[]
+  onChange?: (data: string[]) => void
 }
 
 // Comprehensive diagnosis database organized by department
@@ -179,7 +180,7 @@ const diagnosisDatabase = {
   ],
 }
 
-export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionProps) {
+export function DiagnosisSection({ department, data, onChange }: DiagnosisSectionProps) {
   const { activeConsultation, updateConsultationData } = useConsultation()
 
   const [provisionalDiagnosis, setProvisionalDiagnosis] = useState<string[]>([])
@@ -189,9 +190,16 @@ export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionPro
   const [customDiagnosis, setCustomDiagnosis] = useState("")
   const [clinicalImpression, setClinicalImpression] = useState("")
 
+  // Use ref to track if we're loading data to prevent auto-save during load
+  const isLoadingRef = useRef(false)
+  const consultationIdRef = useRef<string | null>(null)
+
   // Load data from active consultation only when consultation ID changes
   useEffect(() => {
-    if (activeConsultation) {
+    if (activeConsultation && activeConsultation.id !== consultationIdRef.current) {
+      isLoadingRef.current = true
+      consultationIdRef.current = activeConsultation.id || null
+
       setProvisionalDiagnosis(activeConsultation.provisionalDiagnosis || [])
       setDifferentialDiagnosis(activeConsultation.differentialDiagnosis || [])
       setClinicalImpression(activeConsultation.clinicalFindings || "")
@@ -200,30 +208,36 @@ export function DiagnosisSection({ patientId, patientName }: DiagnosisSectionPro
       if (activeConsultation.department) {
         setSelectedDepartment(activeConsultation.department)
       }
-    }
-  }, [activeConsultation]) // Only depend on consultation ID
 
-  // Memoized auto-save function
-  const autoSave = useCallback(() => {
-    if (activeConsultation) {
+      // Reset loading flag after a short delay
+      setTimeout(() => {
+        isLoadingRef.current = false
+      }, 100)
+    }
+  }, [activeConsultation])
+
+  // Debounced auto-save function
+  const debouncedSave = useCallback(() => {
+    if (!activeConsultation || isLoadingRef.current) return
+
+    const timer = setTimeout(() => {
       updateConsultationData({
         provisionalDiagnosis,
         differentialDiagnosis,
         clinicalFindings: clinicalImpression,
       })
-    }
-  }, [activeConsultation, provisionalDiagnosis, differentialDiagnosis, clinicalImpression, updateConsultationData])
-
-  // Debounced auto-save
-  useEffect(() => {
-    if (!activeConsultation) return
-
-    const timer = setTimeout(() => {
-      autoSave()
-    }, 2000) // 2 second delay
+    }, 2000)
 
     return () => clearTimeout(timer)
-  }, [autoSave])
+  }, [activeConsultation, provisionalDiagnosis, differentialDiagnosis, clinicalImpression, updateConsultationData])
+
+  // Auto-save when data changes
+  useEffect(() => {
+    if (!isLoadingRef.current) {
+      const cleanup = debouncedSave()
+      return cleanup
+    }
+  }, [debouncedSave])
 
   // Get filtered diagnoses based on search and department
   const getFilteredDiagnoses = useCallback(() => {

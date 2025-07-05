@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,11 +13,11 @@ import { FileText, Plus, Heart, TreesIcon as Lungs, Brain, Eye, Activity } from 
 import { useConsultation } from "@/contexts/consultation-context"
 
 interface ClinicalNotesSectionProps {
-  patientId: string
-  patientName: string
+  data?: string
+  onChange?: (data: string) => void
 }
 
-export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSectionProps) {
+export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionProps) {
   const { activeConsultation, updateConsultationData } = useConsultation()
 
   // Clinical notes state
@@ -49,9 +49,16 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
   const [newAllergy, setNewAllergy] = useState("")
   const [newMedication, setNewMedication] = useState("")
 
-  // Load data from active consultation only once when consultation changes
+  // Use ref to track if we're loading data to prevent auto-save during load
+  const isLoadingRef = useRef(false)
+  const consultationIdRef = useRef<string | null>(null)
+
+  // Load data from active consultation only when consultation ID changes
   useEffect(() => {
-    if (activeConsultation) {
+    if (activeConsultation && activeConsultation.id !== consultationIdRef.current) {
+      isLoadingRef.current = true
+      consultationIdRef.current = activeConsultation.id || null
+
       setChiefComplaint(activeConsultation.chiefComplaint || "")
       setHistoryOfPresentIllness(activeConsultation.historyOfPresentIllness || "")
       setPastMedicalHistory(activeConsultation.pastMedicalHistory || [])
@@ -74,12 +81,19 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
           dermatological: "no_symptoms",
         },
       )
-    }
-  }, [activeConsultation]) // Updated to depend on the entire activeConsultation object
 
-  // Memoized auto-save function
-  const autoSave = useCallback(() => {
-    if (activeConsultation) {
+      // Reset loading flag after a short delay
+      setTimeout(() => {
+        isLoadingRef.current = false
+      }, 100)
+    }
+  }, [activeConsultation])
+
+  // Debounced auto-save function
+  const debouncedSave = useCallback(() => {
+    if (!activeConsultation || isLoadingRef.current) return
+
+    const timer = setTimeout(() => {
       updateConsultationData({
         chiefComplaint,
         historyOfPresentIllness,
@@ -93,7 +107,9 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
         privateNotes,
         systemReview,
       })
-    }
+    }, 2000)
+
+    return () => clearTimeout(timer)
   }, [
     activeConsultation,
     chiefComplaint,
@@ -110,16 +126,13 @@ export function ClinicalNotesSection({ patientId, patientName }: ClinicalNotesSe
     updateConsultationData,
   ])
 
-  // Debounced auto-save
+  // Auto-save when data changes
   useEffect(() => {
-    if (!activeConsultation) return
-
-    const timer = setTimeout(() => {
-      autoSave()
-    }, 2000) // Increased delay to 2 seconds
-
-    return () => clearTimeout(timer)
-  }, [autoSave])
+    if (!isLoadingRef.current) {
+      const cleanup = debouncedSave()
+      return cleanup
+    }
+  }, [debouncedSave])
 
   const handleAddMedicalHistory = useCallback(() => {
     if (newMedicalHistory.trim()) {
