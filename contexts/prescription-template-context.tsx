@@ -10,7 +10,7 @@ export interface Medicine {
   frequency: string
   duration: string
   instructions: string
-  type: "tablet" | "syrup" | "injection" | "capsule" | "ointment" | "drops"
+  beforeAfterFood: "before" | "after" | "with"
 }
 
 export interface PrescriptionTemplate {
@@ -26,89 +26,79 @@ export interface PrescriptionTemplate {
 interface PrescriptionTemplateContextType {
   templates: PrescriptionTemplate[]
   saveTemplate: (template: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => void
-  loadTemplate: (templateId: string) => PrescriptionTemplate | null
-  deleteTemplate: (templateId: string) => void
-  searchTemplates: (query: string, department?: string) => PrescriptionTemplate[]
+  deleteTemplate: (id: string) => void
   getTemplatesByDepartment: (department: string) => PrescriptionTemplate[]
+  searchTemplates: (query: string) => PrescriptionTemplate[]
 }
 
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
 
-// Sample templates for demonstration
+// Sample templates
 const sampleTemplates: PrescriptionTemplate[] = [
   {
     id: "template-1",
     name: "Common Cold Treatment",
-    description: "Standard prescription for common cold and flu symptoms",
+    description: "Standard treatment for common cold and flu symptoms",
     department: "General Medicine",
     medicines: [
       {
         id: "med-1",
-        name: "Paracetamol",
+        name: "Paracetamol 500mg",
         dosage: "500mg",
-        frequency: "Twice daily",
+        frequency: "3 times daily",
         duration: "5 days",
-        instructions: "Take after meals",
-        type: "tablet",
+        instructions: "Take with water",
+        beforeAfterFood: "after",
       },
       {
         id: "med-2",
-        name: "Cetirizine",
+        name: "Cetirizine 10mg",
         dosage: "10mg",
         frequency: "Once daily",
-        duration: "3 days",
+        duration: "7 days",
         instructions: "Take at bedtime",
-        type: "tablet",
+        beforeAfterFood: "after",
       },
       {
         id: "med-3",
         name: "Cough Syrup",
         dosage: "10ml",
-        frequency: "Three times daily",
+        frequency: "3 times daily",
         duration: "7 days",
-        instructions: "Take after meals",
-        type: "syrup",
+        instructions: "Shake well before use",
+        beforeAfterFood: "after",
       },
     ],
-    createdAt: "2024-01-15T10:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
   },
   {
     id: "template-2",
-    name: "Digestive Health Package",
+    name: "Digestive Health Support",
     description: "Treatment for digestive issues and stomach problems",
     department: "Gastroenterology",
     medicines: [
       {
         id: "med-4",
-        name: "Omeprazole",
+        name: "Omeprazole 20mg",
         dosage: "20mg",
         frequency: "Once daily",
         duration: "14 days",
-        instructions: "Take before breakfast",
-        type: "capsule",
+        instructions: "Take on empty stomach",
+        beforeAfterFood: "before",
       },
       {
         id: "med-5",
-        name: "Domperidone",
-        dosage: "10mg",
-        frequency: "Three times daily",
-        duration: "7 days",
-        instructions: "Take before meals",
-        type: "tablet",
-      },
-      {
-        id: "med-6",
         name: "Probiotics",
-        dosage: "1 sachet",
-        frequency: "Once daily",
-        duration: "10 days",
-        instructions: "Mix with water and take",
-        type: "tablet",
+        dosage: "1 capsule",
+        frequency: "Twice daily",
+        duration: "30 days",
+        instructions: "Take with meals",
+        beforeAfterFood: "with",
       },
     ],
-    createdAt: "2024-01-16T14:30:00Z",
-    updatedAt: "2024-01-16T14:30:00Z",
+    createdAt: "2024-01-02T00:00:00Z",
+    updatedAt: "2024-01-02T00:00:00Z",
   },
   {
     id: "template-3",
@@ -117,35 +107,26 @@ const sampleTemplates: PrescriptionTemplate[] = [
     department: "Dentistry",
     medicines: [
       {
-        id: "med-7",
-        name: "Ibuprofen",
+        id: "med-6",
+        name: "Ibuprofen 400mg",
         dosage: "400mg",
-        frequency: "Three times daily",
+        frequency: "3 times daily",
         duration: "3 days",
-        instructions: "Take with food",
-        type: "tablet",
+        instructions: "Take with food to avoid stomach upset",
+        beforeAfterFood: "with",
       },
       {
-        id: "med-8",
-        name: "Amoxicillin",
-        dosage: "500mg",
-        frequency: "Three times daily",
-        duration: "5 days",
-        instructions: "Complete the course",
-        type: "capsule",
-      },
-      {
-        id: "med-9",
+        id: "med-7",
         name: "Chlorhexidine Mouthwash",
         dosage: "15ml",
         frequency: "Twice daily",
         duration: "7 days",
-        instructions: "Rinse for 30 seconds",
-        type: "drops",
+        instructions: "Rinse for 30 seconds, do not swallow",
+        beforeAfterFood: "after",
       },
     ],
-    createdAt: "2024-01-17T09:15:00Z",
-    updatedAt: "2024-01-17T09:15:00Z",
+    createdAt: "2024-01-03T00:00:00Z",
+    updatedAt: "2024-01-03T00:00:00Z",
   },
 ]
 
@@ -154,24 +135,30 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
 
   // Load templates from localStorage on mount
   useEffect(() => {
-    const savedTemplates = localStorage.getItem("prescriptionTemplates")
-    if (savedTemplates) {
-      try {
+    try {
+      const savedTemplates = localStorage.getItem("prescriptionTemplates")
+      if (savedTemplates) {
         const parsedTemplates = JSON.parse(savedTemplates)
         setTemplates([...sampleTemplates, ...parsedTemplates])
-      } catch (error) {
-        console.error("Error parsing saved templates:", error)
+      } else {
         setTemplates(sampleTemplates)
       }
-    } else {
+    } catch (error) {
+      console.error("Error loading prescription templates:", error)
       setTemplates(sampleTemplates)
     }
   }, [])
 
   // Save templates to localStorage whenever templates change
   useEffect(() => {
-    const customTemplates = templates.filter((t) => !sampleTemplates.find((st) => st.id === t.id))
-    localStorage.setItem("prescriptionTemplates", JSON.stringify(customTemplates))
+    try {
+      const customTemplates = templates.filter(
+        (template) => !sampleTemplates.some((sample) => sample.id === template.id),
+      )
+      localStorage.setItem("prescriptionTemplates", JSON.stringify(customTemplates))
+    } catch (error) {
+      console.error("Error saving prescription templates:", error)
+    }
   }, [templates])
 
   const saveTemplate = (templateData: Omit<PrescriptionTemplate, "id" | "createdAt" | "updatedAt">) => {
@@ -185,52 +172,49 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
     setTemplates((prev) => [...prev, newTemplate])
   }
 
-  const loadTemplate = (templateId: string): PrescriptionTemplate | null => {
-    return templates.find((t) => t.id === templateId) || null
+  const deleteTemplate = (id: string) => {
+    // Don't allow deletion of sample templates
+    if (sampleTemplates.some((template) => template.id === id)) {
+      return
+    }
+    setTemplates((prev) => prev.filter((template) => template.id !== id))
   }
 
-  const deleteTemplate = (templateId: string) => {
-    setTemplates((prev) => prev.filter((t) => t.id !== templateId))
+  const getTemplatesByDepartment = (department: string) => {
+    if (department === "All Departments") {
+      return templates
+    }
+    return templates.filter((template) => template.department === department)
   }
 
-  const searchTemplates = (query: string, department?: string): PrescriptionTemplate[] => {
-    let filtered = templates
-
-    if (department) {
-      filtered = filtered.filter((t) => t.department.toLowerCase() === department.toLowerCase())
+  const searchTemplates = (query: string) => {
+    if (!query.trim()) {
+      return templates
     }
 
-    if (query.trim()) {
-      const searchQuery = query.toLowerCase()
-      filtered = filtered.filter(
-        (t) =>
-          t.name.toLowerCase().includes(searchQuery) ||
-          t.description.toLowerCase().includes(searchQuery) ||
-          t.medicines.some((m) => m.name.toLowerCase().includes(searchQuery)),
-      )
-    }
-
-    return filtered
+    const lowercaseQuery = query.toLowerCase()
+    return templates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(lowercaseQuery) ||
+        template.description.toLowerCase().includes(lowercaseQuery) ||
+        template.department.toLowerCase().includes(lowercaseQuery) ||
+        template.medicines.some(
+          (medicine) =>
+            medicine.name.toLowerCase().includes(lowercaseQuery) ||
+            medicine.instructions.toLowerCase().includes(lowercaseQuery),
+        ),
+    )
   }
 
-  const getTemplatesByDepartment = (department: string): PrescriptionTemplate[] => {
-    return templates.filter((t) => t.department.toLowerCase() === department.toLowerCase())
+  const value = {
+    templates,
+    saveTemplate,
+    deleteTemplate,
+    getTemplatesByDepartment,
+    searchTemplates,
   }
 
-  return (
-    <PrescriptionTemplateContext.Provider
-      value={{
-        templates,
-        saveTemplate,
-        loadTemplate,
-        deleteTemplate,
-        searchTemplates,
-        getTemplatesByDepartment,
-      }}
-    >
-      {children}
-    </PrescriptionTemplateContext.Provider>
-  )
+  return <PrescriptionTemplateContext.Provider value={value}>{children}</PrescriptionTemplateContext.Provider>
 }
 
 export function usePrescriptionTemplates() {

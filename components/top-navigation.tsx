@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, Users, CreditCard, Pill, Activity, Calendar, ClipboardList, Building2, UserPlus } from "lucide-react"
+import { Home, Users, Stethoscope, UserPlus } from "lucide-react"
 
 export function TopNavigation() {
   const pathname = usePathname()
@@ -22,40 +22,10 @@ export function TopNavigation() {
       current: pathname.startsWith("/patients"),
     },
     {
-      name: "Appointments",
-      href: "/appointments",
-      icon: Calendar,
-      current: pathname.startsWith("/appointments"),
-    },
-    {
-      name: "Queue",
-      href: "/queue",
-      icon: ClipboardList,
-      current: pathname.startsWith("/queue"),
-    },
-    {
-      name: "Billing",
-      href: "/billing",
-      icon: CreditCard,
-      current: pathname.startsWith("/billing"),
-    },
-    {
-      name: "Pharmacy",
-      href: "/pharmacy",
-      icon: Pill,
-      current: pathname.startsWith("/pharmacy"),
-    },
-    {
-      name: "Departments",
+      name: "Services & Procedures",
       href: "/departments",
-      icon: Building2,
+      icon: Stethoscope,
       current: pathname.startsWith("/departments"),
-    },
-    {
-      name: "Reports",
-      href: "/reports",
-      icon: Activity,
-      current: pathname.startsWith("/reports"),
     },
   ]
 
@@ -65,7 +35,7 @@ export function TopNavigation() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Activity className="h-8 w-8 text-blue-600 mr-2" />
+              <Stethoscope className="h-8 w-8 text-blue-600 mr-2" />
               <h1 className="text-xl font-bold text-gray-900">Hospital Management System</h1>
             </div>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
