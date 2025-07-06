@@ -80,6 +80,8 @@ export function AppointmentDetailsModal({
   }
 
   const getStatusColor = (status: string) => {
+    if (!status) return "bg-gray-100 text-gray-800"
+
     switch (status) {
       case "scheduled":
         return "bg-gray-100 text-gray-800"
@@ -99,6 +101,8 @@ export function AppointmentDetailsModal({
   }
 
   const getPaymentStatusColor = (status: string) => {
+    if (!status) return "bg-gray-100 text-gray-800"
+
     switch (status) {
       case "paid":
         return "bg-green-100 text-green-800"
@@ -109,6 +113,16 @@ export function AppointmentDetailsModal({
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const formatStatusText = (status: string) => {
+    if (!status) return "Unknown"
+    return status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")
+  }
+
+  const formatPaymentStatusText = (status: string) => {
+    if (!status) return "Unknown"
+    return status.charAt(0).toUpperCase() + status.slice(1)
   }
 
   const handleStatusChange = (newStatus: string) => {
@@ -296,7 +310,7 @@ export function AppointmentDetailsModal({
               <h3 className="font-semibold text-green-900 flex items-center gap-2">Status & Actions</h3>
               <Badge className={`${getStatusColor(appointment.status)} flex items-center gap-1`}>
                 {getStatusIcon(appointment.status)}
-                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1).replace("-", " ")}
+                {formatStatusText(appointment.status)}
               </Badge>
             </div>
             <div className="flex justify-end">{getStatusActions()}</div>
@@ -316,7 +330,7 @@ export function AppointmentDetailsModal({
               <div>
                 <p className="text-sm text-yellow-700">Payment Status</p>
                 <Badge className={`${getPaymentStatusColor(appointment.paymentStatus)} mt-1`}>
-                  {appointment.paymentStatus.charAt(0).toUpperCase() + appointment.paymentStatus.slice(1)}
+                  {formatPaymentStatusText(appointment.paymentStatus)}
                 </Badge>
               </div>
               {appointment.paymentMethod && (
