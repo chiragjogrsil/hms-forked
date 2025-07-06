@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X } from "lucide-react"
 import { AddAyurvedicPrescriptionModal } from "@/components/modals/add-ayurvedic-prescription-modal"
+import { PrescriptionTemplateManager } from "@/components/prescription-template-manager"
 
 interface AyurvedicPrescriptionProps {
   data: any[]
@@ -138,6 +139,18 @@ export function AyurvedicPrescription({ data, onChange, readOnly = false }: Ayur
             </Badge>
           )}
         </div>
+        {!readOnly && (
+          <PrescriptionTemplateManager
+            ayurvedicPrescriptions={safeData}
+            allopathicPrescriptions={[]}
+            department="Ayurveda"
+            onLoadTemplate={(template) => {
+              onChange(template.ayurvedicPrescriptions || [])
+              setShowInitialOptions(false)
+            }}
+            readOnly={readOnly}
+          />
+        )}
       </div>
 
       {/* Overall Pathya/Apathya Section - Only show if there are prescriptions */}
@@ -163,7 +176,7 @@ export function AyurvedicPrescription({ data, onChange, readOnly = false }: Ayur
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs"
+                          className="h-7 text-xs bg-transparent"
                           onClick={() => addPathya(item)}
                         >
                           <Plus className="h-3 w-3 mr-1" />
@@ -225,7 +238,7 @@ export function AyurvedicPrescription({ data, onChange, readOnly = false }: Ayur
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs"
+                          className="h-7 text-xs bg-transparent"
                           onClick={() => addApathya(item)}
                         >
                           <Plus className="h-3 w-3 mr-1" />

@@ -1,24 +1,20 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins } from "next/font/google"
+import { Inter } from "next/font/google"
 import "./globals.css"
-import { TopNavigation } from "@/components/top-navigation"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 import { DoctorProvider } from "@/contexts/doctor-context"
 import { VisitWorkflowProvider } from "@/contexts/visit-workflow-context"
-import { ConsultationProvider } from "@/contexts/consultation-context"
 import { PrescriptionTemplateProvider } from "@/contexts/prescription-template-context"
-import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider"
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Hospital Management System",
-  description: "Comprehensive hospital management solution",
+  description: "Comprehensive hospital management application",
     generator: 'v0.dev'
 }
 
@@ -28,24 +24,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`${poppins.variable} font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-orange-50 min-h-screen`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="light">
-          <DoctorProvider>
-            <VisitWorkflowProvider>
-              <ConsultationProvider>
-                <PrescriptionTemplateProvider>
-                  <div className="flex min-h-screen w-full flex-col">
-                    <TopNavigation />
-                    <main className="flex-1 p-6">{children}</main>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <PrescriptionTemplateProvider>
+            <DoctorProvider>
+              <VisitWorkflowProvider>
+                <SidebarProvider>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar />
+                    <main className="flex-1 overflow-auto">{children}</main>
                   </div>
                   <Toaster />
-                </PrescriptionTemplateProvider>
-              </ConsultationProvider>
-            </VisitWorkflowProvider>
-          </DoctorProvider>
+                </SidebarProvider>
+              </VisitWorkflowProvider>
+            </DoctorProvider>
+          </PrescriptionTemplateProvider>
         </ThemeProvider>
       </body>
     </html>
