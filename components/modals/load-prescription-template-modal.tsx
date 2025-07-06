@@ -1,310 +1,212 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Download, Search, Eye, Trash2, Pill, Leaf, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
-import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FolderOpen, Search, Eye, Trash2, Calendar } from "lucide-react"
+import { usePrescriptionTemplates, type PrescriptionTemplate } from "@/contexts/prescription-template-context"
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 
 interface LoadPrescriptionTemplateModalProps {
-  isOpen: boolean
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onLoadTemplate: (allopathicMedicines: any[], ayurvedicMedicines: any[]) => void
   department: string
-  onLoadTemplate: (template: any) => void
 }
 
 export function LoadPrescriptionTemplateModal({
-  isOpen,
-  onClose,
-  department,
+  open,
+  onOpenChange,
   onLoadTemplate,
+  department,
 }: LoadPrescriptionTemplateModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
-  const [showPreview, setShowPreview] = useState(false)
-  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<PrescriptionTemplate | null>(null)
+  const [previewOpen, setPreviewOpen] = useState<string | null>(null)
+  const { searchTemplates, loadTemplate, deleteTemplate } = usePrescriptionTemplates()
 
-  const { searchTemplates, getTemplatesByDepartment, deleteTemplate } = usePrescriptionTemplates()
-  const { toast } = useToast()
+  const filteredTemplates = searchTemplates(searchQuery, department)
 
-  const templates = searchQuery
-    ? searchTemplates(searchQuery).filter(
-        (t) => t.department === department || t.department === "general" || department === "general",
-      )
-    : getTemplatesByDepartment(department)
-
-  const handleLoadTemplate = (template: any) => {
-    onLoadTemplate(template)
-    toast({
-      title: "Template loaded successfully",
-      description: `"${template.name}" has been applied to your prescription`,
-    })
-    onClose()
+  const handleLoadTemplate = (template: PrescriptionTemplate) => {
+    onLoadTemplate(template.allopathicMedicines, template.ayurvedicMedicines)
+    loadTemplate(template.id)
+    onOpenChange(false)
+    setSearchQuery("")
+    setSelectedTemplate(null)
   }
 
-  const handleDeleteTemplate = (templateId: string) => {
+  const handleDeleteTemplate = (templateId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     deleteTemplate(templateId)
-    toast({
-      title: "Template deleted",
-      description: "Template has been removed from your library",
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     })
-    setTemplateToDelete(null)
   }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "allopathic":
-        return "bg-blue-100 text-blue-800"
+        return "bg-green-50 text-green-700 border-green-200"
       case "ayurvedic":
-        return "bg-green-100 text-green-800"
+        return "bg-orange-50 text-orange-700 border-orange-200"
       case "mixed":
-        return "bg-purple-100 text-purple-800"
+        return "bg-purple-50 text-purple-700 border-purple-200"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-50 text-gray-700 border-gray-200"
     }
   }
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-blue-600" />
-              Load Prescription Template
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5 text-blue-600" />
+            Load Prescription Template
+          </DialogTitle>
+          <DialogDescription>Choose a template to load into your current prescription</DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search templates by name, description, or medicine..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search templates by name, description, or medicine..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Templates List */}
+        <div className="flex-1 overflow-y-auto space-y-3">
+          {filteredTemplates.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FolderOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">No templates found</p>
+              <p className="text-sm">Try adjusting your search or create a new template</p>
             </div>
+          ) : (
+            filteredTemplates.map((template) => (
+              <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      {template.description && (
+                        <CardDescription className="mt-1">{template.description}</CardDescription>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPreviewOpen(previewOpen === template.id ? null : template.id)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleDeleteTemplate(template.id, e)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-            {/* Templates List */}
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-3">
-                {templates.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-8">
-                      <Download className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground text-center">
-                        {searchQuery ? "No templates found matching your search" : "No templates available"}
-                      </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline" className={getCategoryColor(template.category)}>
+                      {template.category}
+                    </Badge>
+                    <Badge variant="outline">{template.department}</Badge>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 ml-auto">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(template.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
+                    {template.allopathicMedicines.length > 0 && (
+                      <span>{template.allopathicMedicines.length} Allopathic</span>
+                    )}
+                    {template.ayurvedicMedicines.length > 0 && (
+                      <span>{template.ayurvedicMedicines.length} Ayurvedic</span>
+                    )}
+                    <span className="text-xs text-gray-400">by {template.createdBy}</span>
+                  </div>
+                </CardHeader>
+
+                <Collapsible open={previewOpen === template.id}>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                        {template.allopathicMedicines.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-green-700 mb-2">Allopathic Medicines</h4>
+                            <div className="space-y-2">
+                              {template.allopathicMedicines.map((medicine, index) => (
+                                <div key={index} className="text-sm bg-white p-2 rounded border">
+                                  <div className="font-medium">{medicine.name}</div>
+                                  <div className="text-gray-600">
+                                    {medicine.dosage} • {medicine.frequency} • {medicine.duration}
+                                  </div>
+                                  {medicine.instructions && (
+                                    <div className="text-gray-500 text-xs mt-1">{medicine.instructions}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {template.ayurvedicMedicines.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-orange-700 mb-2">Ayurvedic Medicines</h4>
+                            <div className="space-y-2">
+                              {template.ayurvedicMedicines.map((medicine, index) => (
+                                <div key={index} className="text-sm bg-white p-2 rounded border">
+                                  <div className="font-medium">{medicine.name}</div>
+                                  <div className="text-gray-600">
+                                    {medicine.dosage} • {medicine.frequency} • {medicine.duration}
+                                  </div>
+                                  {medicine.instructions && (
+                                    <div className="text-gray-500 text-xs mt-1">{medicine.instructions}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
-                  </Card>
-                ) : (
-                  templates.map((template) => (
-                    <Card key={template.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-medium">{template.name}</h4>
-                              <Badge className={`text-xs ${getCategoryColor(template.category)}`}>
-                                {template.category}
-                              </Badge>
-                            </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
-                            {template.description && (
-                              <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                            )}
-
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              {template.allopathicPrescriptions.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Pill className="h-3 w-3 text-blue-600" />
-                                  <span>{template.allopathicPrescriptions.length} Allopathic</span>
-                                </div>
-                              )}
-                              {template.ayurvedicPrescriptions.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Leaf className="h-3 w-3 text-green-600" />
-                                  <span>{template.ayurvedicPrescriptions.length} Ayurvedic</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>{template.createdAt}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                <span>{template.createdBy}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedTemplate(template)
-                                setShowPreview(true)
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setTemplateToDelete(template.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" onClick={() => handleLoadTemplate(template)}>
-                              Load
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Template Preview Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Template Preview: {selectedTemplate?.name}</DialogTitle>
-          </DialogHeader>
-
-          {selectedTemplate && (
-            <ScrollArea className="h-[500px]">
-              <div className="space-y-4">
-                {selectedTemplate.allopathicPrescriptions.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Pill className="h-4 w-4 text-blue-600" />
-                      Allopathic Medicines
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedTemplate.allopathicPrescriptions.map((med: any, idx: number) => (
-                        <Card key={idx} className="bg-blue-50">
-                          <CardContent className="p-3">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <strong>Medicine:</strong> {med.medicine}
-                              </div>
-                              <div>
-                                <strong>Dosage:</strong> {med.dosage}
-                              </div>
-                              <div>
-                                <strong>Duration:</strong> {med.duration} days
-                              </div>
-                              <div>
-                                <strong>Quantity:</strong> {med.quantity}
-                              </div>
-                              <div className="col-span-2">
-                                <strong>Instructions:</strong> {med.instructions}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedTemplate.ayurvedicPrescriptions.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Leaf className="h-4 w-4 text-green-600" />
-                      Ayurvedic Medicines
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedTemplate.ayurvedicPrescriptions.map((med: any, idx: number) => (
-                        <Card key={idx} className="bg-green-50">
-                          <CardContent className="p-3">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <strong>Medicine:</strong> {med.medicine}
-                              </div>
-                              <div>
-                                <strong>Dosage:</strong> {med.dosage}
-                              </div>
-                              <div>
-                                <strong>Duration:</strong> {med.duration}
-                              </div>
-                              <div className="col-span-2">
-                                <strong>Instructions:</strong> {med.instructions}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+                <CardContent className="pt-0">
+                  <Button onClick={() => handleLoadTemplate(template)} className="w-full bg-blue-600 hover:bg-blue-700">
+                    Load This Template
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
           )}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowPreview(false)}>
-              Close
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedTemplate) {
-                  handleLoadTemplate(selectedTemplate)
-                  setShowPreview(false)
-                }
-              }}
-            >
-              Load This Template
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this template? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => templateToDelete && handleDeleteTemplate(templateToDelete)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

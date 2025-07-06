@@ -2,7 +2,19 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Calendar, Clock, User, Phone, FileText, CreditCard, CheckCircle, XCircle, Edit3 } from "lucide-react"
+import {
+  Calendar,
+  Clock,
+  User,
+  Phone,
+  FileText,
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Edit3,
+  ExternalLink,
+} from "lucide-react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -33,6 +45,25 @@ export function AppointmentDetailsModal({
   const [notes, setNotes] = useState(appointment?.notes || "")
 
   if (!appointment) return null
+
+  // Generate a patient ID from the appointment data
+  const getPatientId = () => {
+    // In a real app, this would come from the appointment data
+    // For demo purposes, we'll generate a consistent ID based on patient name
+    const patientName = appointment.patientName || appointment.patient
+    return (
+      patientName.toLowerCase().replace(/\s+/g, "-") +
+      "-" +
+      Math.abs(
+        patientName.split("").reduce((a, b) => {
+          a = (a << 5) - a + b.charCodeAt(0)
+          return a & a
+        }, 0),
+      )
+        .toString()
+        .slice(0, 4)
+    )
+  }
 
   const handleStatusUpdate = async (newStatus: string) => {
     setIsUpdating(true)
@@ -150,6 +181,17 @@ export function AppointmentDetailsModal({
               <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="h-5 w-5 text-teal-600" />
                 Patient Information
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto border-blue-200 text-blue-600 hover:bg-blue-50 bg-transparent"
+                >
+                  <Link href={`/patients/${getPatientId()}`} target="_blank">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Patient Details
+                  </Link>
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -160,7 +202,7 @@ export function AppointmentDetailsModal({
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Patient ID</Label>
-                  <p className="font-medium">{appointment.patientId}</p>
+                  <p className="font-medium">{appointment.patientId || getPatientId()}</p>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
@@ -174,7 +216,7 @@ export function AppointmentDetailsModal({
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Token Number</Label>
                   <Badge variant="outline" className="w-fit">
-                    {appointment.token}
+                    {appointment.token || "No Token"}
                   </Badge>
                 </div>
               </div>

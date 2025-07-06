@@ -9,7 +9,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@chakra-ui/react": "latest",
     "@emotion/react": "latest",
     "@emotion/styled": "latest",
     "@hookform/resolvers": "latest",

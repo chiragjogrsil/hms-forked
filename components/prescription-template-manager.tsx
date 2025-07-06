@@ -1,79 +1,110 @@
 "use client"
 
 import { useState } from "react"
-import { Save, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Save, FolderOpen } from "lucide-react"
 import { SavePrescriptionTemplateModal } from "@/components/modals/save-prescription-template-modal"
 import { LoadPrescriptionTemplateModal } from "@/components/modals/load-prescription-template-modal"
 import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
 
 interface PrescriptionTemplateManagerProps {
-  ayurvedicPrescriptions: any[]
-  allopathicPrescriptions: any[]
-  department: string
-  onLoadTemplate: (template: any) => void
-  readOnly?: boolean
+  allopathicMedicines: Array<{
+    name: string
+    dosage: string
+    frequency: string
+    duration: string
+    instructions?: string
+  }>
+  ayurvedicMedicines: Array<{
+    name: string
+    dosage: string
+    frequency: string
+    duration: string
+    instructions?: string
+  }>
+  onLoadTemplate: (allopathicMedicines: any[], ayurvedicMedicines: any[]) => void
+  department?: string
 }
 
 export function PrescriptionTemplateManager({
-  ayurvedicPrescriptions,
-  allopathicPrescriptions,
-  department,
+  allopathicMedicines,
+  ayurvedicMedicines,
   onLoadTemplate,
-  readOnly = false,
+  department = "General OPD",
 }: PrescriptionTemplateManagerProps) {
-  const [showSaveModal, setShowSaveModal] = useState(false)
-  const [showLoadModal, setShowLoadModal] = useState(false)
-  const { getTemplatesByDepartment } = usePrescriptionTemplates()
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [loadModalOpen, setLoadModalOpen] = useState(false)
+  const { templates } = usePrescriptionTemplates()
 
-  const totalMedicines = ayurvedicPrescriptions.length + allopathicPrescriptions.length
-  const hasTemplates = getTemplatesByDepartment(department).length > 0
+  const totalMedicines = allopathicMedicines.length + ayurvedicMedicines.length
+  const hasMedicines = totalMedicines > 0
 
-  if (readOnly) return null
+  const departmentTemplates = templates.filter((t) => t.department === department)
 
   return (
-    <div className="flex items-center gap-2">
-      {totalMedicines > 0 && (
+    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg mb-6">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800">Prescription Templates</h3>
+          <Badge variant="outline" className="bg-white">
+            {departmentTemplates.length} available
+          </Badge>
+        </div>
+        {hasMedicines && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Current prescription:</span>
+            {allopathicMedicines.length > 0 && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                {allopathicMedicines.length} Allopathic
+              </Badge>
+            )}
+            {ayurvedicMedicines.length > 0 && (
+              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                {ayurvedicMedicines.length} Ayurvedic
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowSaveModal(true)}
-          className="text-green-600 border-green-200 hover:bg-green-50"
+          onClick={() => setLoadModalOpen(true)}
+          className="border-blue-200 text-blue-600 hover:bg-blue-50"
         >
-          <Save className="h-4 w-4 mr-2" />
-          Save Template
+          <FolderOpen className="mr-2 h-4 w-4" />
+          Load Template
         </Button>
-      )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowLoadModal(true)}
-        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-      >
-        <Download className="h-4 w-4 mr-2" />
-        Load Template
-        {hasTemplates && (
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {getTemplatesByDepartment(department).length}
-          </Badge>
+        {hasMedicines && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSaveModalOpen(true)}
+            className="border-green-200 text-green-600 hover:bg-green-50"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Save as Template
+          </Button>
         )}
-      </Button>
+      </div>
 
       <SavePrescriptionTemplateModal
-        isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        ayurvedicPrescriptions={ayurvedicPrescriptions}
-        allopathicPrescriptions={allopathicPrescriptions}
+        open={saveModalOpen}
+        onOpenChange={setSaveModalOpen}
+        allopathicMedicines={allopathicMedicines}
+        ayurvedicMedicines={ayurvedicMedicines}
         department={department}
       />
 
       <LoadPrescriptionTemplateModal
-        isOpen={showLoadModal}
-        onClose={() => setShowLoadModal(false)}
-        department={department}
+        open={loadModalOpen}
+        onOpenChange={setLoadModalOpen}
         onLoadTemplate={onLoadTemplate}
+        department={department}
       />
     </div>
   )

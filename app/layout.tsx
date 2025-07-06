@@ -9,9 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DoctorProvider } from "@/contexts/doctor-context"
-import { VisitWorkflowProvider } from "@/contexts/visit-workflow-context"
 import { PrescriptionTemplateProvider } from "@/contexts/prescription-template-context"
-import { ConsultationProvider } from "@/contexts/consultation-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,21 +26,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className, "antialiased")}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <DoctorProvider>
-            <VisitWorkflowProvider>
-              <PrescriptionTemplateProvider>
-                <ConsultationProvider>
-                  <SidebarProvider>
-                    <div className="flex min-h-screen w-full">
-                      <AppSidebar />
-                      <main className="flex-1 overflow-hidden">{children}</main>
-                    </div>
-                  </SidebarProvider>
-                </ConsultationProvider>
-              </PrescriptionTemplateProvider>
-            </VisitWorkflowProvider>
+            <PrescriptionTemplateProvider>
+              <SidebarProvider>
+                <AppSidebar />
+                <main className="flex-1 overflow-auto">{children}</main>
+              </SidebarProvider>
+            </PrescriptionTemplateProvider>
           </DoctorProvider>
           <Toaster />
         </ThemeProvider>
