@@ -2,74 +2,95 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { LayoutDashboard, Users, Stethoscope, UserPlus, Bell, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Home, Users, Stethoscope, UserPlus } from "lucide-react"
+
+const navigationItems = [
+  {
+    name: "Dashboard",
+    href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Patients",
+    href: "/patients",
+    icon: Users,
+  },
+  {
+    name: "Services & Procedures",
+    href: "/departments",
+    icon: Stethoscope,
+  },
+]
 
 export function TopNavigation() {
   const pathname = usePathname()
 
-  const navigation = [
-    {
-      name: "Dashboard",
-      href: "/",
-      icon: Home,
-      current: pathname === "/",
-    },
-    {
-      name: "Patients",
-      href: "/patients",
-      icon: Users,
-      current: pathname.startsWith("/patients"),
-    },
-    {
-      name: "Services & Procedures",
-      href: "/departments",
-      icon: Stethoscope,
-      current: pathname.startsWith("/departments"),
-    },
-  ]
-
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Stethoscope className="h-8 w-8 text-blue-600 mr-2" />
-              <h1 className="text-xl font-bold text-gray-900">Hospital Management System</h1>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        {/* Logo and Brand */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
-              {navigation.map((item) => {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
+            <span className="font-bold text-xl">Hospital Management</span>
+          </Link>
+
+          {/* Main Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navigationItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
                     className={cn(
-                      item.current
-                        ? "border-blue-500 text-gray-900 bg-blue-50"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50",
-                      "inline-flex items-center px-3 py-2 border-b-2 text-sm font-medium rounded-t-md transition-colors",
+                      "flex items-center gap-2 px-4 py-2",
+                      isActive && "bg-secondary text-secondary-foreground",
                     )}
                   >
-                    <Icon className="h-4 w-4 mr-2" />
+                    <Icon className="h-4 w-4" />
                     {item.name}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-          <div className="flex items-center">
-            <Link
-              href="/patients/register"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  </Button>
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-4 w-4" />
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
             >
-              <UserPlus className="h-4 w-4 mr-2" />
+              3
+            </Badge>
+          </Button>
+
+          {/* Settings */}
+          <Button variant="ghost" size="icon">
+            <Settings className="h-4 w-4" />
+          </Button>
+
+          {/* Register Patient - Primary Action */}
+          <Link href="/patients/register">
+            <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
+              <UserPlus className="h-4 w-4" />
               Register Patient
-            </Link>
-          </div>
+            </Button>
+          </Link>
         </div>
       </div>
-    </nav>
+    </header>
   )
 }
