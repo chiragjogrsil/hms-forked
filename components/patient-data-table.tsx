@@ -14,6 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,12 @@ export function PatientDataTable<TData, TValue>({ columns, data, isLoading }: Da
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const shouldReduceMotion = useReducedMotion()
+  const router = useRouter()
+
+  const handleRowClick = (row: any) => {
+    const patientId = row.original.id
+    router.push(`/patients/${patientId}`)
+  }
 
   const table = useReactTable({
     data,
@@ -111,8 +118,9 @@ export function PatientDataTable<TData, TValue>({ columns, data, isLoading }: Da
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted")}
+                      className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer")}
                       data-state={row.getIsSelected() && "selected"}
+                      onClick={() => handleRowClick(row)}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>

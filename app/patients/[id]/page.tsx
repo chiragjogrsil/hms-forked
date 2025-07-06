@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { patients } from "@/data/patients"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -51,25 +52,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { StreamlinedFollowUp } from "@/components/streamlined-follow-up"
 
-// Mock patient data
-const mockPatient = {
-  id: "P12345",
-  name: "John Doe",
-  age: 45,
-  gender: "Male",
-  phone: "+1 (555) 123-4567",
-  email: "john.doe@email.com",
-  address: "123 Main St, City, State 12345",
-  bloodGroup: "O+",
-  allergies: ["Penicillin", "Shellfish"],
-  emergencyContact: {
-    name: "Jane Doe",
-    relationship: "Spouse",
-    phone: "+1 (555) 987-6543",
-  },
-  medicalHistory: ["Hypertension", "Type 2 Diabetes", "Previous heart surgery (2019)"],
-  currentMedications: ["Metformin 500mg twice daily", "Lisinopril 10mg once daily"],
-}
+
 
 // Medical services configuration based on departments
 const medicalServices = {
@@ -203,6 +186,44 @@ export default function PatientDetailsPage() {
   const params = useParams()
   const patientId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
+  
+  // Get patient data based on ID from URL
+  const patient = patients.find(p => p.id === patientId)
+  
+  // If patient not found, show error
+  if (!patient) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <User className="h-12 w-12 mb-4 text-muted-foreground" />
+            <h2 className="text-lg font-semibold mb-2">Patient Not Found</h2>
+            <p className="text-muted-foreground">The patient with ID "{patientId}" could not be found.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+  
+  // Convert patient data to match expected format
+  const mockPatient = {
+    id: patient.id,
+    name: patient.name,
+    age: patient.age,
+    gender: patient.gender,
+    phone: "+1 (555) 123-4567", // Default values since not in patient data
+    email: patient.email,
+    address: "123 Main St, City, State 12345", // Default value
+    bloodGroup: "O+", // Default value
+    allergies: ["Penicillin", "Shellfish"], // Default values
+    emergencyContact: {
+      name: "Emergency Contact",
+      relationship: "Family",
+      phone: "+1 (555) 987-6543",
+    },
+    medicalHistory: ["No significant medical history"], // Default value
+    currentMedications: ["No current medications"], // Default value
+  }
   const [selectedDepartment, setSelectedDepartment] = useState("general")
   const [selectedService, setSelectedService] = useState("")
   const [consultationKey, setConsultationKey] = useState(0)

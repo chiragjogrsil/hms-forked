@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +16,46 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import type { Patient } from "@/data/patients"
+
+const PatientActions = ({ patient }: { patient: Patient }) => {
+  const router = useRouter()
+  
+  const handleViewProfile = () => {
+    router.push(`/patients/${patient.id}`)
+  }
+  
+  const handleEditDetails = () => {
+    router.push(`/patients/${patient.id}/edit`)
+  }
+  
+  const handleDeletePatient = () => {
+    if (window.confirm(`Are you sure you want to delete ${patient.name}?`)) {
+      // In a real app, this would call an API to delete the patient
+      console.log('Delete patient:', patient.id)
+    }
+  }
+  
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(patient.id)}>
+          Copy patient ID
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleViewProfile}>View profile</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEditDetails}>Edit details</DropdownMenuItem>
+        <DropdownMenuItem className="text-red-600" onClick={handleDeletePatient}>Delete patient</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 const CategoryBadge = ({ category }: { category: Patient["category"] }) => {
   const variant = {
@@ -110,24 +151,9 @@ export const columns: ColumnDef<Patient>[] = [
     cell: ({ row }) => {
       const patient = row.original
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(patient.id)}>
-              Copy patient ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View profile</DropdownMenuItem>
-            <DropdownMenuItem>Edit details</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">Delete patient</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div onClick={(e) => e.stopPropagation()}>
+          <PatientActions patient={patient} />
+        </div>
       )
     },
   },
