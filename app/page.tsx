@@ -13,6 +13,10 @@ import {
   NotebookPen,
   CalendarPlus,
   CalendarPlus2,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Calendar,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, useReducedMotion } from "framer-motion"
@@ -23,6 +27,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { EmptyState } from "@/components/empty-state"
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog"
 import { QuickRegistrationDialog } from "@/components/quick-registration-dialog"
@@ -180,6 +191,8 @@ export default function DashboardPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [isQuickRegOpen, setIsQuickRegOpen] = useState(false)
   const [isCreationOpen, setIsCreationOpen] = useState(false)
+  const [isEditAppointmentOpen, setIsEditAppointmentOpen] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null)
   const shouldReduceMotion = useReducedMotion()
   const router = useRouter()
 
@@ -197,6 +210,23 @@ export default function DashboardPage() {
 
   const handlePatientClick = (patientId: string) => {
     router.push(`/patients/${patientId}`)
+  }
+
+  const handleEditAppointment = (appointment: any) => {
+    setSelectedAppointment(appointment)
+    setIsEditAppointmentOpen(true)
+  }
+
+  const handleDeleteAppointment = (appointmentId: number) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
+      setAppointments((prev) => prev.filter((app) => app.id !== appointmentId))
+    }
+  }
+
+  const handleRescheduleAppointment = (appointment: any) => {
+    // For now, we'll just open the edit dialog
+    // In a real app, this could open a specific reschedule dialog
+    handleEditAppointment(appointment)
   }
 
   const getActionButtons = (appointment: (typeof initialAppointmentsData)[0]) => {
@@ -362,8 +392,36 @@ export default function DashboardPage() {
                     </Badge>
                     <div className="w-28 hidden md:block">{getStatusPill(appointment.status as AppointmentStatus)}</div>
                     <div className="font-mono text-sm w-24 text-right hidden lg:block">{appointment.fee}</div>
-                    <div className="w-36 text-right" onClick={(e) => e.stopPropagation()}>
-                      {getActionButtons(appointment)}
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-32 text-right">
+                        {getActionButtons(appointment)}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditAppointment(appointment)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Appointment
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRescheduleAppointment(appointment)}>
+                            <Calendar className="mr-2 h-4 w-4" />
+                            Reschedule
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteAppointment(appointment.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Appointment
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))
@@ -387,6 +445,34 @@ export default function DashboardPage() {
           setAppointments((prev) => [...prev, { ...newAppointment, id: prev.length + 1, status: "Scheduled" }])
         }}
       />
+      
+      {/* Edit Appointment Dialog */}
+      {selectedAppointment && (
+        <AppointmentBookingDialog
+          open={isEditAppointmentOpen}
+          onOpenChange={setIsEditAppointmentOpen}
+          onAppointmentCreated={(updatedAppointment) => {
+            setAppointments((prev) => 
+              prev.map((app) => 
+                app.id === selectedAppointment.id 
+                  ? { ...updatedAppointment, id: selectedAppointment.id, status: selectedAppointment.status }
+                  : app
+              )
+            )
+            setSelectedAppointment(null)
+          }}
+          initialPatientData={{
+            id: selectedAppointment.patientId,
+            name: selectedAppointment.patient,
+          }}
+          prefilledData={{
+            appointmentType: selectedAppointment.reason,
+            department: "General Medicine", // You might want to store this in the appointment data
+            doctor: "Dr. Smith", // You might want to store this in the appointment data
+          }}
+        />
+      )}
+      
       <QuickRegistrationDialog open={isQuickRegOpen} onOpenChange={setIsQuickRegOpen} />
       <PatientCreationDialog
         open={isCreationOpen}
