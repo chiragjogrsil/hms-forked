@@ -239,14 +239,30 @@ export default function PatientDetailsPage() {
 
   // Handle URL parameters for tab selection
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const tabParam = urlParams.get("tab")
-    if (
-      tabParam &&
-      ["overview", "consultation", "services", "telemedicine", "invoices", "reports"].includes(tabParam)
-    ) {
-      setActiveTab(tabParam)
+    // Only run on client side to avoid hydration issues
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const tabParam = urlParams.get("tab")
+      if (
+        tabParam &&
+        ["overview", "consultation", "services", "telemedicine", "invoices", "reports"].includes(tabParam)
+      ) {
+        setActiveTab(tabParam)
+      }
     }
+  }, [])
+
+  // Set initial dates after component mounts to avoid hydration issues
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0]
+    setCertificateData(prev => ({
+      ...prev,
+      issueDate: today
+    }))
+    setConsentData(prev => ({
+      ...prev,
+      procedureDate: today
+    }))
   }, [])
 
   // Set default service when department changes
@@ -269,12 +285,12 @@ export default function PatientDetailsPage() {
     ailment: "",
     duration: "",
     recommendations: "",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: "",
   })
   const [consentData, setConsentData] = useState({
     procedureName: "",
     procedureDuration: "",
-    procedureDate: new Date().toISOString().split("T")[0],
+    procedureDate: "",
     additionalNotes: "",
   })
 
@@ -319,8 +335,10 @@ export default function PatientDetailsPage() {
   }
 
   const copyMeetingLink = (link: string) => {
-    navigator.clipboard.writeText(link)
-    toast.success("Meeting link copied to clipboard")
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(link)
+      toast.success("Meeting link copied to clipboard")
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -360,7 +378,7 @@ export default function PatientDetailsPage() {
 
     // Check if there's an active consultation that would be overridden
     if (isConsultationActive) {
-      const confirmed = window.confirm(
+      const confirmed = typeof window !== 'undefined' && window.confirm(
         "You have an active consultation in progress. Starting a new consultation will override the current one. Do you want to continue?",
       )
       if (!confirmed) return
@@ -371,6 +389,7 @@ export default function PatientDetailsPage() {
 
   const handleCreateConsultation = () => {
     const currentDate = new Date().toISOString().split("T")[0]
+    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })
 
     // Start new consultation with specified data
     startNewConsultation(patientId, mockPatient.name, currentDate, {
@@ -378,7 +397,7 @@ export default function PatientDetailsPage() {
       consultationType: newConsultationData.consultationType,
       doctorName: newConsultationData.doctorName,
       appointmentDate: currentDate,
-      appointmentTime: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
+      appointmentTime: currentTime,
     })
 
     // Force re-render of consultation component by changing key
@@ -459,12 +478,12 @@ export default function PatientDetailsPage() {
     if (!activeConsultation) return false
 
     return (
-      activeConsultation.prescriptions?.ayurvedic?.length > 0 ||
-      activeConsultation.prescriptions?.allopathic?.length > 0 ||
+      (activeConsultation.prescriptions?.ayurvedic?.length || 0) > 0 ||
+      (activeConsultation.prescriptions?.allopathic?.length || 0) > 0 ||
       activeConsultation.clinicalNotes ||
       activeConsultation.chiefComplaint ||
-      activeConsultation.provisionalDiagnosis?.length > 0 ||
-      activeConsultation.diagnosis?.length > 0 ||
+      (activeConsultation.provisionalDiagnosis?.length || 0) > 0 ||
+      (activeConsultation.diagnosis?.length || 0) > 0 ||
       Object.keys(activeConsultation.vitals || {}).length > 0
     )
   }

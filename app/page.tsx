@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, useReducedMotion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -68,6 +69,7 @@ const initialAppointmentsData = [
     id: 1,
     time: "09:00 AM",
     patient: "Liam Johnson",
+    patientId: "P001",
     avatar: "/placeholder.svg?height=40&width=40",
     reason: "Consultation",
     status: "Scheduled",
@@ -77,6 +79,7 @@ const initialAppointmentsData = [
     id: 2,
     time: "10:00 AM",
     patient: "Olivia Smith",
+    patientId: "P002",
     avatar: "/placeholder.svg?height=40&width=40",
     reason: "Follow-up",
     status: "Waiting",
@@ -86,6 +89,7 @@ const initialAppointmentsData = [
     id: 3,
     time: "11:00 AM",
     patient: "Noah Williams",
+    patientId: "P003",
     avatar: "/placeholder.svg?height=40&width=40",
     reason: "Check-up",
     status: "In Progress",
@@ -95,6 +99,7 @@ const initialAppointmentsData = [
     id: 4,
     time: "12:00 PM",
     patient: "Emma Brown",
+    patientId: "P004",
     avatar: "/placeholder.svg?height=40&width=40",
     reason: "Consultation",
     status: "Completed",
@@ -104,6 +109,7 @@ const initialAppointmentsData = [
     id: 5,
     time: "01:00 PM",
     patient: "James Jones",
+    patientId: "P005",
     avatar: "/placeholder.svg?height=40&width=40",
     reason: "New Patient",
     status: "Scheduled",
@@ -175,6 +181,7 @@ export default function DashboardPage() {
   const [isQuickRegOpen, setIsQuickRegOpen] = useState(false)
   const [isCreationOpen, setIsCreationOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
+  const router = useRouter()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -186,6 +193,10 @@ export default function DashboardPage() {
 
   const handleStatusChange = (id: number, newStatus: AppointmentStatus) => {
     setAppointments((prev) => prev.map((app) => (app.id === id ? { ...app, status: newStatus } : app)))
+  }
+
+  const handlePatientClick = (patientId: string) => {
+    router.push(`/patients/${patientId}`)
   }
 
   const getActionButtons = (appointment: (typeof initialAppointmentsData)[0]) => {
@@ -335,7 +346,8 @@ export default function DashboardPage() {
                 appointments.map((appointment) => (
                   <div
                     key={appointment.id}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+                    onClick={() => handlePatientClick(appointment.patientId)}
                   >
                     <div className="text-sm font-medium text-muted-foreground w-20">{appointment.time}</div>
                     <div className="flex items-center gap-3 flex-1">
@@ -343,14 +355,16 @@ export default function DashboardPage() {
                         <AvatarImage src={appointment.avatar || "/placeholder.svg"} alt={appointment.patient} />
                         <AvatarFallback>{appointment.patient.substring(0, 2)}</AvatarFallback>
                       </Avatar>
-                      <span className="font-semibold">{appointment.patient}</span>
+                      <span className="font-semibold group-hover:text-primary transition-colors">{appointment.patient}</span>
                     </div>
                     <Badge variant="secondary" className="hidden sm:inline-flex">
                       {appointment.reason}
                     </Badge>
                     <div className="w-28 hidden md:block">{getStatusPill(appointment.status as AppointmentStatus)}</div>
                     <div className="font-mono text-sm w-24 text-right hidden lg:block">{appointment.fee}</div>
-                    <div className="w-36 text-right">{getActionButtons(appointment)}</div>
+                    <div className="w-36 text-right" onClick={(e) => e.stopPropagation()}>
+                      {getActionButtons(appointment)}
+                    </div>
                   </div>
                 ))
               ) : (
