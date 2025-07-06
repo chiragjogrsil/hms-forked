@@ -5,40 +5,37 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import {
-  Calendar,
-  Clock,
   User,
   Phone,
-  CreditCard,
-  FileText,
-  UserCheck,
+  Calendar,
+  Clock,
   Building2,
   Stethoscope,
+  CreditCard,
   ExternalLink,
   CheckCircle,
   XCircle,
-  Clock3,
+  AlertCircle,
   PlayCircle,
   UserX,
-  DollarSign,
+  Hash,
 } from "lucide-react"
+import Link from "next/link"
 
 interface Appointment {
   id: string
   patientId: string
   patientName: string
-  patientPhone: string
+  phone: string
   date: string
   time: string
   department: string
-  doctorName: string
+  doctor: string
   type: string
-  status: "scheduled" | "waiting" | "in-progress" | "completed" | "cancelled" | "no-show"
   duration: string
+  status: "scheduled" | "waiting" | "in-progress" | "completed" | "cancelled" | "no-show"
   consultationFee: number
   paymentStatus: "paid" | "pending" | "failed"
   paymentMethod?: string
@@ -51,22 +48,6 @@ interface AppointmentDetailsModalProps {
   isOpen: boolean
   onClose: () => void
   onStatusChange?: (appointmentId: string, newStatus: string) => void
-  onPaymentStatusChange?: (appointmentId: string, newStatus: string) => void
-}
-
-const statusConfig = {
-  scheduled: { color: "bg-blue-100 text-blue-800", icon: Calendar },
-  waiting: { color: "bg-yellow-100 text-yellow-800", icon: Clock3 },
-  "in-progress": { color: "bg-green-100 text-green-800", icon: PlayCircle },
-  completed: { color: "bg-gray-100 text-gray-800", icon: CheckCircle },
-  cancelled: { color: "bg-red-100 text-red-800", icon: XCircle },
-  "no-show": { color: "bg-orange-100 text-orange-800", icon: UserX },
-}
-
-const paymentStatusConfig = {
-  paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
-  pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
-  failed: { color: "bg-red-100 text-red-800", icon: XCircle },
 }
 
 export function AppointmentDetailsModal({
@@ -74,55 +55,63 @@ export function AppointmentDetailsModal({
   isOpen,
   onClose,
   onStatusChange,
-  onPaymentStatusChange,
 }: AppointmentDetailsModalProps) {
   const [notes, setNotes] = useState(appointment?.notes || "")
-  const [isUpdatingNotes, setIsUpdatingNotes] = useState(false)
+  const [isSavingNotes, setIsSavingNotes] = useState(false)
   const { toast } = useToast()
 
   if (!appointment) return null
 
-  const StatusIcon = statusConfig[appointment.status]?.icon || Calendar
-  const PaymentIcon = paymentStatusConfig[appointment.paymentStatus]?.icon || Clock
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      scheduled: { color: "bg-blue-100 text-blue-800", icon: Calendar },
+      waiting: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      "in-progress": { color: "bg-green-100 text-green-800", icon: PlayCircle },
+      completed: { color: "bg-gray-100 text-gray-800", icon: CheckCircle },
+      cancelled: { color: "bg-red-100 text-red-800", icon: XCircle },
+      "no-show": { color: "bg-orange-100 text-orange-800", icon: UserX },
+    }
 
-  const handleStatusChange = (newStatus: string) => {
-    onStatusChange?.(appointment.id, newStatus)
-    toast({
-      title: "Status Updated",
-      description: `Appointment status changed to ${newStatus.replace("-", " ")}`,
-    })
+    const config = statusConfig[status as keyof typeof statusConfig]
+    const Icon = config?.icon || AlertCircle
+
+    return (
+      <Badge className={`${config?.color} flex items-center gap-1`}>
+        <Icon className="h-3 w-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
+      </Badge>
+    )
   }
 
-  const handlePaymentStatusChange = (newStatus: string) => {
-    onPaymentStatusChange?.(appointment.id, newStatus)
-    toast({
-      title: "Payment Status Updated",
-      description: `Payment status changed to ${newStatus}`,
-    })
+  const getPaymentStatusBadge = (status: string) => {
+    const statusConfig = {
+      paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
+      pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      failed: { color: "bg-red-100 text-red-800", icon: XCircle },
+    }
+
+    const config = statusConfig[status as keyof typeof statusConfig]
+    const Icon = config?.icon || AlertCircle
+
+    return (
+      <Badge className={`${config?.color} flex items-center gap-1`}>
+        <Icon className="h-3 w-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    )
   }
 
-  const handleSaveNotes = async () => {
-    setIsUpdatingNotes(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsUpdatingNotes(false)
-    toast({
-      title: "Notes Saved",
-      description: "Appointment notes have been updated successfully.",
-    })
-  }
-
-  const getStatusActions = () => {
-    switch (appointment.status) {
+  const getStatusActions = (status: string) => {
+    switch (status) {
       case "scheduled":
         return (
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => handleStatusChange("waiting")}>
-              <Clock3 className="h-4 w-4 mr-1" />
+            <Button onClick={() => handleStatusChange("waiting")} className="bg-yellow-600 hover:bg-yellow-700">
+              <Clock className="h-4 w-4 mr-2" />
               Mark as Waiting
             </Button>
-            <Button size="sm" variant="destructive" onClick={() => handleStatusChange("cancelled")}>
-              <XCircle className="h-4 w-4 mr-1" />
+            <Button variant="destructive" onClick={() => handleStatusChange("cancelled")}>
+              <XCircle className="h-4 w-4 mr-2" />
               Cancel
             </Button>
           </div>
@@ -130,27 +119,27 @@ export function AppointmentDetailsModal({
       case "waiting":
         return (
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => handleStatusChange("in-progress")}>
-              <PlayCircle className="h-4 w-4 mr-1" />
+            <Button onClick={() => handleStatusChange("in-progress")} className="bg-green-600 hover:bg-green-700">
+              <PlayCircle className="h-4 w-4 mr-2" />
               Start Consultation
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleStatusChange("no-show")}>
-              <UserX className="h-4 w-4 mr-1" />
+            <Button variant="outline" onClick={() => handleStatusChange("no-show")}>
+              <UserX className="h-4 w-4 mr-2" />
               Mark No Show
             </Button>
           </div>
         )
       case "in-progress":
         return (
-          <Button size="sm" onClick={() => handleStatusChange("completed")}>
-            <CheckCircle className="h-4 w-4 mr-1" />
+          <Button onClick={() => handleStatusChange("completed")} className="bg-blue-600 hover:bg-blue-700">
+            <CheckCircle className="h-4 w-4 mr-2" />
             Complete Appointment
           </Button>
         )
       case "completed":
         return appointment.paymentStatus === "pending" ? (
-          <Button size="sm" variant="outline" onClick={() => handlePaymentStatusChange("paid")}>
-            <DollarSign className="h-4 w-4 mr-1" />
+          <Button onClick={() => handlePaymentStatusChange("paid")} className="bg-green-600 hover:bg-green-700">
+            <CreditCard className="h-4 w-4 mr-2" />
             Mark as Paid
           </Button>
         ) : null
@@ -159,186 +148,179 @@ export function AppointmentDetailsModal({
     }
   }
 
-  const openPatientDetails = () => {
-    window.open(`/patients/${appointment.patientId}`, "_blank")
+  const handleStatusChange = (newStatus: string) => {
+    if (onStatusChange) {
+      onStatusChange(appointment.id, newStatus)
+      toast({
+        title: "Status Updated",
+        description: `Appointment status changed to ${newStatus.replace("-", " ")}`,
+      })
+    }
+  }
+
+  const handlePaymentStatusChange = (newStatus: string) => {
+    // In a real app, this would update the payment status
+    toast({
+      title: "Payment Status Updated",
+      description: `Payment marked as ${newStatus}`,
+    })
+  }
+
+  const handleSaveNotes = async () => {
+    setIsSavingNotes(true)
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // In a real app, this would save to backend
+    appointment.notes = notes
+
+    setIsSavingNotes(false)
+    toast({
+      title: "Notes Saved",
+      description: "Appointment notes have been updated successfully",
+    })
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Appointment Details
-          </DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Appointment Details</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Patient Information */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-5 w-5" />
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3 flex items-center">
+              <User className="h-5 w-5 mr-2 text-blue-600" />
               Patient Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{appointment.patientName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">{appointment.patientPhone}</span>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Patient Name</p>
+                <p className="font-medium">{appointment.patientName}</p>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">
-                    {appointment.tokenNumber ? `Token: ${appointment.tokenNumber}` : "No Token Assigned"}
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={openPatientDetails} className="w-full bg-transparent">
-                  <ExternalLink className="h-4 w-4 mr-1" />
+              <div>
+                <p className="text-sm text-gray-600">Patient ID</p>
+                <p className="font-medium">{appointment.patientId}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Phone Number
+                </p>
+                <p className="font-medium">{appointment.phone}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Hash className="h-4 w-4 mr-1" />
+                  Token Number
+                </p>
+                <p className="font-medium">{appointment.tokenNumber || "No Token Assigned"}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Link href={`/patients/${appointment.patientId}`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="h-4 w-4 mr-2" />
                   View Patient Details
                 </Button>
-              </div>
+              </Link>
             </div>
           </div>
 
-          <Separator />
-
           {/* Appointment Information */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3 flex items-center">
+              <Calendar className="h-5 w-5 mr-2 text-gray-600" />
               Appointment Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Date & Time</span>
-                </div>
-                <div className="pl-6 text-sm text-gray-600">
-                  {new Date(appointment.date).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </div>
-                <div className="pl-6 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">{appointment.time}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Department</span>
-                </div>
-                <div className="pl-6 text-sm text-gray-600">{appointment.department}</div>
+              <div>
+                <p className="text-sm text-gray-600">Date & Time</p>
+                <p className="font-medium">
+                  {new Date(appointment.date).toLocaleDateString()} at {appointment.time}
+                </p>
               </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Doctor</span>
-                </div>
-                <div className="pl-6 text-sm text-gray-600">{appointment.doctorName}</div>
-
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Type & Duration</span>
-                </div>
-                <div className="pl-6 text-sm text-gray-600">
-                  {appointment.type} • {appointment.duration}
-                </div>
+              <div>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Building2 className="h-4 w-4 mr-1" />
+                  Department
+                </p>
+                <p className="font-medium">{appointment.department}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <Stethoscope className="h-4 w-4 mr-1" />
+                  Doctor
+                </p>
+                <p className="font-medium">Dr. {appointment.doctor}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Type & Duration</p>
+                <p className="font-medium">
+                  {appointment.type} ({appointment.duration})
+                </p>
               </div>
             </div>
           </div>
-
-          <Separator />
 
           {/* Status and Actions */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              Status & Actions
-            </h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <StatusIcon className="h-4 w-4" />
-                <Badge className={statusConfig[appointment.status]?.color}>
-                  {appointment.status.replace("-", " ").toUpperCase()}
-                </Badge>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3">Status & Actions</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Current Status</p>
+                {getStatusBadge(appointment.status)}
               </div>
-              {getStatusActions()}
             </div>
+            <div className="mt-4">{getStatusActions(appointment.status)}</div>
           </div>
-
-          <Separator />
 
           {/* Payment Information */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3 flex items-center">
+              <CreditCard className="h-5 w-5 mr-2 text-yellow-600" />
               Payment Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Consultation Fee</span>
-                  <span className="text-lg font-bold">₹{appointment.consultationFee}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PaymentIcon className="h-4 w-4" />
-                  <Badge className={paymentStatusConfig[appointment.paymentStatus]?.color}>
-                    {appointment.paymentStatus.toUpperCase()}
-                  </Badge>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Consultation Fee</p>
+                <p className="font-bold text-lg text-green-600">₹{appointment.consultationFee}</p>
               </div>
-              <div className="space-y-2">
-                {appointment.paymentMethod && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Payment Method</span>
-                    <span className="text-sm font-medium">{appointment.paymentMethod}</span>
-                  </div>
-                )}
-                {appointment.status === "completed" && appointment.paymentStatus === "pending" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handlePaymentStatusChange("paid")}
-                    className="w-full"
-                  >
-                    <DollarSign className="h-4 w-4 mr-1" />
-                    Mark as Paid
-                  </Button>
-                )}
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Payment Status</p>
+                {getPaymentStatusBadge(appointment.paymentStatus)}
               </div>
+              {appointment.paymentMethod && (
+                <div>
+                  <p className="text-sm text-gray-600">Payment Method</p>
+                  <p className="font-medium">{appointment.paymentMethod}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <Separator />
-
           {/* Notes Section */}
-          <div className="space-y-3">
-            <Label htmlFor="notes" className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Appointment Notes
-            </Label>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3">Appointment Notes</h3>
             <Textarea
-              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about this appointment..."
-              className="min-h-[100px]"
+              placeholder="Add notes about this appointment..."
+              className="min-h-[100px] mb-3"
             />
-            <Button onClick={handleSaveNotes} disabled={isUpdatingNotes || notes === appointment.notes} size="sm">
-              {isUpdatingNotes ? "Saving..." : "Save Notes"}
+            <Button onClick={handleSaveNotes} disabled={isSavingNotes} size="sm">
+              {isSavingNotes ? "Saving..." : "Save Notes"}
             </Button>
           </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
