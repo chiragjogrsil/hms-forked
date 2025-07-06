@@ -206,8 +206,8 @@ export function IntegratedConsultation({
 
       {/* Prescription Template Manager */}
       <PrescriptionTemplateManager
-        ayurvedicPrescriptions={consultationData.prescriptions.ayurvedic}
-        allopathicPrescriptions={consultationData.prescriptions.allopathic}
+        allopathicMedicines={consultationData.prescriptions.allopathic || []}
+        ayurvedicMedicines={consultationData.prescriptions.ayurvedic || []}
         onLoadTemplate={(template) => {
           updateConsultation({
             prescriptions: {

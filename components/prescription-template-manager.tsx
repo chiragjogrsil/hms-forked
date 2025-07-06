@@ -28,15 +28,19 @@ interface PrescriptionTemplateManagerProps {
 }
 
 export function PrescriptionTemplateManager({
-  allopathicMedicines,
-  ayurvedicMedicines,
+  allopathicMedicines = [],
+  ayurvedicMedicines = [],
   onLoadTemplate,
   department = "General Medicine",
 }: PrescriptionTemplateManagerProps) {
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [loadModalOpen, setLoadModalOpen] = useState(false)
 
-  const totalMedicines = allopathicMedicines.length + ayurvedicMedicines.length
+  // Ensure arrays are defined and have length property
+  const safeAllopathicMedicines = Array.isArray(allopathicMedicines) ? allopathicMedicines : []
+  const safeAyurvedicMedicines = Array.isArray(ayurvedicMedicines) ? ayurvedicMedicines : []
+
+  const totalMedicines = safeAllopathicMedicines.length + safeAyurvedicMedicines.length
   const hasMedicines = totalMedicines > 0
 
   return (
@@ -57,16 +61,16 @@ export function PrescriptionTemplateManager({
 
               {hasMedicines && (
                 <div className="flex items-center gap-2">
-                  {allopathicMedicines.length > 0 && (
+                  {safeAllopathicMedicines.length > 0 && (
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                       <Pill className="w-3 h-3 mr-1" />
-                      {allopathicMedicines.length} Allopathic
+                      {safeAllopathicMedicines.length} Allopathic
                     </Badge>
                   )}
-                  {ayurvedicMedicines.length > 0 && (
+                  {safeAyurvedicMedicines.length > 0 && (
                     <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                       <Leaf className="w-3 h-3 mr-1" />
-                      {ayurvedicMedicines.length} Ayurvedic
+                      {safeAyurvedicMedicines.length} Ayurvedic
                     </Badge>
                   )}
                 </div>
@@ -98,8 +102,8 @@ export function PrescriptionTemplateManager({
       <SavePrescriptionTemplateModal
         open={saveModalOpen}
         onOpenChange={setSaveModalOpen}
-        allopathicMedicines={allopathicMedicines}
-        ayurvedicMedicines={ayurvedicMedicines}
+        allopathicMedicines={safeAllopathicMedicines}
+        ayurvedicMedicines={safeAyurvedicMedicines}
         department={department}
       />
 
