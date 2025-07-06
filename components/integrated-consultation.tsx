@@ -158,29 +158,37 @@ export function IntegratedConsultation({
       {/* Prescriptions Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Allopathic Prescriptions */}
-        <AllopathicPrescription
-          department={department}
-          data={activeConsultation.prescriptions?.allopathic || []}
-          onChange={(data) => {
-            const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
-            handleSectionChange("prescriptions", {
-              ...currentPrescriptions,
-              allopathic: data,
-            })
-          }}
-        />
+        <Card>
+          <CardContent className="p-6">
+            <AllopathicPrescription
+              department={department}
+              data={activeConsultation.prescriptions?.allopathic || []}
+              onChange={(data) => {
+                const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
+                handleSectionChange("prescriptions", {
+                  ...currentPrescriptions,
+                  allopathic: data,
+                })
+              }}
+            />
+          </CardContent>
+        </Card>
 
         {/* Ayurvedic Prescriptions */}
-        <AyurvedicPrescription
-          data={activeConsultation.prescriptions?.ayurvedic || []}
-          onChange={(data) => {
-            const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
-            handleSectionChange("prescriptions", {
-              ...currentPrescriptions,
-              ayurvedic: data,
-            })
-          }}
-        />
+        <Card>
+          <CardContent className="p-6">
+            <AyurvedicPrescription
+              data={activeConsultation.prescriptions?.ayurvedic || []}
+              onChange={(data) => {
+                const currentPrescriptions = activeConsultation.prescriptions || { ayurvedic: [], allopathic: [] }
+                handleSectionChange("prescriptions", {
+                  ...currentPrescriptions,
+                  ayurvedic: data,
+                })
+              }}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Complete Visit Button */}

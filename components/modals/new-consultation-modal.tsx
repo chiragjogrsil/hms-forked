@@ -1,190 +1,156 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Stethoscope } from "lucide-react"
-import { useConsultation } from "@/contexts/consultation-context"
-import { toast } from "sonner"
+import { User, Stethoscope } from "lucide-react"
 
 interface NewConsultationModalProps {
   isOpen: boolean
   onClose: () => void
   patientId: string
   patientName: string
-  visitDate: string
-  department?: string
-  doctorName?: string
 }
 
-export function NewConsultationModal({
-  isOpen,
-  onClose,
-  patientId,
-  patientName,
-  visitDate,
-  department = "general",
-  doctorName = "Dr. Smith",
-}: NewConsultationModalProps) {
-  const { startNewConsultation } = useConsultation()
-  const [chiefComplaint, setChiefComplaint] = useState("")
-  const [selectedDepartment, setSelectedDepartment] = useState(department)
-  const [selectedDoctor, setSelectedDoctor] = useState(doctorName)
-  const [appointmentTime, setAppointmentTime] = useState("")
-  const [consultationType, setConsultationType] = useState("routine")
+export function NewConsultationModal({ isOpen, onClose, patientId, patientName }: NewConsultationModalProps) {
+  const [formData, setFormData] = useState({
+    department: "",
+    doctor: "Dr. Smith", // Prepopulated
+    consultationType: "",
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Handle consultation creation here
+    console.log("Creating consultation:", formData)
+    onClose()
+  }
 
   const departments = [
     { value: "general", label: "General Medicine" },
     { value: "cardiology", label: "Cardiology" },
-    { value: "orthopedics", label: "Orthopedics" },
-    { value: "neurology", label: "Neurology" },
     { value: "dermatology", label: "Dermatology" },
-    { value: "ophthalmology", label: "Ophthalmology" },
-    { value: "ayurveda", label: "Ayurveda" },
-    { value: "dental", label: "Dental" },
+    { value: "orthopedics", label: "Orthopedics" },
     { value: "pediatrics", label: "Pediatrics" },
     { value: "gynecology", label: "Gynecology" },
+    { value: "ayurveda", label: "Ayurveda" },
+    { value: "ophthalmology", label: "Ophthalmology" },
   ]
 
+  // Removed "follow-up" since it's now handled in the dedicated follow-up section
   const consultationTypes = [
-    { value: "routine", label: "Routine Consultation" },
-    { value: "followup", label: "Follow-up" },
     { value: "emergency", label: "Emergency" },
-    { value: "second_opinion", label: "Second Opinion" },
+    { value: "routine", label: "Routine checkup" },
+    { value: "screening", label: "Health screening" },
+    { value: "consultation", label: "General consultation" },
   ]
-
-  const handleStartConsultation = () => {
-    if (!chiefComplaint.trim()) {
-      toast.error("Please enter the chief complaint")
-      return
-    }
-
-    const consultationInfo = {
-      department: selectedDepartment,
-      doctorName: selectedDoctor,
-      chiefComplaint: chiefComplaint.trim(),
-      appointmentTime: appointmentTime || new Date().toLocaleTimeString("en-US", { hour12: false }),
-      consultationType,
-    }
-
-    startNewConsultation(patientId, patientName, visitDate, consultationInfo)
-
-    // Reset form
-    setChiefComplaint("")
-    setAppointmentTime("")
-    setConsultationType("routine")
-
-    onClose()
-
-    toast.success("New consultation started", {
-      description: `Consultation for ${patientName} has been initiated`,
-    })
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-blue-600" />
+      <DialogContent className="w-[95vw] max-w-[450px] max-h-[95vh] p-0 gap-0">
+        <DialogHeader className="p-4 pb-2 border-b">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Stethoscope className="h-5 w-5" />
             Start New Consultation
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Patient Info */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">Patient Information</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-blue-600 font-medium">Name:</span>
-                <p className="font-semibold">{patientName}</p>
+        <div className="flex flex-col">
+          <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            {/* Patient Info */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="font-medium text-sm">Patient Information</span>
               </div>
-              <div>
-                <span className="text-blue-600 font-medium">Visit Date:</span>
-                <p className="font-semibold">{new Date(visitDate).toLocaleDateString()}</p>
+              <div className="space-y-1">
+                <p className="text-xs text-gray-600">
+                  <strong>Name:</strong> {patientName}
+                </p>
+                <p className="text-xs text-gray-600">
+                  <strong>Patient ID:</strong> {patientId}
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Chief Complaint */}
-          <div className="space-y-2">
-            <Label htmlFor="chiefComplaint">Chief Complaint *</Label>
-            <Textarea
-              id="chiefComplaint"
-              placeholder="Enter the patient's primary concern or reason for visit..."
-              value={chiefComplaint}
-              onChange={(e) => setChiefComplaint(e.target.value)}
-              rows={3}
-            />
-          </div>
+            {/* Department Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="department">Department *</Label>
+              <Select
+                value={formData.department}
+                onValueChange={(value) => setFormData({ ...formData, department: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.value} value={dept.value}>
+                      {dept.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Department Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.value} value={dept.value}>
-                    {dept.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Consultation Type */}
+            <div className="space-y-2">
+              <Label htmlFor="consultationType">Consultation Type *</Label>
+              <Select
+                value={formData.consultationType}
+                onValueChange={(value) => setFormData({ ...formData, consultationType: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select consultation type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {consultationTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Doctor Name */}
-          <div className="space-y-2">
-            <Label htmlFor="doctorName">Consulting Doctor</Label>
-            <Input
-              id="doctorName"
-              value={selectedDoctor}
-              onChange={(e) => setSelectedDoctor(e.target.value)}
-              placeholder="Enter doctor name"
-            />
-          </div>
+            {/* Doctor Info (Read-only display) */}
+            <div className="space-y-2">
+              <Label>Consulting Doctor</Label>
+              <div className="bg-gray-50 p-3 rounded-lg border">
+                <p className="text-sm font-medium">{formData.doctor}</p>
+                <p className="text-xs text-gray-600">Current Session Doctor</p>
+              </div>
+            </div>
 
-          {/* Consultation Type */}
-          <div className="space-y-2">
-            <Label htmlFor="consultationType">Consultation Type</Label>
-            <Select value={consultationType} onValueChange={setConsultationType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select consultation type" />
-              </SelectTrigger>
-              <SelectContent>
-                {consultationTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Info about follow-up consultations */}
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-2">
+                <div className="text-blue-600 text-xs font-medium mt-0.5">💡 Note:</div>
+                <div className="text-xs text-blue-700">
+                  <strong>For follow-up consultations:</strong> Use the dedicated "Follow-up Consultation" section to
+                  load previous visit data and continue patient care.
+                </div>
+              </div>
+            </div>
+          </form>
 
-          {/* Appointment Time */}
-          <div className="space-y-2">
-            <Label htmlFor="appointmentTime">Appointment Time (Optional)</Label>
-            <Input
-              id="appointmentTime"
-              type="time"
-              value={appointmentTime}
-              onChange={(e) => setAppointmentTime(e.target.value)}
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={onClose}>
+          {/* Action Buttons - Fixed at bottom */}
+          <div className="flex flex-col sm:flex-row justify-end gap-2 p-4 border-t bg-white">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleStartConsultation} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              type="submit"
+              className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
+              onClick={handleSubmit}
+              disabled={!formData.department || !formData.consultationType}
+            >
               <Stethoscope className="h-4 w-4 mr-2" />
               Start Consultation
             </Button>

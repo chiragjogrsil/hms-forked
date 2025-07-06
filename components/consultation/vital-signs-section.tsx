@@ -1,305 +1,327 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type React from "react"
+
+import { useState } from "react"
+import { Heart, Thermometer, Activity, Droplets, Eye, Weight, Ruler, Clock } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Activity, Heart, Thermometer, Wind, Droplets, Weight, Ruler, Calculator } from "lucide-react"
-import { useConsultation } from "@/contexts/consultation-context"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 
-interface VitalSignsSectionProps {
-  data?: any
-  onChange?: (data: any) => void
+interface VitalSign {
+  id: string
+  name: string
+  value: string
+  unit: string
+  normalRange: string
+  status: "normal" | "high" | "low" | "critical"
+  icon: React.ReactNode
+  timestamp: string
 }
 
-export function VitalSignsSection({ data, onChange }: VitalSignsSectionProps) {
-  const { activeConsultation, updateConsultationData } = useConsultation()
+interface VitalSignsSectionProps {
+  patientId: string
+  onVitalSignsUpdate?: (vitalSigns: VitalSign[]) => void
+}
 
-  const [vitals, setVitals] = useState({
-    bloodPressure: "",
-    pulse: "",
-    temperature: "",
-    respiratoryRate: "",
-    spo2: "",
-    weight: "",
-    height: "",
-    bmi: "",
-  })
+export function VitalSignsSection({ patientId, onVitalSignsUpdate }: VitalSignsSectionProps) {
+  const { toast } = useToast()
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // Use ref to track if we're loading data to prevent auto-save during load
-  const isLoadingRef = useRef(false)
-  const consultationIdRef = useRef<string | null>(null)
+  const [vitalSigns, setVitalSigns] = useState<VitalSign[]>([
+    {
+      id: "temperature",
+      name: "Temperature",
+      value: "37.0",
+      unit: "°C",
+      normalRange: "36.1-37.2°C",
+      status: "normal",
+      icon: <Thermometer className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "blood-pressure-systolic",
+      name: "Blood Pressure (Systolic)",
+      value: "120",
+      unit: "mmHg",
+      normalRange: "90-140 mmHg",
+      status: "normal",
+      icon: <Heart className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "blood-pressure-diastolic",
+      name: "Blood Pressure (Diastolic)",
+      value: "80",
+      unit: "mmHg",
+      normalRange: "60-90 mmHg",
+      status: "normal",
+      icon: <Heart className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "heart-rate",
+      name: "Heart Rate",
+      value: "72",
+      unit: "bpm",
+      normalRange: "60-100 bpm",
+      status: "normal",
+      icon: <Activity className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "respiratory-rate",
+      name: "Respiratory Rate",
+      value: "16",
+      unit: "breaths/min",
+      normalRange: "12-20 breaths/min",
+      status: "normal",
+      icon: <Activity className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "oxygen-saturation",
+      name: "Oxygen Saturation",
+      value: "98",
+      unit: "%",
+      normalRange: "95-100%",
+      status: "normal",
+      icon: <Droplets className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "weight",
+      name: "Weight",
+      value: "70",
+      unit: "kg",
+      normalRange: "BMI 18.5-24.9",
+      status: "normal",
+      icon: <Weight className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: "height",
+      name: "Height",
+      value: "175",
+      unit: "cm",
+      normalRange: "Adult height",
+      status: "normal",
+      icon: <Ruler className="h-4 w-4" />,
+      timestamp: new Date().toISOString(),
+    },
+  ])
 
-  // Load vitals from active consultation only when consultation ID changes
-  useEffect(() => {
-    if (activeConsultation && activeConsultation.id !== consultationIdRef.current) {
-      isLoadingRef.current = true
-      consultationIdRef.current = activeConsultation.id || null
-
-      if (activeConsultation.vitals) {
-        setVitals({
-          bloodPressure: activeConsultation.vitals.bloodPressure || "",
-          pulse: activeConsultation.vitals.pulse || "",
-          temperature: activeConsultation.vitals.temperature || "",
-          respiratoryRate: activeConsultation.vitals.respiratoryRate || "",
-          spo2: activeConsultation.vitals.spo2 || "",
-          weight: activeConsultation.vitals.weight || "",
-          height: activeConsultation.vitals.height || "",
-          bmi: activeConsultation.vitals.bmi || "",
-        })
-      }
-
-      // Reset loading flag after a short delay
-      setTimeout(() => {
-        isLoadingRef.current = false
-      }, 100)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "normal":
+        return "bg-green-100 text-green-800"
+      case "high":
+        return "bg-yellow-100 text-yellow-800"
+      case "low":
+        return "bg-blue-100 text-blue-800"
+      case "critical":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
-  }, [activeConsultation]) // Updated to use activeConsultation directly
-
-  // Auto-calculate BMI when weight or height changes
-  useEffect(() => {
-    if (vitals.weight && vitals.height && !isLoadingRef.current) {
-      const weightKg = Number.parseFloat(vitals.weight)
-      const heightM = Number.parseFloat(vitals.height) / 100 // Convert cm to m
-      if (weightKg > 0 && heightM > 0) {
-        const bmiValue = (weightKg / (heightM * heightM)).toFixed(1)
-        setVitals((prev) => ({ ...prev, bmi: bmiValue }))
-      }
-    }
-  }, [vitals.weight, vitals.height])
-
-  // Debounced auto-save function
-  const debouncedSave = useCallback(() => {
-    if (!activeConsultation || isLoadingRef.current) return
-
-    const timer = setTimeout(() => {
-      updateConsultationData({ vitals })
-    }, 2000)
-
-    return () => clearTimeout(timer)
-  }, [activeConsultation, vitals, updateConsultationData]) // Updated to use activeConsultation directly
-
-  // Auto-save when vitals change
-  useEffect(() => {
-    if (!isLoadingRef.current) {
-      const cleanup = debouncedSave()
-      return cleanup
-    }
-  }, [debouncedSave])
-
-  const handleVitalChange = useCallback((field: string, value: string) => {
-    setVitals((prev) => ({ ...prev, [field]: value }))
-  }, [])
-
-  const getBPStatus = (bp: string) => {
-    if (!bp) return null
-    const [systolic, diastolic] = bp.split("/").map((n) => Number.parseInt(n))
-    if (isNaN(systolic) || isNaN(diastolic)) return null
-
-    if (systolic < 90 || diastolic < 60) return { status: "Low", color: "bg-blue-100 text-blue-800" }
-    if (systolic < 120 && diastolic < 80) return { status: "Normal", color: "bg-green-100 text-green-800" }
-    if (systolic < 130 && diastolic < 80) return { status: "Elevated", color: "bg-yellow-100 text-yellow-800" }
-    if (systolic < 140 || diastolic < 90) return { status: "Stage 1", color: "bg-orange-100 text-orange-800" }
-    return { status: "Stage 2", color: "bg-red-100 text-red-800" }
   }
 
-  const getPulseStatus = (pulse: string) => {
-    if (!pulse) return null
-    const rate = Number.parseInt(pulse)
-    if (isNaN(rate)) return null
-
-    if (rate < 60) return { status: "Bradycardia", color: "bg-blue-100 text-blue-800" }
-    if (rate <= 100) return { status: "Normal", color: "bg-green-100 text-green-800" }
-    return { status: "Tachycardia", color: "bg-red-100 text-red-800" }
-  }
-
-  const getTempStatus = (temp: string) => {
-    if (!temp) return null
-    const temperature = Number.parseFloat(temp)
-    if (isNaN(temperature)) return null
-
-    if (temperature < 97) return { status: "Low", color: "bg-blue-100 text-blue-800" }
-    if (temperature <= 99.5) return { status: "Normal", color: "bg-green-100 text-green-800" }
-    if (temperature <= 100.4) return { status: "Low Fever", color: "bg-yellow-100 text-yellow-800" }
-    return { status: "Fever", color: "bg-red-100 text-red-800" }
-  }
-
-  const getSpo2Status = (spo2: string) => {
-    if (!spo2) return null
-    const oxygen = Number.parseInt(spo2)
-    if (isNaN(oxygen)) return null
-
-    if (oxygen < 90) return { status: "Critical", color: "bg-red-100 text-red-800" }
-    if (oxygen < 95) return { status: "Low", color: "bg-orange-100 text-orange-800" }
-    return { status: "Normal", color: "bg-green-100 text-green-800" }
-  }
-
-  const getBMIStatus = (bmi: string) => {
-    if (!bmi) return null
-    const bmiValue = Number.parseFloat(bmi)
-    if (isNaN(bmiValue)) return null
-
-    if (bmiValue < 18.5) return { status: "Underweight", color: "bg-blue-100 text-blue-800" }
-    if (bmiValue < 25) return { status: "Normal", color: "bg-green-100 text-green-800" }
-    if (bmiValue < 30) return { status: "Overweight", color: "bg-yellow-100 text-yellow-800" }
-    return { status: "Obese", color: "bg-red-100 text-red-800" }
-  }
-
-  if (!activeConsultation) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No Active Consultation</h3>
-          <p className="text-muted-foreground">Start a consultation to record vital signs</p>
-        </CardContent>
-      </Card>
+  const handleVitalSignChange = (id: string, value: string) => {
+    setVitalSigns((prev) =>
+      prev.map((vital) =>
+        vital.id === id
+          ? {
+              ...vital,
+              value,
+              timestamp: new Date().toISOString(),
+              status: determineStatus(id, value),
+            }
+          : vital,
+      ),
     )
+  }
+
+  const determineStatus = (id: string, value: string): "normal" | "high" | "low" | "critical" => {
+    const numValue = Number.parseFloat(value)
+
+    switch (id) {
+      case "temperature":
+        if (numValue < 36.1) return "low"
+        if (numValue > 37.2 && numValue < 38.0) return "high"
+        if (numValue >= 38.0) return "critical"
+        return "normal"
+      case "blood-pressure-systolic":
+        if (numValue < 90) return "low"
+        if (numValue > 140 && numValue < 160) return "high"
+        if (numValue >= 160) return "critical"
+        return "normal"
+      case "blood-pressure-diastolic":
+        if (numValue < 60) return "low"
+        if (numValue > 90 && numValue < 100) return "high"
+        if (numValue >= 100) return "critical"
+        return "normal"
+      case "heart-rate":
+        if (numValue < 60) return "low"
+        if (numValue > 100 && numValue < 120) return "high"
+        if (numValue >= 120) return "critical"
+        return "normal"
+      case "oxygen-saturation":
+        if (numValue < 90) return "critical"
+        if (numValue < 95) return "low"
+        return "normal"
+      default:
+        return "normal"
+    }
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      if (onVitalSignsUpdate) {
+        onVitalSignsUpdate(vitalSigns)
+      }
+
+      toast({
+        title: "Vital signs updated",
+        description: "Patient vital signs have been recorded successfully.",
+      })
+
+      setIsEditing(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save vital signs. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    // Reset to original values if needed
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          Vital Signs
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-red-500" />
+              Vital Signs
+            </CardTitle>
+            <CardDescription>Record and monitor patient vital signs</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button onClick={handleCancel} variant="outline" size="sm" disabled={isSaving}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} size="sm" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Blood Pressure */}
-          <div className="space-y-2">
-            <Label htmlFor="bloodPressure" className="flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-500" />
-              Blood Pressure
-            </Label>
-            <Input
-              id="bloodPressure"
-              placeholder="120/80"
-              value={vitals.bloodPressure}
-              onChange={(e) => handleVitalChange("bloodPressure", e.target.value)}
-            />
-            {getBPStatus(vitals.bloodPressure) && (
-              <Badge className={getBPStatus(vitals.bloodPressure)!.color}>
-                {getBPStatus(vitals.bloodPressure)!.status}
-              </Badge>
-            )}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {vitalSigns.map((vital) => (
+            <div key={vital.id} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  {vital.icon}
+                  {vital.name}
+                </Label>
+                <Badge className={getStatusColor(vital.status)} variant="secondary">
+                  {vital.status}
+                </Badge>
+              </div>
+
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={vital.value}
+                    onChange={(e) => handleVitalSignChange(vital.id, e.target.value)}
+                    className="flex-1"
+                    step="0.1"
+                  />
+                  <span className="text-sm text-gray-500 min-w-fit">{vital.unit}</span>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold">
+                  {vital.value} <span className="text-sm font-normal text-gray-500">{vital.unit}</span>
+                </div>
+              )}
+
+              <div className="text-xs text-gray-500">
+                <div>Normal: {vital.normalRange}</div>
+                <div className="flex items-center gap-1 mt-1">
+                  <Clock className="h-3 w-3" />
+                  {new Date(vital.timestamp).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Separator className="my-6" />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <h4 className="font-medium mb-2">Blood Pressure Summary</h4>
+            <div className="text-lg font-semibold">
+              {vitalSigns.find((v) => v.id === "blood-pressure-systolic")?.value}/
+              {vitalSigns.find((v) => v.id === "blood-pressure-diastolic")?.value} mmHg
+            </div>
+            <p className="text-sm text-gray-600">
+              {vitalSigns.find((v) => v.id === "blood-pressure-systolic")?.status === "normal" &&
+              vitalSigns.find((v) => v.id === "blood-pressure-diastolic")?.status === "normal"
+                ? "Normal blood pressure"
+                : "Blood pressure needs attention"}
+            </p>
           </div>
 
-          {/* Pulse */}
-          <div className="space-y-2">
-            <Label htmlFor="pulse" className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-500" />
-              Pulse (bpm)
-            </Label>
-            <Input
-              id="pulse"
-              placeholder="72"
-              type="number"
-              value={vitals.pulse}
-              onChange={(e) => handleVitalChange("pulse", e.target.value)}
-            />
-            {getPulseStatus(vitals.pulse) && (
-              <Badge className={getPulseStatus(vitals.pulse)!.color}>{getPulseStatus(vitals.pulse)!.status}</Badge>
-            )}
-          </div>
-
-          {/* Temperature */}
-          <div className="space-y-2">
-            <Label htmlFor="temperature" className="flex items-center gap-2">
-              <Thermometer className="h-4 w-4 text-orange-500" />
-              Temperature (°F)
-            </Label>
-            <Input
-              id="temperature"
-              placeholder="98.6"
-              type="number"
-              step="0.1"
-              value={vitals.temperature}
-              onChange={(e) => handleVitalChange("temperature", e.target.value)}
-            />
-            {getTempStatus(vitals.temperature) && (
-              <Badge className={getTempStatus(vitals.temperature)!.color}>
-                {getTempStatus(vitals.temperature)!.status}
-              </Badge>
-            )}
-          </div>
-
-          {/* Respiratory Rate */}
-          <div className="space-y-2">
-            <Label htmlFor="respiratoryRate" className="flex items-center gap-2">
-              <Wind className="h-4 w-4 text-blue-500" />
-              Respiratory Rate
-            </Label>
-            <Input
-              id="respiratoryRate"
-              placeholder="16"
-              type="number"
-              value={vitals.respiratoryRate}
-              onChange={(e) => handleVitalChange("respiratoryRate", e.target.value)}
-            />
-          </div>
-
-          {/* SpO2 */}
-          <div className="space-y-2">
-            <Label htmlFor="spo2" className="flex items-center gap-2">
-              <Droplets className="h-4 w-4 text-cyan-500" />
-              SpO2 (%)
-            </Label>
-            <Input
-              id="spo2"
-              placeholder="98"
-              type="number"
-              value={vitals.spo2}
-              onChange={(e) => handleVitalChange("spo2", e.target.value)}
-            />
-            {getSpo2Status(vitals.spo2) && (
-              <Badge className={getSpo2Status(vitals.spo2)!.color}>{getSpo2Status(vitals.spo2)!.status}</Badge>
-            )}
-          </div>
-
-          {/* Weight */}
-          <div className="space-y-2">
-            <Label htmlFor="weight" className="flex items-center gap-2">
-              <Weight className="h-4 w-4 text-purple-500" />
-              Weight (kg)
-            </Label>
-            <Input
-              id="weight"
-              placeholder="70"
-              type="number"
-              step="0.1"
-              value={vitals.weight}
-              onChange={(e) => handleVitalChange("weight", e.target.value)}
-            />
-          </div>
-
-          {/* Height */}
-          <div className="space-y-2">
-            <Label htmlFor="height" className="flex items-center gap-2">
-              <Ruler className="h-4 w-4 text-indigo-500" />
-              Height (cm)
-            </Label>
-            <Input
-              id="height"
-              placeholder="175"
-              type="number"
-              value={vitals.height}
-              onChange={(e) => handleVitalChange("height", e.target.value)}
-            />
-          </div>
-
-          {/* BMI */}
-          <div className="space-y-2">
-            <Label htmlFor="bmi" className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-teal-500" />
-              BMI
-            </Label>
-            <Input id="bmi" placeholder="Auto-calculated" value={vitals.bmi} readOnly className="bg-gray-50" />
-            {getBMIStatus(vitals.bmi) && (
-              <Badge className={getBMIStatus(vitals.bmi)!.color}>{getBMIStatus(vitals.bmi)!.status}</Badge>
-            )}
+          <div>
+            <h4 className="font-medium mb-2">BMI Calculation</h4>
+            <div className="text-lg font-semibold">
+              {(() => {
+                const weight = Number.parseFloat(vitalSigns.find((v) => v.id === "weight")?.value || "0")
+                const height = Number.parseFloat(vitalSigns.find((v) => v.id === "height")?.value || "0") / 100
+                const bmi = height > 0 ? (weight / (height * height)).toFixed(1) : "0"
+                return `${bmi} kg/m²`
+              })()}
+            </div>
+            <p className="text-sm text-gray-600">
+              {(() => {
+                const weight = Number.parseFloat(vitalSigns.find((v) => v.id === "weight")?.value || "0")
+                const height = Number.parseFloat(vitalSigns.find((v) => v.id === "height")?.value || "0") / 100
+                const bmi = height > 0 ? weight / (height * height) : 0
+                if (bmi < 18.5) return "Underweight"
+                if (bmi < 25) return "Normal weight"
+                if (bmi < 30) return "Overweight"
+                return "Obese"
+              })()}
+            </p>
           </div>
         </div>
       </CardContent>

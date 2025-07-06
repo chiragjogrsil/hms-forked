@@ -1,325 +1,1174 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
 
-export interface VitalSigns {
-  temperature?: string
-  bloodPressure?: string
-  heartRate?: string
-  respiratoryRate?: string
-  oxygenSaturation?: string
-  weight?: string
-  height?: string
-  bmi?: string
-}
-
-export interface Diagnosis {
-  id: string
-  code?: string
-  name: string
-  type: "primary" | "secondary"
-  notes?: string
-}
-
-export interface Prescription {
-  id: string
-  type: "allopathic" | "ayurvedic"
-  medication: string
-  dosage: string
-  frequency: string
-  duration: string
-  instructions?: string
-  beforeFood?: boolean
-  afterFood?: boolean
-}
-
-export interface LabTest {
-  id: string
-  name: string
-  category: string
-  urgency: "routine" | "urgent" | "stat"
-  instructions?: string
-}
-
-export interface RadiologyTest {
-  id: string
-  name: string
-  category: string
-  urgency: "routine" | "urgent" | "stat"
-  instructions?: string
-}
-
-export interface Procedure {
-  id: string
-  name: string
-  category: string
-  notes?: string
-}
-
-export interface ConsultationData {
+interface ConsultationData {
+  id?: string
   patientId?: string
-  visitId?: string
+  patientName?: string
+  visitDate?: string
+  visitTime?: string
+  doctorId?: string
+  doctorName?: string
+  department?: string
+  consultationType?: string
+
+  // Clinical Data
   chiefComplaint?: string
   historyOfPresentIllness?: string
-  pastMedicalHistory?: string
+  pastMedicalHistory?: string[]
   familyHistory?: string
   socialHistory?: string
-  reviewOfSystems?: string
-  vitalSigns: VitalSigns
-  physicalExamination?: string
-  diagnoses: Diagnosis[]
-  prescriptions: Prescription[]
-  labTests: LabTest[]
-  radiologyTests: RadiologyTest[]
-  procedures: Procedure[]
-  followUpInstructions?: string
-  nextVisitDate?: string
-  clinicalNotes?: string
-  ayurvedicAnalysis?: {
-    prakriti?: string
-    vikriti?: string
-    agni?: string
-    ama?: string
-    ojas?: string
-    recommendations?: string
-  }
-  ophthalmologyAnalysis?: {
-    visualAcuity?: string
-    intraocularPressure?: string
-    fundusExamination?: string
-    slitLampExamination?: string
-    recommendations?: string
-  }
-}
+  allergies?: string[]
+  currentMedications?: string[]
 
-interface ConsultationHistory {
-  id: string
-  patientId: string
-  patientName: string
-  date: string
-  department: string
-  doctor: string
-  chiefComplaint: string
-  diagnoses: string[]
-  status: "completed" | "in-progress" | "cancelled"
+  // Physical Examination
+  vitals?: {
+    bloodPressure?: string
+    pulse?: string
+    temperature?: string
+    respiratoryRate?: string
+    spo2?: string
+    weight?: string
+    height?: string
+    bmi?: string
+  }
+
+  // System Review
+  systemReview?: {
+    cardiovascular?: string
+    respiratory?: string
+    gastrointestinal?: string
+    neurological?: string
+    musculoskeletal?: string
+    genitourinary?: string
+    endocrine?: string
+    dermatological?: string
+  }
+
+  // Clinical Assessment
+  clinicalFindings?: string
+  provisionalDiagnosis?: string[]
+  differentialDiagnosis?: string[]
+
+  // Investigations
+  investigationsOrdered?: Array<{
+    id: string
+    category: string
+    test: string
+    urgency: string
+    notes?: string
+  }>
+
+  // Treatment Plan
+  prescriptions?: {
+    ayurvedic?: Array<{
+      id: string
+      medicine: string
+      dosage: string
+      frequency: string
+      duration: string
+      instructions: string
+      beforeAfterFood: string
+    }>
+    allopathic?: Array<{
+      id: string
+      medicine: string
+      dosage: string
+      frequency: string
+      duration: string
+      instructions: string
+      beforeAfterFood: string
+    }>
+  }
+
+  // Follow-up and Advice
+  advice?: string
+  followUpDate?: string
+  followUpInstructions?: string
+
+  // Administrative
+  consultationFee?: number
+  status?: "in-progress" | "completed" | "cancelled"
+  createdAt?: string
+  updatedAt?: string
+
+  // Additional Notes
+  doctorNotes?: string
+  privateNotes?: string
+
+  // Legacy fields for backward compatibility
+  clinicalNotes?: string
+  diagnosis?: string[]
+  ayurvedicAnalysis?: any
+  ophthalmologyAnalysis?: any
+
+  // Additional appointment information
+  appointmentDate?: string
+  appointmentTime?: string
+
+  // Next steps data from complete visit modal
+  nextSteps?: {
+    labTests?: string[]
+    radiology?: string[]
+    procedures?: string[]
+    followUp?: {
+      date: Date
+      time: string
+      notes: string
+    }
+    nextStepsNotes?: string
+    urgentTests?: string[]
+    totalCost?: number
+  }
 }
 
 interface ConsultationContextType {
-  consultationData: ConsultationData
-  updateConsultationData: (data: Partial<ConsultationData>) => void
-  saveConsultation: () => Promise<void>
+  // Current consultation state
+  activeConsultation: ConsultationData | null
+  isConsultationActive: boolean
+  hasUnsavedChanges: boolean
+  isConsultationSaved: boolean
+
+  // Consultation management
+  startNewConsultation: (patientId: string, patientName: string, visitDate: string, consultationInfo?: any) => void
+  updateConsultationData: (updates: Partial<ConsultationData>) => void
+  saveConsultation: () => Promise<boolean>
+  completeConsultation: (consultationData?: any) => void
+  completeVisit: () => Promise<boolean>
+  cancelConsultation: () => void
   loadConsultation: (consultationId: string) => Promise<void>
-  clearConsultation: () => void
-  isLoading: boolean
-  isSaving: boolean
-  consultationHistory: ConsultationHistory[]
-  loadConsultationHistory: (patientId: string) => Promise<void>
+
+  // History management
+  consultationHistory: ConsultationData[]
+  getPatientConsultations: (patientId: string) => ConsultationData[]
+  getConsultationsByDate: (patientId: string, visitDate: string) => ConsultationData[]
+  searchConsultations: (query: string) => ConsultationData[]
+
+  // Utility functions
+  resetConsultation: () => void
+  validateConsultation: () => { isValid: boolean; errors: string[] }
+  getConsultationSummary: () => string
+
+  // Visit management
+  hasInProgressConsultation: (patientId: string, visitDate: string) => boolean
+  getInProgressConsultation: (patientId: string, visitDate: string) => ConsultationData | null
+  loadInProgressConsultation: (patientId: string, visitDate: string) => Promise<void>
+  hasIncompleteVisits: (patientId: string) => ConsultationData[]
+  completeIncompleteVisit: (consultationId: string) => Promise<boolean>
+
+  debugConsultationHistory: () => ConsultationData[]
 }
 
 const ConsultationContext = createContext<ConsultationContextType | undefined>(undefined)
 
-const initialConsultationData: ConsultationData = {
-  vitalSigns: {},
-  diagnoses: [],
-  prescriptions: [],
-  labTests: [],
-  radiologyTests: [],
-  procedures: [],
-}
-
-// Mock consultation history data
-const mockConsultationHistory: ConsultationHistory[] = [
+// Enhanced mock consultation history data with comprehensive test scenarios
+const mockConsultationHistory: ConsultationData[] = [
   {
-    id: "1",
-    patientId: "P001",
+    id: "CONS-P12345-2024-06-20-1718899200000",
+    patientId: "P12345",
     patientName: "John Doe",
-    date: "2024-01-15",
-    department: "General Medicine",
-    doctor: "Dr. Smith",
-    chiefComplaint: "Fever and headache",
-    diagnoses: ["Viral fever", "Tension headache"],
+    visitDate: "2024-06-20",
+    visitTime: "14:30",
+    doctorName: "Dr. Sarah Wilson",
+    department: "cardiology",
+    consultationType: "followup",
+    chiefComplaint: "Follow-up for hypertension management and chest discomfort",
+    clinicalNotes:
+      "Patient reports improved blood pressure control with current medication regimen. Occasional mild chest discomfort on exertion, no chest pain at rest. Compliance with medication is excellent. Patient has been following dietary recommendations and regular exercise routine. No shortness of breath or palpitations reported.",
+    provisionalDiagnosis: ["Essential Hypertension - Well Controlled", "Atypical Chest Pain - Stable"],
+    vitals: {
+      bloodPressure: "128/82",
+      pulse: "72",
+      temperature: "98.6",
+      respiratoryRate: "16",
+      spo2: "98",
+      weight: "75",
+      height: "175",
+      bmi: "24.5",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Lisinopril",
+          dosage: "10mg",
+          frequency: "Once daily",
+          duration: "30 days",
+          instructions: "Continue current dose, monitor BP at home",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "2",
+          medicine: "Aspirin",
+          dosage: "75mg",
+          frequency: "Once daily",
+          duration: "30 days",
+          instructions: "Take with food to prevent gastric irritation",
+          beforeAfterFood: "after",
+        },
+      ],
+      ayurvedic: [],
+    },
+    advice:
+      "Continue current medication. Monitor blood pressure at home twice weekly. Follow low-sodium diet (<2g/day). Regular moderate exercise 30 minutes daily. Return if chest pain worsens or becomes frequent.",
+    followUpInstructions: "Follow-up in 4 weeks or sooner if symptoms worsen",
     status: "completed",
+    createdAt: "2024-06-20T14:30:00.000Z",
+    updatedAt: "2024-06-20T15:15:00.000Z",
   },
   {
-    id: "2",
-    patientId: "P001",
+    id: "CONS-P12345-2024-06-15-1718467200000",
+    patientId: "P12345",
     patientName: "John Doe",
-    date: "2024-01-10",
-    department: "Cardiology",
-    doctor: "Dr. Johnson",
-    chiefComplaint: "Chest pain",
-    diagnoses: ["Angina pectoris"],
+    visitDate: "2024-06-15",
+    visitTime: "10:15",
+    doctorName: "Dr. Michael Chen",
+    department: "general",
+    consultationType: "routine",
+    chiefComplaint: "Annual health checkup and diabetes monitoring",
+    clinicalNotes:
+      "Comprehensive health assessment for annual checkup. Patient appears well-nourished and in no acute distress. Diabetes management has been excellent with HbA1c of 6.8%. Patient reports good adherence to diabetic diet and regular blood glucose monitoring. No diabetic complications noted. Cardiovascular examination normal. Discussed preventive care measures including vaccinations and cancer screening.",
+    provisionalDiagnosis: ["Type 2 Diabetes Mellitus - Well Controlled", "Annual Health Maintenance"],
+    vitals: {
+      bloodPressure: "130/85",
+      pulse: "68",
+      temperature: "98.4",
+      respiratoryRate: "14",
+      spo2: "99",
+      weight: "74",
+      height: "175",
+      bmi: "24.1",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Metformin",
+          dosage: "500mg",
+          frequency: "Twice daily",
+          duration: "90 days",
+          instructions: "Take with meals to reduce GI upset",
+          beforeAfterFood: "after",
+        },
+      ],
+      ayurvedic: [],
+    },
+    advice:
+      "Continue healthy lifestyle. Maintain diabetic diet with carbohydrate counting. Regular blood glucose monitoring. Schedule HbA1c in 3 months. Consider flu vaccination. Diabetic eye exam due.",
+    followUpInstructions: "Follow-up in 3 months with lab results",
+    investigationsOrdered: [
+      {
+        id: "1",
+        category: "laboratory",
+        test: "HbA1c",
+        urgency: "routine",
+        notes: "Diabetes monitoring",
+      },
+      {
+        id: "2",
+        category: "laboratory",
+        test: "Lipid Profile",
+        urgency: "routine",
+        notes: "Cardiovascular risk assessment",
+      },
+    ],
     status: "completed",
+    createdAt: "2024-06-15T10:15:00.000Z",
+    updatedAt: "2024-06-15T11:00:00.000Z",
   },
   {
-    id: "3",
-    patientId: "P002",
-    patientName: "Jane Smith",
-    date: "2024-01-12",
-    department: "Dermatology",
-    doctor: "Dr. Brown",
-    chiefComplaint: "Skin rash",
-    diagnoses: ["Eczema"],
+    id: "CONS-P12345-2024-06-10-1718035200000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-06-10",
+    visitTime: "16:45",
+    doctorName: "Dr. Priya Sharma",
+    department: "ayurveda",
+    consultationType: "routine",
+    chiefComplaint: "Digestive issues, stress management, and overall wellness consultation",
+    clinicalNotes:
+      "Patient reports occasional indigestion, bloating after meals, and work-related stress affecting sleep quality. Seeking natural remedies for overall wellness and digestive health. Pulse examination reveals Vata-Pitta imbalance. Tongue examination shows mild coating indicating digestive fire (Agni) imbalance. Patient interested in Panchakarma therapy for detoxification.",
+    provisionalDiagnosis: [
+      "Ajirna (Digestive Imbalance)",
+      "Stress-related Vata Aggravation",
+      "Mandagni (Weak Digestive Fire)",
+    ],
+    vitals: {
+      bloodPressure: "125/80",
+      pulse: "70",
+      temperature: "98.2",
+      weight: "74.5",
+      height: "175",
+    },
+    prescriptions: {
+      allopathic: [],
+      ayurvedic: [
+        {
+          id: "1",
+          medicine: "Triphala Churna",
+          dosage: "1 tsp",
+          frequency: "Twice daily",
+          duration: "15 days",
+          instructions: "Mix with warm water, take on empty stomach",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "2",
+          medicine: "Brahmi Ghrita",
+          dosage: "1/2 tsp",
+          frequency: "Once daily",
+          duration: "21 days",
+          instructions: "Take with warm milk before bedtime for stress relief",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "3",
+          medicine: "Hingvastak Churna",
+          dosage: "1/4 tsp",
+          frequency: "After meals",
+          duration: "10 days",
+          instructions: "Mix with buttermilk for digestive support",
+          beforeAfterFood: "after",
+        },
+      ],
+    },
+    ayurvedicAnalysis: {
+      constitution: "Vata-Pitta",
+      currentImbalance: "Vata aggravated with Pitta secondary",
+      pulseFindings: "Vata pulse prominent, irregular rhythm",
+      tongueExamination: "Mild white coating, slightly dry",
+      digestiveFire: "Mandagni (irregular/weak)",
+      recommendations: [
+        "Follow Vata-pacifying diet",
+        "Regular meal timings",
+        "Avoid cold and raw foods",
+        "Practice Pranayama daily",
+        "Oil massage (Abhyanga) twice weekly",
+      ],
+    },
+    advice:
+      "Practice pranayama daily (Anulom-Vilom 10 minutes). Avoid spicy and fried foods. Follow regular meal timings. Warm water intake throughout the day. Consider Panchakarma therapy after initial treatment response.",
+    followUpInstructions: "Follow-up in 2 weeks to assess treatment response",
     status: "completed",
+    createdAt: "2024-06-10T16:45:00.000Z",
+    updatedAt: "2024-06-10T17:30:00.000Z",
+  },
+  {
+    id: "CONS-P12345-2024-06-05-1717603200000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-06-05",
+    visitTime: "11:20",
+    doctorName: "Dr. Robert Johnson",
+    department: "orthopedics",
+    consultationType: "routine",
+    chiefComplaint: "Lower back pain after exercise and morning stiffness",
+    clinicalNotes:
+      "Patient reports mild to moderate lower back pain that started after recent gym sessions focusing on deadlifts. Pain is mechanical in nature, worse with forward bending and prolonged sitting. No radiation to legs. Morning stiffness lasting 15-20 minutes. No neurological symptoms. Physical examination reveals mild paravertebral muscle spasm at L4-L5 level. Straight leg raise test negative bilaterally. Range of motion slightly restricted in forward flexion.",
+    provisionalDiagnosis: ["Mechanical Lower Back Pain", "Lumbar Muscle Strain", "Postural Syndrome"],
+    vitals: {
+      bloodPressure: "122/78",
+      pulse: "65",
+      temperature: "98.1",
+      weight: "75",
+      height: "175",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Ibuprofen",
+          dosage: "400mg",
+          frequency: "Twice daily",
+          duration: "5 days",
+          instructions: "Take with food to prevent gastric irritation",
+          beforeAfterFood: "after",
+        },
+        {
+          id: "2",
+          medicine: "Muscle Relaxant (Thiocolchicoside)",
+          dosage: "4mg",
+          frequency: "Twice daily",
+          duration: "5 days",
+          instructions: "May cause drowsiness, avoid driving",
+          beforeAfterFood: "after",
+        },
+      ],
+      ayurvedic: [],
+    },
+    advice:
+      "Apply heat therapy 15-20 minutes twice daily. Avoid heavy lifting for 2 weeks. Start gentle stretching exercises after pain subsides. Maintain proper posture while sitting. Sleep on firm mattress. Gradual return to gym activities with proper form.",
+    followUpInstructions: "Follow-up in 1 week if pain persists or worsens",
+    investigationsOrdered: [
+      {
+        id: "1",
+        category: "radiology",
+        test: "X-Ray Lumbar Spine (AP & Lateral)",
+        urgency: "routine",
+        notes: "If pain persists beyond 1 week",
+      },
+    ],
+    status: "completed",
+    createdAt: "2024-06-05T11:20:00.000Z",
+    updatedAt: "2024-06-05T12:05:00.000Z",
+  },
+  {
+    id: "CONS-P12345-2024-05-28-1717200000000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-05-28",
+    visitTime: "09:30",
+    doctorName: "Dr. Lisa Anderson",
+    department: "ophthalmology",
+    consultationType: "routine",
+    chiefComplaint: "Routine eye examination and vision screening",
+    clinicalNotes:
+      "Annual comprehensive eye examination. Patient reports no visual complaints, no eye pain, discharge, or redness. Occasional mild eye strain with prolonged computer work. No family history of glaucoma or macular degeneration. Visual acuity testing shows mild myopic progression. Fundoscopy reveals healthy optic discs and macula. Intraocular pressure within normal limits.",
+    provisionalDiagnosis: ["Myopia - Mild Progression", "Computer Vision Syndrome", "Healthy Eyes - Routine Screening"],
+    vitals: {
+      bloodPressure: "124/80",
+      pulse: "70",
+      temperature: "98.3",
+    },
+    ophthalmologyAnalysis: {
+      visualAcuity: {
+        rightEye: "6/9",
+        leftEye: "6/9",
+        corrected: "6/6 both eyes",
+      },
+      refraction: {
+        rightEye: "-1.25 D",
+        leftEye: "-1.50 D",
+        astigmatism: "Minimal",
+      },
+      intraocularPressure: {
+        rightEye: "14 mmHg",
+        leftEye: "15 mmHg",
+      },
+      fundoscopy: {
+        opticDisc: "Healthy, well-defined margins",
+        macula: "Normal foveal reflex",
+        vessels: "Normal caliber and course",
+        periphery: "No retinal tears or detachment",
+      },
+      recommendations: [
+        "Update prescription glasses",
+        "20-20-20 rule for computer use",
+        "Annual eye examination",
+        "UV protection sunglasses",
+      ],
+    },
+    prescriptions: {
+      allopathic: [],
+      ayurvedic: [
+        {
+          id: "1",
+          medicine: "Triphala Eye Wash",
+          dosage: "1 tsp in 200ml water",
+          frequency: "Twice daily",
+          duration: "15 days",
+          instructions: "Strain and use as eye wash for eye strain relief",
+          beforeAfterFood: "anytime",
+        },
+      ],
+    },
+    advice:
+      "Update prescription glasses with new power. Follow 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds. Use computer glasses with anti-glare coating. Maintain good lighting while reading. Include eye-healthy foods rich in Vitamin A and antioxidants.",
+    followUpInstructions: "Annual eye examination recommended, sooner if vision changes",
+    status: "completed",
+    createdAt: "2024-05-28T09:30:00.000Z",
+    updatedAt: "2024-05-28T10:15:00.000Z",
+  },
+  {
+    id: "CONS-P12345-2024-05-20-1716480000000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-05-20",
+    visitTime: "14:00",
+    doctorName: "Dr. Amanda Rodriguez",
+    department: "dermatology",
+    consultationType: "routine",
+    chiefComplaint: "Skin rash on arms and dry skin concerns",
+    clinicalNotes:
+      "Patient presents with mild eczematous rash on bilateral forearms, present for 2 weeks. Associated with mild itching, worse at night. No known triggers identified. Patient has history of dry skin, especially during winter months. No fever or systemic symptoms. Examination reveals erythematous, slightly scaly patches on forearms. No secondary infection signs.",
+    provisionalDiagnosis: ["Atopic Dermatitis (Eczema)", "Xerosis (Dry Skin)", "Contact Dermatitis - Rule Out"],
+    vitals: {
+      bloodPressure: "126/82",
+      pulse: "72",
+      temperature: "98.4",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Hydrocortisone Cream 1%",
+          dosage: "Thin layer",
+          frequency: "Twice daily",
+          duration: "7 days",
+          instructions: "Apply to affected areas only, avoid face",
+          beforeAfterFood: "anytime",
+        },
+        {
+          id: "2",
+          medicine: "Cetaphil Moisturizing Cream",
+          dosage: "Liberal application",
+          frequency: "Twice daily",
+          duration: "Ongoing",
+          instructions: "Apply to entire body, especially after bathing",
+          beforeAfterFood: "anytime",
+        },
+      ],
+      ayurvedic: [
+        {
+          id: "1",
+          medicine: "Neem Oil",
+          dosage: "Few drops",
+          frequency: "Once daily",
+          duration: "10 days",
+          instructions: "Mix with coconut oil, apply to affected areas",
+          beforeAfterFood: "anytime",
+        },
+      ],
+    },
+    advice:
+      "Use lukewarm water for bathing, avoid hot showers. Use mild, fragrance-free soaps. Apply moisturizer within 3 minutes of bathing. Avoid known irritants like harsh detergents. Wear cotton clothing. Keep fingernails short to prevent scratching.",
+    followUpInstructions: "Follow-up in 2 weeks if rash persists or worsens",
+    status: "completed",
+    createdAt: "2024-05-20T14:00:00.000Z",
+    updatedAt: "2024-05-20T14:45:00.000Z",
+  },
+  {
+    id: "CONS-P12345-2024-05-10-1715875200000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-05-10",
+    visitTime: "16:15",
+    doctorName: "Dr. James Mitchell",
+    department: "neurology",
+    consultationType: "routine",
+    chiefComplaint: "Headaches and occasional dizziness episodes",
+    clinicalNotes:
+      "Patient reports intermittent headaches over the past month, typically frontal and temporal, moderate intensity (6/10). Associated with mild photophobia but no nausea or vomiting. Occasional dizziness episodes, non-rotatory, lasting few minutes. No focal neurological symptoms. Headaches seem stress-related, worse during work deadlines. Neurological examination completely normal. No papilledema on fundoscopy.",
+    provisionalDiagnosis: ["Tension-Type Headache", "Stress-Related Headache", "Benign Positional Vertigo - Rule Out"],
+    vitals: {
+      bloodPressure: "132/84",
+      pulse: "74",
+      temperature: "98.2",
+      respiratoryRate: "16",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Paracetamol",
+          dosage: "500mg",
+          frequency: "As needed",
+          duration: "PRN",
+          instructions: "Maximum 4 times daily, for headache relief",
+          beforeAfterFood: "after",
+        },
+        {
+          id: "2",
+          medicine: "Propranolol",
+          dosage: "20mg",
+          frequency: "Twice daily",
+          duration: "30 days",
+          instructions: "For headache prophylaxis, monitor BP",
+          beforeAfterFood: "after",
+        },
+      ],
+      ayurvedic: [
+        {
+          id: "1",
+          medicine: "Brahmi Vati",
+          dosage: "1 tablet",
+          frequency: "Twice daily",
+          duration: "21 days",
+          instructions: "For stress relief and mental clarity",
+          beforeAfterFood: "after",
+        },
+      ],
+    },
+    advice:
+      "Maintain regular sleep schedule (7-8 hours). Practice stress management techniques like meditation or yoga. Stay well hydrated. Avoid trigger foods (chocolate, aged cheese, alcohol). Regular meals, don't skip breakfast. Limit screen time before bed.",
+    followUpInstructions: "Follow-up in 4 weeks, sooner if headaches worsen or new symptoms develop",
+    investigationsOrdered: [
+      {
+        id: "1",
+        category: "radiology",
+        test: "MRI Brain",
+        urgency: "routine",
+        notes: "If headaches persist or worsen despite treatment",
+      },
+    ],
+    status: "completed",
+    createdAt: "2024-05-10T16:15:00.000Z",
+    updatedAt: "2024-05-10T17:00:00.000Z",
+  },
+  {
+    id: "CONS-P12345-2024-04-25-1714060800000",
+    patientId: "P12345",
+    patientName: "John Doe",
+    visitDate: "2024-04-25",
+    visitTime: "11:45",
+    doctorName: "Dr. Kevin Park",
+    department: "gastroenterology",
+    consultationType: "followup",
+    chiefComplaint: "Follow-up for gastroesophageal reflux disease (GERD)",
+    clinicalNotes:
+      "Patient returns for GERD follow-up after 6 weeks of proton pump inhibitor therapy. Reports significant improvement in heartburn symptoms, now occurring only 1-2 times per week compared to daily episodes previously. No more nocturnal symptoms or regurgitation. Patient has been compliant with dietary modifications and lifestyle changes. Occasional mild bloating after large meals. No alarm symptoms like dysphagia, weight loss, or GI bleeding.",
+    provisionalDiagnosis: ["GERD - Responding Well to Treatment", "Functional Dyspepsia - Mild"],
+    vitals: {
+      bloodPressure: "128/80",
+      pulse: "68",
+      temperature: "98.5",
+      weight: "73",
+      height: "175",
+    },
+    prescriptions: {
+      allopathic: [
+        {
+          id: "1",
+          medicine: "Omeprazole",
+          dosage: "20mg",
+          frequency: "Once daily",
+          duration: "30 days",
+          instructions: "Take 30 minutes before breakfast",
+          beforeAfterFood: "before",
+        },
+        {
+          id: "2",
+          medicine: "Domperidone",
+          dosage: "10mg",
+          frequency: "Before meals",
+          duration: "15 days",
+          instructions: "Take 15 minutes before meals for bloating",
+          beforeAfterFood: "before",
+        },
+      ],
+      ayurvedic: [
+        {
+          id: "1",
+          medicine: "Avipattikar Churna",
+          dosage: "1 tsp",
+          frequency: "Twice daily",
+          duration: "21 days",
+          instructions: "Mix with water, take after meals for acidity",
+          beforeAfterFood: "after",
+        },
+      ],
+    },
+    advice:
+      "Continue dietary modifications: avoid spicy, fatty, and acidic foods. Eat smaller, frequent meals. Avoid lying down within 3 hours of eating. Elevate head of bed 6-8 inches. Maintain weight loss. Avoid tight-fitting clothes. Consider gradual PPI tapering after symptom resolution.",
+    followUpInstructions: "Follow-up in 8 weeks to consider PPI tapering",
+    status: "completed",
+    createdAt: "2024-04-25T11:45:00.000Z",
+    updatedAt: "2024-04-25T12:30:00.000Z",
   },
 ]
 
-export function ConsultationProvider({ children }: { children: React.ReactNode }) {
-  const [consultationData, setConsultationData] = useState<ConsultationData>(initialConsultationData)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [consultationHistory, setConsultationHistory] = useState<ConsultationHistory[]>([])
-  const [lastSaved, setLastSaved] = useState<string>("")
+export function ConsultationProvider({ children }: { children: ReactNode }) {
+  const [activeConsultation, setActiveConsultation] = useState<ConsultationData | null>(null)
+  const [consultationHistory, setConsultationHistory] = useState<ConsultationData[]>([])
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isConsultationSaved, setIsConsultationSaved] = useState(false)
 
-  // Auto-save functionality
+  // Load consultation history from localStorage on mount, with fallback to mock data
   useEffect(() => {
-    const dataString = JSON.stringify(consultationData)
-    if (dataString !== lastSaved && dataString !== JSON.stringify(initialConsultationData)) {
-      const timeoutId = setTimeout(() => {
-        autoSave()
-      }, 2000) // Auto-save after 2 seconds of inactivity
-
-      return () => clearTimeout(timeoutId)
+    const savedHistory = localStorage.getItem("consultation-history")
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory)
+        // Merge with mock data if no existing history for this patient
+        const hasPatientHistory = parsed.some((c: ConsultationData) => c.patientId === "P12345")
+        if (!hasPatientHistory) {
+          setConsultationHistory([...mockConsultationHistory, ...parsed])
+        } else {
+          setConsultationHistory(parsed)
+        }
+      } catch (error) {
+        console.error("Error loading consultation history:", error)
+        setConsultationHistory(mockConsultationHistory)
+      }
+    } else {
+      // First time - use mock data
+      setConsultationHistory(mockConsultationHistory)
     }
-  }, [consultationData, lastSaved])
+  }, [])
 
-  const autoSave = async () => {
+  // Save consultation history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("consultation-history", JSON.stringify(consultationHistory))
+  }, [consultationHistory])
+
+  const startNewConsultation = (patientId: string, patientName: string, visitDate: string, consultationInfo?: any) => {
+    const now = new Date()
+    const consultationDate = visitDate
+
+    // Check for existing in-progress consultation for this date
+    const existingConsultation = getInProgressConsultation(patientId, visitDate)
+    if (existingConsultation) {
+      // Load existing consultation instead of creating new one
+      setActiveConsultation({ ...existingConsultation })
+      setHasUnsavedChanges(false)
+      setIsConsultationSaved(false)
+
+      toast.info("Loaded existing consultation", {
+        description: `Continuing consultation for ${new Date(visitDate).toLocaleDateString()}`,
+      })
+      return
+    }
+
+    const newConsultation: ConsultationData = {
+      id: `CONS-${patientId}-${visitDate}-${Date.now()}`,
+      patientId,
+      patientName,
+      visitDate: consultationDate,
+      visitTime: now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
+      doctorId: consultationInfo?.doctor || "DR001",
+      doctorName: consultationInfo?.doctorName || "Dr. Smith",
+      department: consultationInfo?.department || "general",
+      consultationType: consultationInfo?.consultationType || "routine",
+
+      // Store additional consultation info
+      chiefComplaint: consultationInfo?.chiefComplaint || "",
+      appointmentDate: consultationInfo?.appointmentDate || visitDate,
+      appointmentTime:
+        consultationInfo?.appointmentTime ||
+        now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
+
+      // Clinical Data
+      historyOfPresentIllness: "",
+      pastMedicalHistory: [],
+      familyHistory: "",
+      socialHistory: "",
+      allergies: [],
+      currentMedications: [],
+
+      // Physical Examination
+      vitals: {},
+
+      // System Review
+      systemReview: {},
+
+      // Clinical Assessment
+      clinicalFindings: "",
+      provisionalDiagnosis: [],
+      differentialDiagnosis: [],
+
+      // Investigations
+      investigationsOrdered: [],
+
+      // Treatment Plan
+      prescriptions: {
+        ayurvedic: [],
+        allopathic: [],
+      },
+
+      // Follow-up and Advice
+      advice: "",
+      followUpInstructions: "",
+
+      // Administrative
+      consultationFee: 0,
+      status: "in-progress",
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+
+      // Additional Notes
+      doctorNotes: "",
+      privateNotes: "",
+
+      // Legacy fields for backward compatibility
+      clinicalNotes: "",
+      diagnosis: [],
+      ayurvedicAnalysis: {},
+      ophthalmologyAnalysis: {},
+    }
+
+    setActiveConsultation(newConsultation)
+    setHasUnsavedChanges(false)
+    setIsConsultationSaved(false)
+
+    toast.success("New consultation started", {
+      description: `Visit consultation for ${patientName} on ${new Date(consultationDate).toLocaleDateString()}`,
+    })
+  }
+
+  const updateConsultationData = (updates: Partial<ConsultationData>) => {
+    if (!activeConsultation) return
+
+    const updatedConsultation = {
+      ...activeConsultation,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    }
+
+    setActiveConsultation(updatedConsultation)
+    setHasUnsavedChanges(true)
+    setIsConsultationSaved(false)
+  }
+
+  const saveConsultation = async (): Promise<boolean> => {
+    if (!activeConsultation) return false
+
     try {
-      setIsSaving(true)
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500))
-      setLastSaved(JSON.stringify(consultationData))
-      toast.success("Consultation auto-saved")
+
+      const updatedConsultation = {
+        ...activeConsultation,
+        updatedAt: new Date().toISOString(),
+      }
+
+      // Update or add to history (but keep as in-progress)
+      const existingIndex = consultationHistory.findIndex((c) => c.id === updatedConsultation.id)
+      if (existingIndex >= 0) {
+        const newHistory = [...consultationHistory]
+        newHistory[existingIndex] = updatedConsultation
+        setConsultationHistory(newHistory)
+      } else {
+        setConsultationHistory((prev) => [updatedConsultation, ...prev])
+      }
+
+      setActiveConsultation(updatedConsultation)
+      setHasUnsavedChanges(false)
+      setIsConsultationSaved(true)
+
+      return true
     } catch (error) {
-      toast.error("Failed to auto-save consultation")
-    } finally {
-      setIsSaving(false)
+      toast.error("Failed to save consultation", {
+        description: "Please try again",
+      })
+      return false
     }
   }
 
-  const updateConsultationData = useCallback((data: Partial<ConsultationData>) => {
-    setConsultationData((prev) => ({
-      ...prev,
-      ...data,
-      vitalSigns: data.vitalSigns ? { ...prev.vitalSigns, ...data.vitalSigns } : prev.vitalSigns,
-      ayurvedicAnalysis: data.ayurvedicAnalysis
-        ? { ...prev.ayurvedicAnalysis, ...data.ayurvedicAnalysis }
-        : prev.ayurvedicAnalysis,
-      ophthalmologyAnalysis: data.ophthalmologyAnalysis
-        ? { ...prev.ophthalmologyAnalysis, ...data.ophthalmologyAnalysis }
-        : prev.ophthalmologyAnalysis,
-    }))
-  }, [])
+  const completeConsultation = (consultationData?: any) => {
+    if (!activeConsultation) return
 
-  const saveConsultation = async () => {
-    try {
-      setIsSaving(true)
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setLastSaved(JSON.stringify(consultationData))
-      toast.success("Consultation saved successfully")
-    } catch (error) {
-      toast.error("Failed to save consultation")
-      throw error
-    } finally {
-      setIsSaving(false)
+    const completedConsultation = {
+      ...activeConsultation,
+      ...consultationData,
+      status: "completed" as const,
+      updatedAt: new Date().toISOString(),
     }
+
+    // Update or add to history
+    const existingIndex = consultationHistory.findIndex((c) => c.id === completedConsultation.id)
+    if (existingIndex >= 0) {
+      const newHistory = [...consultationHistory]
+      newHistory[existingIndex] = completedConsultation
+      setConsultationHistory(newHistory)
+    } else {
+      setConsultationHistory((prev) => [completedConsultation, ...prev])
+    }
+
+    // Clear active consultation
+    setActiveConsultation(null)
+    setHasUnsavedChanges(false)
+    setIsConsultationSaved(false)
+  }
+
+  const completeVisit = async (): Promise<boolean> => {
+    if (!activeConsultation) {
+      toast.error("No active consultation to complete")
+      return false
+    }
+
+    // Validate consultation before completing
+    const validation = validateConsultation()
+    if (!validation.isValid) {
+      toast.error("Cannot complete visit", {
+        description: validation.errors.join(", "),
+      })
+      return false
+    }
+
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading("Completing visit...", {
+        description: "Saving consultation data and updating records",
+      })
+
+      // Simulate processing time
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Ensure the consultation is saved with all current data
+      const consultationToComplete = {
+        ...activeConsultation,
+        status: "completed" as const,
+        updatedAt: new Date().toISOString(),
+      }
+
+      // Save to history as completed
+      const existingIndex = consultationHistory.findIndex((c) => c.id === consultationToComplete.id)
+      if (existingIndex >= 0) {
+        // Update existing consultation in history
+        const newHistory = [...consultationHistory]
+        newHistory[existingIndex] = consultationToComplete
+        setConsultationHistory(newHistory)
+      } else {
+        // Add new consultation to history
+        setConsultationHistory((prev) => [consultationToComplete, ...prev])
+      }
+
+      // Clear active consultation
+      setActiveConsultation(null)
+      setHasUnsavedChanges(false)
+      setIsConsultationSaved(false)
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+
+      // Show success toast with detailed information
+      toast.success("🎉 Visit completed successfully!", {
+        description: (
+          <div className="space-y-1">
+            <div className="font-medium">Consultation saved to patient history</div>
+            <div className="text-sm opacity-90">
+              Patient: {consultationToComplete.patientName}
+              <br />
+              Date: {new Date(consultationToComplete.visitDate!).toLocaleDateString()}
+              <br />
+              Department: {consultationToComplete.department}
+              <br />
+              Doctor: {consultationToComplete.doctorName}
+            </div>
+          </div>
+        ),
+        duration: 6000,
+      })
+
+      // Show additional info toast
+      setTimeout(() => {
+        toast.info("📋 Consultation History Updated", {
+          description: "The completed visit is now available in the consultation history section",
+          duration: 4000,
+        })
+      }, 1000)
+
+      return true
+    } catch (error) {
+      console.error("Error completing visit:", error)
+      toast.error("Failed to complete visit", {
+        description: "Please try again",
+      })
+      return false
+    }
+  }
+
+  const cancelConsultation = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm("You have unsaved changes. Are you sure you want to cancel this consultation?")
+      if (!confirmed) return
+    }
+
+    setActiveConsultation(null)
+    setHasUnsavedChanges(false)
+    setIsConsultationSaved(false)
+
+    toast.info("Consultation cancelled")
   }
 
   const loadConsultation = async (consultationId: string) => {
-    try {
-      setIsLoading(true)
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Mock loading consultation data
-      const mockData: ConsultationData = {
-        patientId: "P001",
-        visitId: "V001",
-        chiefComplaint: "Fever and headache for 3 days",
-        historyOfPresentIllness: "Patient reports onset of fever 3 days ago, accompanied by headache and body aches.",
-        vitalSigns: {
-          temperature: "101.2°F",
-          bloodPressure: "120/80",
-          heartRate: "88",
-          respiratoryRate: "18",
-          oxygenSaturation: "98%",
-          weight: "70",
-          height: "175",
-          bmi: "22.9",
-        },
-        diagnoses: [
-          { id: "1", code: "A09", name: "Viral fever", type: "primary" },
-          { id: "2", code: "G44.2", name: "Tension headache", type: "secondary" },
-        ],
-        prescriptions: [
-          {
-            id: "1",
-            type: "allopathic",
-            medication: "Paracetamol",
-            dosage: "500mg",
-            frequency: "TID",
-            duration: "5 days",
-            instructions: "Take after meals",
-            afterFood: true,
-          },
-        ],
-        labTests: [],
-        radiologyTests: [],
-        procedures: [],
-        followUpInstructions: "Return if symptoms worsen or persist beyond 5 days",
-        clinicalNotes: "Patient appears stable, no signs of complications",
+    const consultation = consultationHistory.find((c) => c.id === consultationId)
+    if (consultation) {
+      if (consultation.status === "completed") {
+        toast.error("Cannot edit completed visit", {
+          description: "This visit has been completed and moved to history",
+        })
+        return
       }
 
-      setConsultationData(mockData)
-      setLastSaved(JSON.stringify(mockData))
-      toast.success("Consultation loaded successfully")
-    } catch (error) {
-      toast.error("Failed to load consultation")
-      throw error
-    } finally {
-      setIsLoading(false)
+      setActiveConsultation({ ...consultation })
+      setHasUnsavedChanges(false)
+      setIsConsultationSaved(false)
+
+      toast.success("Consultation loaded", {
+        description: `Visit from ${new Date(consultation.visitDate!).toLocaleDateString()}`,
+      })
     }
   }
 
-  const loadConsultationHistory = async (patientId: string) => {
+  const resetConsultation = () => {
+    setActiveConsultation(null)
+    setHasUnsavedChanges(false)
+    setIsConsultationSaved(false)
+  }
+
+  const validateConsultation = () => {
+    if (!activeConsultation) {
+      return { isValid: false, errors: ["No active consultation"] }
+    }
+
+    const errors: string[] = []
+
+    // Make validation less strict - only require basic information
+    if (!activeConsultation.chiefComplaint?.trim() && !activeConsultation.clinicalNotes?.trim()) {
+      errors.push("Either chief complaint or clinical notes is required")
+    }
+
+    // Allow completion even without diagnosis if there are clinical notes
+    const hasAnyDiagnosis =
+      activeConsultation.provisionalDiagnosis?.length ||
+      activeConsultation.diagnosis?.length ||
+      activeConsultation.clinicalNotes?.trim()
+
+    if (!hasAnyDiagnosis) {
+      errors.push("Please add clinical notes, diagnosis, or consultation details")
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    }
+  }
+
+  const getPatientConsultations = (patientId: string) => {
+    return consultationHistory
+      .filter((c) => c.patientId === patientId)
+      .sort((a, b) => new Date(b.visitDate!).getTime() - new Date(a.visitDate!).getTime())
+  }
+
+  const getConsultationsByDate = (patientId: string, visitDate: string) => {
+    return consultationHistory
+      .filter((c) => c.patientId === patientId && c.visitDate === visitDate)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+  }
+
+  const searchConsultations = (query: string) => {
+    const lowercaseQuery = query.toLowerCase()
+    return consultationHistory.filter(
+      (c) =>
+        c.patientName?.toLowerCase().includes(lowercaseQuery) ||
+        c.chiefComplaint?.toLowerCase().includes(lowercaseQuery) ||
+        c.provisionalDiagnosis?.some((d) => d.toLowerCase().includes(lowercaseQuery)) ||
+        c.diagnosis?.some((d) => d.toLowerCase().includes(lowercaseQuery)) ||
+        c.visitDate?.includes(query),
+    )
+  }
+
+  const getConsultationSummary = () => {
+    if (!activeConsultation) return ""
+
+    const { patientName, visitDate, chiefComplaint, provisionalDiagnosis, diagnosis } = activeConsultation
+    const diagnosisList = provisionalDiagnosis?.length ? provisionalDiagnosis : diagnosis || []
+    return `${patientName} - ${new Date(visitDate!).toLocaleDateString()} - ${chiefComplaint} - ${diagnosisList.join(", ")}`
+  }
+
+  const hasInProgressConsultation = (patientId: string, visitDate: string): boolean => {
+    return consultationHistory.some(
+      (consultation) =>
+        consultation.patientId === patientId &&
+        consultation.visitDate === visitDate &&
+        consultation.status === "in-progress",
+    )
+  }
+
+  const getInProgressConsultation = (patientId: string, visitDate: string): ConsultationData | null => {
+    return (
+      consultationHistory.find(
+        (consultation) =>
+          consultation.patientId === patientId &&
+          consultation.visitDate === visitDate &&
+          consultation.status === "in-progress",
+      ) || null
+    )
+  }
+
+  const loadInProgressConsultation = async (patientId: string, visitDate: string) => {
+    const consultation = getInProgressConsultation(patientId, visitDate)
+    if (consultation) {
+      setActiveConsultation({ ...consultation })
+      setHasUnsavedChanges(false)
+      setIsConsultationSaved(false)
+
+      toast.success("Consultation loaded", {
+        description: `Continuing visit from ${new Date(consultation.visitDate!).toLocaleDateString()}`,
+      })
+    } else {
+      toast.error("No in-progress consultation found for this date")
+    }
+  }
+
+  const hasIncompleteVisits = (patientId: string): ConsultationData[] => {
+    return consultationHistory.filter(
+      (consultation) => consultation.patientId === patientId && consultation.status === "in-progress",
+    )
+  }
+
+  const completeIncompleteVisit = async (consultationId: string): Promise<boolean> => {
+    const consultation = consultationHistory.find((c) => c.id === consultationId)
+    if (!consultation) return false
+
     try {
-      setIsLoading(true)
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const completedConsultation = {
+        ...consultation,
+        status: "completed" as const,
+        updatedAt: new Date().toISOString(),
+      }
 
-      const patientHistory = mockConsultationHistory.filter((consultation) => consultation.patientId === patientId)
+      const existingIndex = consultationHistory.findIndex((c) => c.id === consultationId)
+      if (existingIndex >= 0) {
+        const newHistory = [...consultationHistory]
+        newHistory[existingIndex] = completedConsultation
+        setConsultationHistory(newHistory)
+      }
 
-      setConsultationHistory(patientHistory)
+      toast.success("Previous visit completed", {
+        description: `Visit from ${new Date(consultation.visitDate!).toLocaleDateString()} has been completed`,
+      })
+
+      return true
     } catch (error) {
-      toast.error("Failed to load consultation history")
-      throw error
-    } finally {
-      setIsLoading(false)
+      toast.error("Failed to complete previous visit")
+      return false
     }
   }
 
-  const clearConsultation = () => {
-    setConsultationData(initialConsultationData)
-    setLastSaved("")
-    setConsultationHistory([])
+  // Add this function to the context value
+  const debugConsultationHistory = () => {
+    console.log("Current consultation history:", consultationHistory)
+    console.log("Active consultation:", activeConsultation)
+    return consultationHistory
   }
 
-  const value: ConsultationContextType = {
-    consultationData,
-    updateConsultationData,
-    saveConsultation,
-    loadConsultation,
-    clearConsultation,
-    isLoading,
-    isSaving,
-    consultationHistory,
-    loadConsultationHistory,
-  }
-
-  return <ConsultationContext.Provider value={value}>{children}</ConsultationContext.Provider>
+  // Add it to the return value:
+  return (
+    <ConsultationContext.Provider
+      value={{
+        activeConsultation,
+        isConsultationActive: !!activeConsultation,
+        hasUnsavedChanges,
+        isConsultationSaved,
+        startNewConsultation,
+        updateConsultationData,
+        saveConsultation,
+        completeConsultation,
+        completeVisit,
+        cancelConsultation,
+        loadConsultation,
+        consultationHistory,
+        getPatientConsultations,
+        getConsultationsByDate,
+        searchConsultations,
+        resetConsultation,
+        validateConsultation,
+        getConsultationSummary,
+        hasInProgressConsultation,
+        getInProgressConsultation,
+        loadInProgressConsultation,
+        hasIncompleteVisits,
+        completeIncompleteVisit,
+        debugConsultationHistory,
+      }}
+    >
+      {children}
+    </ConsultationContext.Provider>
+  )
 }
 
 export function useConsultation() {
