@@ -51,7 +51,12 @@ export function SavePrescriptionTemplateModal({
     }
 
     onSave(templateData)
-    toast.success("Template saved successfully!")
+    setTemplateName("")
+    setDescription("")
+    onClose()
+  }
+
+  const handleClose = () => {
     setTemplateName("")
     setDescription("")
     onClose()
@@ -60,7 +65,7 @@ export function SavePrescriptionTemplateModal({
   const totalPrescriptions = ayurvedicPrescriptions.length + allopathicPrescriptions.length
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -114,7 +119,7 @@ export function SavePrescriptionTemplateModal({
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button onClick={handleSave} className="bg-orange-600 hover:bg-orange-700">

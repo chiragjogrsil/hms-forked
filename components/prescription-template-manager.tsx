@@ -34,6 +34,11 @@ export function PrescriptionTemplateManager({
     setShowSaveModal(false)
   }
 
+  const handleLoadTemplate = (template: any) => {
+    onLoadTemplate(template)
+    setShowLoadModal(false)
+  }
+
   if (readOnly) {
     return null
   }
@@ -52,17 +57,15 @@ export function PrescriptionTemplateManager({
         </Button>
       )}
 
-      {templates.length > 0 && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowLoadModal(true)}
-          className="border-blue-300 text-blue-700 hover:bg-blue-50"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Load Template
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowLoadModal(true)}
+        className="border-blue-300 text-blue-700 hover:bg-blue-50"
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Load Template
+      </Button>
 
       <SavePrescriptionTemplateModal
         isOpen={showSaveModal}
@@ -76,7 +79,7 @@ export function PrescriptionTemplateManager({
       <LoadPrescriptionTemplateModal
         isOpen={showLoadModal}
         onClose={() => setShowLoadModal(false)}
-        onLoad={onLoadTemplate}
+        onLoad={handleLoadTemplate}
         department={department}
       />
     </div>
