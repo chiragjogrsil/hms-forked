@@ -1,188 +1,128 @@
 "use client"
 
 import { useState } from "react"
-import { format } from "date-fns"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 import {
   Calendar,
   Clock,
   User,
   Phone,
-  FileText,
   CreditCard,
+  FileText,
+  UserCheck,
+  Building2,
+  Stethoscope,
+  ExternalLink,
   CheckCircle,
   XCircle,
-  Edit3,
-  ExternalLink,
-  Stethoscope,
-  Play,
-  Check,
-  X,
-  UserCheck,
+  Clock3,
+  PlayCircle,
+  UserX,
+  DollarSign,
 } from "lucide-react"
-import Link from "next/link"
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+interface Appointment {
+  id: string
+  patientId: string
+  patientName: string
+  patientPhone: string
+  date: string
+  time: string
+  department: string
+  doctorName: string
+  type: string
+  status: "scheduled" | "waiting" | "in-progress" | "completed" | "cancelled" | "no-show"
+  duration: string
+  consultationFee: number
+  paymentStatus: "paid" | "pending" | "failed"
+  paymentMethod?: string
+  tokenNumber?: string
+  notes?: string
+}
 
 interface AppointmentDetailsModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  appointment: any
+  appointment: Appointment | null
+  isOpen: boolean
+  onClose: () => void
   onStatusChange?: (appointmentId: string, newStatus: string) => void
-  onAppointmentUpdate?: (appointmentId: string, updatedData: any) => void
+  onPaymentStatusChange?: (appointmentId: string, newStatus: string) => void
+}
+
+const statusConfig = {
+  scheduled: { color: "bg-blue-100 text-blue-800", icon: Calendar },
+  waiting: { color: "bg-yellow-100 text-yellow-800", icon: Clock3 },
+  "in-progress": { color: "bg-green-100 text-green-800", icon: PlayCircle },
+  completed: { color: "bg-gray-100 text-gray-800", icon: CheckCircle },
+  cancelled: { color: "bg-red-100 text-red-800", icon: XCircle },
+  "no-show": { color: "bg-orange-100 text-orange-800", icon: UserX },
+}
+
+const paymentStatusConfig = {
+  paid: { color: "bg-green-100 text-green-800", icon: CheckCircle },
+  pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  failed: { color: "bg-red-100 text-red-800", icon: XCircle },
 }
 
 export function AppointmentDetailsModal({
-  open,
-  onOpenChange,
   appointment,
+  isOpen,
+  onClose,
   onStatusChange,
-  onAppointmentUpdate,
+  onPaymentStatusChange,
 }: AppointmentDetailsModalProps) {
-  const { toast } = useToast()
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [status, setStatus] = useState(appointment?.status || "scheduled")
-  const [paymentStatus, setPaymentStatus] = useState(appointment?.paymentStatus || "pending")
   const [notes, setNotes] = useState(appointment?.notes || "")
+  const [isUpdatingNotes, setIsUpdatingNotes] = useState(false)
+  const { toast } = useToast()
 
   if (!appointment) return null
 
-  // Generate a patient ID from the appointment data
-  const getPatientId = () => {
-    const patientName = appointment.patientName || appointment.patient
-    return (
-      patientName.toLowerCase().replace(/\s+/g, "-") +
-      "-" +
-      Math.abs(
-        patientName.split("").reduce((a, b) => {
-          a = (a << 5) - a + b.charCodeAt(0)
-          return a & a
-        }, 0),
-      )
-        .toString()
-        .slice(0, 4)
-    )
+  const StatusIcon = statusConfig[appointment.status]?.icon || Calendar
+  const PaymentIcon = paymentStatusConfig[appointment.paymentStatus]?.icon || Clock
+
+  const handleStatusChange = (newStatus: string) => {
+    onStatusChange?.(appointment.id, newStatus)
+    toast({
+      title: "Status Updated",
+      description: `Appointment status changed to ${newStatus.replace("-", " ")}`,
+    })
   }
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    setIsUpdating(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setStatus(newStatus)
-
-      if (onStatusChange) {
-        onStatusChange(appointment.id, newStatus)
-      }
-
-      if (onAppointmentUpdate) {
-        onAppointmentUpdate(appointment.id, { status: newStatus })
-      }
-
-      toast({
-        title: "Status updated",
-        description: `Appointment status changed to ${newStatus}`,
-      })
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "Please try again",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
+  const handlePaymentStatusChange = (newStatus: string) => {
+    onPaymentStatusChange?.(appointment.id, newStatus)
+    toast({
+      title: "Payment Status Updated",
+      description: `Payment status changed to ${newStatus}`,
+    })
   }
 
-  const handlePaymentUpdate = async (newPaymentStatus: string) => {
-    setIsUpdating(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setPaymentStatus(newPaymentStatus)
-
-      if (onAppointmentUpdate) {
-        onAppointmentUpdate(appointment.id, { paymentStatus: newPaymentStatus })
-      }
-
-      toast({
-        title: "Payment status updated",
-        description: `Payment status changed to ${newPaymentStatus}`,
-      })
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "Please try again",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "waiting":
-        return "bg-amber-100 text-amber-800 border-amber-200"
-      case "in-progress":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200"
-      case "no-show":
-        return "bg-gray-100 text-gray-800 border-gray-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
-  }
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "failed":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
+  const handleSaveNotes = async () => {
+    setIsUpdatingNotes(true)
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsUpdatingNotes(false)
+    toast({
+      title: "Notes Saved",
+      description: "Appointment notes have been updated successfully.",
+    })
   }
 
   const getStatusActions = () => {
-    switch (status) {
+    switch (appointment.status) {
       case "scheduled":
         return (
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleStatusUpdate("waiting")}
-              disabled={isUpdating}
-              className="border-amber-200 text-amber-700 hover:bg-amber-50"
-            >
-              <Clock className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="outline" onClick={() => handleStatusChange("waiting")}>
+              <Clock3 className="h-4 w-4 mr-1" />
               Mark as Waiting
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleStatusUpdate("cancelled")}
-              disabled={isUpdating}
-              className="border-red-200 text-red-700 hover:bg-red-50"
-            >
-              <X className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="destructive" onClick={() => handleStatusChange("cancelled")}>
+              <XCircle className="h-4 w-4 mr-1" />
               Cancel
             </Button>
           </div>
@@ -190,305 +130,214 @@ export function AppointmentDetailsModal({
       case "waiting":
         return (
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => handleStatusUpdate("in-progress")}
-              disabled={isUpdating}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Play className="mr-2 h-4 w-4" />
+            <Button size="sm" onClick={() => handleStatusChange("in-progress")}>
+              <PlayCircle className="h-4 w-4 mr-1" />
               Start Consultation
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleStatusUpdate("no-show")}
-              disabled={isUpdating}
-              className="border-gray-200 text-gray-700 hover:bg-gray-50"
-            >
-              <UserCheck className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="outline" onClick={() => handleStatusChange("no-show")}>
+              <UserX className="h-4 w-4 mr-1" />
               Mark No Show
             </Button>
           </div>
         )
       case "in-progress":
         return (
-          <Button
-            size="sm"
-            onClick={() => handleStatusUpdate("completed")}
-            disabled={isUpdating}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Check className="mr-2 h-4 w-4" />
+          <Button size="sm" onClick={() => handleStatusChange("completed")}>
+            <CheckCircle className="h-4 w-4 mr-1" />
             Complete Appointment
           </Button>
         )
+      case "completed":
+        return appointment.paymentStatus === "pending" ? (
+          <Button size="sm" variant="outline" onClick={() => handlePaymentStatusChange("paid")}>
+            <DollarSign className="h-4 w-4 mr-1" />
+            Mark as Paid
+          </Button>
+        ) : null
       default:
         return null
     }
   }
 
+  const openPatientDetails = () => {
+    window.open(`/patients/${appointment.patientId}`, "_blank")
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-teal-600" />
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Appointment Details
           </DialogTitle>
-          <DialogDescription>View and manage appointment information</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Patient Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="h-5 w-5 text-teal-600" />
-                Patient Information
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto border-blue-200 text-blue-600 hover:bg-blue-50 bg-transparent"
-                >
-                  <Link href={`/patients/${getPatientId()}`} target="_blank">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    View Patient Details
-                  </Link>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Patient Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{appointment.patientName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">{appointment.patientPhone}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">
+                    {appointment.tokenNumber ? `Token: ${appointment.tokenNumber}` : "No Token Assigned"}
+                  </span>
+                </div>
+                <Button size="sm" variant="outline" onClick={openPatientDetails} className="w-full bg-transparent">
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  View Patient Details
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Patient Name</Label>
-                  <p className="font-medium">{appointment.patientName || appointment.patient}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Patient ID</Label>
-                  <p className="font-medium">{appointment.patientId || getPatientId()}</p>
-                </div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Contact Number</Label>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <p>{appointment.contactNumber}</p>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Token Number</Label>
-                  {appointment.token ? (
-                    <Badge variant="outline" className="w-fit bg-blue-50 text-blue-700 border-blue-200">
-                      {appointment.token}
-                    </Badge>
-                  ) : (
-                    <span className="text-sm text-gray-500">No Token Assigned</span>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          <Separator />
 
           {/* Appointment Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5 text-teal-600" />
-                Appointment Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Date</Label>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <p>{format(new Date(appointment.date), "PPP")}</p>
-                  </div>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Appointment Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Date & Time</span>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Time</Label>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <p>{appointment.time}</p>
-                  </div>
+                <div className="pl-6 text-sm text-gray-600">
+                  {new Date(appointment.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Department</Label>
-                  <div className="flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4 text-gray-400" />
-                    <p className="font-medium">{appointment.department}</p>
-                  </div>
+                <div className="pl-6 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">{appointment.time}</span>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Doctor</Label>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <p className="font-medium">{appointment.doctor}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Appointment Type</Label>
-                  <p>{appointment.type}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Duration</Label>
-                  <p>{appointment.duration || 30} minutes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Status Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Edit3 className="h-5 w-5 text-teal-600" />
-                Status Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Current Status</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className={getStatusColor(status)}>
-                      {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
-                    </Badge>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Department</span>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Payment Status</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className={getPaymentStatusColor(paymentStatus)}>
-                      {paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}
-                    </Badge>
-                    {status === "completed" && (
-                      <Select value={paymentStatus} onValueChange={handlePaymentUpdate} disabled={isUpdating}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="failed">Failed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                </div>
+                <div className="pl-6 text-sm text-gray-600">{appointment.department}</div>
               </div>
 
-              {/* Status Actions */}
-              <div className="pt-2">
-                <Label className="text-sm font-medium text-gray-500">Available Actions</Label>
-                <div className="mt-2">{getStatusActions()}</div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Doctor</span>
+                </div>
+                <div className="pl-6 text-sm text-gray-600">{appointment.doctorName}</div>
+
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Type & Duration</span>
+                </div>
+                <div className="pl-6 text-sm text-gray-600">
+                  {appointment.type} • {appointment.duration}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Status and Actions */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Status & Actions
+            </h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <StatusIcon className="h-4 w-4" />
+                <Badge className={statusConfig[appointment.status]?.color}>
+                  {appointment.status.replace("-", " ").toUpperCase()}
+                </Badge>
+              </div>
+              {getStatusActions()}
+            </div>
+          </div>
+
+          <Separator />
 
           {/* Payment Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CreditCard className="h-5 w-5 text-teal-600" />
-                Payment Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Consultation Fee</Label>
-                  <p className="text-2xl font-bold text-teal-600">₹{appointment.fee || 500}</p>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Payment Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Consultation Fee</span>
+                  <span className="text-lg font-bold">₹{appointment.consultationFee}</span>
                 </div>
-                <div className="text-right">
-                  <Label className="text-sm font-medium text-gray-500">Payment Method</Label>
-                  <p>{appointment.paymentMethod || "Not specified"}</p>
+                <div className="flex items-center gap-2">
+                  <PaymentIcon className="h-4 w-4" />
+                  <Badge className={paymentStatusConfig[appointment.paymentStatus]?.color}>
+                    {appointment.paymentStatus.toUpperCase()}
+                  </Badge>
                 </div>
               </div>
-              {paymentStatus === "paid" && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-4 w-4" />
-                  <span className="text-sm">Payment completed successfully</span>
-                  {appointment.paymentAmount && (
-                    <span className="text-sm font-medium">- ₹{appointment.paymentAmount}</span>
-                  )}
-                </div>
-              )}
-              {paymentStatus === "failed" && (
-                <div className="flex items-center gap-2 text-red-600">
-                  <XCircle className="h-4 w-4" />
-                  <span className="text-sm">Payment failed - please retry</span>
-                </div>
-              )}
-              {paymentStatus === "pending" && status === "completed" && (
-                <div className="flex items-center gap-2 text-amber-600">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">Payment pending - please collect payment</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-teal-600" />
-                Appointment Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add notes about this appointment..."
-                className="min-h-[100px]"
-              />
-              <div className="flex justify-end mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (onAppointmentUpdate) {
-                      onAppointmentUpdate(appointment.id, { notes })
-                    }
-                    toast({
-                      title: "Notes saved",
-                      description: "Appointment notes have been updated.",
-                    })
-                  }}
-                >
-                  Save Notes
-                </Button>
+              <div className="space-y-2">
+                {appointment.paymentMethod && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Payment Method</span>
+                    <span className="text-sm font-medium">{appointment.paymentMethod}</span>
+                  </div>
+                )}
+                {appointment.status === "completed" && appointment.paymentStatus === "pending" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePaymentStatusChange("paid")}
+                    className="w-full"
+                  >
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Mark as Paid
+                  </Button>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
+          <Separator />
+
+          {/* Notes Section */}
+          <div className="space-y-3">
+            <Label htmlFor="notes" className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Appointment Notes
+            </Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any notes about this appointment..."
+              className="min-h-[100px]"
+            />
+            <Button onClick={handleSaveNotes} disabled={isUpdatingNotes || notes === appointment.notes} size="sm">
+              {isUpdatingNotes ? "Saving..." : "Save Notes"}
             </Button>
-            {status === "completed" && paymentStatus === "unpaid" && (
-              <Button
-                onClick={() => handlePaymentUpdate("paid")}
-                disabled={isUpdating}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <CreditCard className="mr-2 h-4 w-4" />
-                Mark as Paid
-              </Button>
-            )}
           </div>
         </div>
       </DialogContent>

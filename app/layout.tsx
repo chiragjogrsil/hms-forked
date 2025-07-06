@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProviderOld, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/toaster"
 import { PrescriptionTemplateProvider } from "@/contexts/prescription-template-context"
@@ -25,10 +25,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <PrescriptionTemplateProvider>
-          <SidebarProvider>
+          <SidebarProviderOld>
             <AppSidebar />
-            <main className="flex-1">{children}</main>
-          </SidebarProvider>
+            <SidebarInset>{children}</SidebarInset>
+          </SidebarProviderOld>
         </PrescriptionTemplateProvider>
         <Toaster />
       </body>
