@@ -1,85 +1,67 @@
 "use client"
 
-import { useState } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
-import { Save, Download } from "lucide-react"
 import { SavePrescriptionTemplateModal } from "@/components/modals/save-prescription-template-modal"
 import { LoadPrescriptionTemplateModal } from "@/components/modals/load-prescription-template-modal"
-import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { Save, FolderOpen } from "lucide-react"
 
 interface PrescriptionTemplateManagerProps {
-  ayurvedicPrescriptions: any[]
-  allopathicPrescriptions: any[]
-  department: string
-  onLoadTemplate: (template: any) => void
-  readOnly?: boolean
+  allopathicMedicines: any[]
+  ayurvedicMedicines: any[]
+  onLoadTemplate: (medicines: { allopathic: any[]; ayurvedic: any[] }) => void
+  department?: string
 }
 
 export function PrescriptionTemplateManager({
-  ayurvedicPrescriptions,
-  allopathicPrescriptions,
-  department,
+  allopathicMedicines,
+  ayurvedicMedicines,
   onLoadTemplate,
-  readOnly = false,
+  department,
 }: PrescriptionTemplateManagerProps) {
-  const [showSaveModal, setShowSaveModal] = useState(false)
-  const [showLoadModal, setShowLoadModal] = useState(false)
-  const { saveTemplate, getTemplatesByDepartment } = usePrescriptionTemplates()
+  const [showSaveModal, setShowSaveModal] = React.useState(false)
+  const [showLoadModal, setShowLoadModal] = React.useState(false)
 
-  const templates = getTemplatesByDepartment(department)
-  const hasPrescriptions = ayurvedicPrescriptions.length > 0 || allopathicPrescriptions.length > 0
-
-  const handleSaveTemplate = (templateData: any) => {
-    saveTemplate(templateData)
-    setShowSaveModal(false)
-  }
-
-  const handleLoadTemplate = (template: any) => {
-    onLoadTemplate(template)
-    setShowLoadModal(false)
-  }
-
-  if (readOnly) {
-    return null
-  }
+  const hasMedicines = allopathicMedicines.length > 0 || ayurvedicMedicines.length > 0
 
   return (
-    <div className="flex gap-2">
-      {hasPrescriptions && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSaveModal(true)}
-          className="border-orange-300 text-orange-700 hover:bg-orange-50"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save as Template
-        </Button>
-      )}
+    <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg border">
+      <div className="flex-1">
+        <h3 className="font-medium text-sm text-gray-700">Prescription Templates</h3>
+        <p className="text-xs text-gray-500">Save frequently used medicine combinations or load existing templates</p>
+      </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowLoadModal(true)}
-        className="border-blue-300 text-blue-700 hover:bg-blue-50"
-      >
-        <Download className="h-4 w-4 mr-2" />
-        Load Template
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => setShowLoadModal(true)} className="flex items-center gap-1">
+          <FolderOpen className="h-4 w-4" />
+          Load Template
+        </Button>
+
+        {hasMedicines && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSaveModal(true)}
+            className="flex items-center gap-1"
+          >
+            <Save className="h-4 w-4" />
+            Save Template
+          </Button>
+        )}
+      </div>
 
       <SavePrescriptionTemplateModal
-        isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        onSave={handleSaveTemplate}
-        ayurvedicPrescriptions={ayurvedicPrescriptions}
-        allopathicPrescriptions={allopathicPrescriptions}
+        open={showSaveModal}
+        onOpenChange={setShowSaveModal}
+        allopathicMedicines={allopathicMedicines}
+        ayurvedicMedicines={ayurvedicMedicines}
         department={department}
       />
 
       <LoadPrescriptionTemplateModal
-        isOpen={showLoadModal}
-        onClose={() => setShowLoadModal(false)}
-        onLoad={handleLoadTemplate}
+        open={showLoadModal}
+        onOpenChange={setShowLoadModal}
+        onLoadTemplate={onLoadTemplate}
         department={department}
       />
     </div>
