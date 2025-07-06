@@ -329,6 +329,8 @@ export function IntegratedConsultation({
               </CardHeader>
               <CardContent>
                 <LaboratorySection
+                  patientId={patientId}
+                  patientName={patientData.name}
                   selectedTests={consultationData.labTests}
                   onTestsChange={(tests) => updateConsultation({ labTests: tests })}
                 />
@@ -345,6 +347,8 @@ export function IntegratedConsultation({
               </CardHeader>
               <CardContent>
                 <RadiologySection
+                  patientId={patientId}
+                  patientName={patientData.name}
                   selectedTests={consultationData.radiologyTests}
                   onTestsChange={(tests) => updateConsultation({ radiologyTests: tests })}
                 />
@@ -361,6 +365,9 @@ export function IntegratedConsultation({
               </CardHeader>
               <CardContent>
                 <ProceduresSection
+                  patientId={patientId}
+                  patientName={patientData.name}
+                  selectedDepartment={department}
                   selectedProcedures={consultationData.procedures}
                   onProceduresChange={(procedures) => updateConsultation({ procedures })}
                 />
