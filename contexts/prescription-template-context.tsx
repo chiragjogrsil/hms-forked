@@ -3,23 +3,14 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
-export interface PrescriptionMedicine {
-  id: string
-  name: string
-  dosage: string
-  frequency: string
-  duration: string
-  instructions?: string
-  type: "allopathic" | "ayurvedic"
-}
-
-export interface PrescriptionTemplate {
+interface PrescriptionTemplate {
   id: string
   name: string
   description?: string
-  medicines: PrescriptionMedicine[]
+  department: string
   category: "allopathic" | "ayurvedic" | "mixed"
-  department?: string
+  allopathicPrescriptions: any[]
+  ayurvedicPrescriptions: any[]
   createdAt: string
   createdBy: string
 }
@@ -27,113 +18,142 @@ export interface PrescriptionTemplate {
 interface PrescriptionTemplateContextType {
   templates: PrescriptionTemplate[]
   saveTemplate: (template: Omit<PrescriptionTemplate, "id" | "createdAt">) => void
-  loadTemplate: (templateId: string) => PrescriptionTemplate | null
-  deleteTemplate: (templateId: string) => void
+  deleteTemplate: (id: string) => void
+  getTemplatesByDepartment: (department: string) => PrescriptionTemplate[]
   searchTemplates: (query: string) => PrescriptionTemplate[]
 }
 
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
 
+const sampleTemplates: PrescriptionTemplate[] = [
+  {
+    id: "1",
+    name: "Common Cold Treatment",
+    description: "Standard treatment for common cold symptoms",
+    department: "general",
+    category: "allopathic",
+    allopathicPrescriptions: [
+      {
+        id: "1",
+        medicine: "Paracetamol 500mg",
+        dosage: "1-0-1",
+        timing: "after-food",
+        duration: "5",
+        quantity: 10,
+        instructions: "Take 1 tablet morning and evening after food",
+      },
+      {
+        id: "2",
+        medicine: "Cetirizine 10mg",
+        dosage: "0-0-1",
+        timing: "after-food",
+        duration: "3",
+        quantity: 3,
+        instructions: "Take 1 tablet in the evening after food",
+      },
+    ],
+    ayurvedicPrescriptions: [],
+    createdAt: "2024-01-15",
+    createdBy: "Dr. Smith",
+  },
+  {
+    id: "2",
+    name: "Dental Pain Relief",
+    description: "For dental procedures and pain management",
+    department: "dental",
+    category: "allopathic",
+    allopathicPrescriptions: [
+      {
+        id: "1",
+        medicine: "Ibuprofen 400mg",
+        dosage: "1-1-1",
+        timing: "after-food",
+        duration: "3",
+        quantity: 9,
+        instructions: "Take 1 tablet three times daily after food",
+      },
+      {
+        id: "2",
+        medicine: "Amoxicillin 500mg",
+        dosage: "1-0-1",
+        timing: "after-food",
+        duration: "5",
+        quantity: 10,
+        instructions: "Take 1 tablet morning and evening after food",
+      },
+    ],
+    ayurvedicPrescriptions: [],
+    createdAt: "2024-01-10",
+    createdBy: "Dr. Johnson",
+  },
+  {
+    id: "3",
+    name: "Digestive Health",
+    description: "Ayurvedic treatment for digestive issues",
+    department: "Ayurveda",
+    category: "ayurvedic",
+    allopathicPrescriptions: [],
+    ayurvedicPrescriptions: [
+      {
+        id: "1",
+        medicine: "Triphala Churna",
+        dosage: "1 tsp twice daily",
+        duration: "15 days",
+        instructions: "Mix with warm water, take before meals",
+      },
+      {
+        id: "2",
+        medicine: "Hingvastak Churna",
+        dosage: "1/2 tsp after meals",
+        duration: "10 days",
+        instructions: "Take with buttermilk after meals",
+      },
+    ],
+    createdAt: "2024-01-12",
+    createdBy: "Dr. Patel",
+  },
+]
+
 export function PrescriptionTemplateProvider({ children }: { children: React.ReactNode }) {
   const [templates, setTemplates] = useState<PrescriptionTemplate[]>([])
 
-  // Load templates from localStorage on mount
   useEffect(() => {
+    // Load templates from localStorage
     const savedTemplates = localStorage.getItem("prescriptionTemplates")
     if (savedTemplates) {
       setTemplates(JSON.parse(savedTemplates))
     } else {
       // Initialize with sample templates
-      const sampleTemplates: PrescriptionTemplate[] = [
-        {
-          id: "1",
-          name: "Common Cold Treatment",
-          description: "Standard treatment for common cold symptoms",
-          category: "allopathic",
-          department: "General Medicine",
-          createdAt: new Date().toISOString(),
-          createdBy: "Dr. Smith",
-          medicines: [
-            {
-              id: "1",
-              name: "Paracetamol",
-              dosage: "500mg",
-              frequency: "Twice daily",
-              duration: "5 days",
-              instructions: "Take after meals",
-              type: "allopathic",
-            },
-            {
-              id: "2",
-              name: "Cetirizine",
-              dosage: "10mg",
-              frequency: "Once daily",
-              duration: "3 days",
-              instructions: "Take at bedtime",
-              type: "allopathic",
-            },
-          ],
-        },
-        {
-          id: "2",
-          name: "Digestive Health",
-          description: "Ayurvedic medicines for digestive issues",
-          category: "ayurvedic",
-          department: "Ayurveda",
-          createdAt: new Date().toISOString(),
-          createdBy: "Dr. Sharma",
-          medicines: [
-            {
-              id: "3",
-              name: "Triphala Churna",
-              dosage: "1 tsp",
-              frequency: "Twice daily",
-              duration: "15 days",
-              instructions: "Take with warm water before meals",
-              type: "ayurvedic",
-            },
-            {
-              id: "4",
-              name: "Hingvastak Churna",
-              dosage: "1/2 tsp",
-              frequency: "After meals",
-              duration: "10 days",
-              instructions: "Mix with buttermilk",
-              type: "ayurvedic",
-            },
-          ],
-        },
-      ]
       setTemplates(sampleTemplates)
       localStorage.setItem("prescriptionTemplates", JSON.stringify(sampleTemplates))
     }
   }, [])
 
-  // Save templates to localStorage whenever templates change
-  useEffect(() => {
-    if (templates.length > 0) {
-      localStorage.setItem("prescriptionTemplates", JSON.stringify(templates))
-    }
-  }, [templates])
-
   const saveTemplate = (template: Omit<PrescriptionTemplate, "id" | "createdAt">) => {
     const newTemplate: PrescriptionTemplate = {
       ...template,
       id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString().split("T")[0],
     }
-    setTemplates((prev) => [...prev, newTemplate])
+
+    const updatedTemplates = [...templates, newTemplate]
+    setTemplates(updatedTemplates)
+    localStorage.setItem("prescriptionTemplates", JSON.stringify(updatedTemplates))
   }
 
-  const loadTemplate = (templateId: string): PrescriptionTemplate | null => {
-    return templates.find((template) => template.id === templateId) || null
+  const deleteTemplate = (id: string) => {
+    const updatedTemplates = templates.filter((template) => template.id !== id)
+    setTemplates(updatedTemplates)
+    localStorage.setItem("prescriptionTemplates", JSON.stringify(updatedTemplates))
   }
 
-  const deleteTemplate = (templateId: string) => {
-    setTemplates((prev) => prev.filter((template) => template.id !== templateId))
+  const getTemplatesByDepartment = (department: string) => {
+    return templates.filter(
+      (template) => template.department === department || template.department === "general" || department === "general",
+    )
   }
 
-  const searchTemplates = (query: string): PrescriptionTemplate[] => {
+  const searchTemplates = (query: string) => {
     if (!query.trim()) return templates
 
     const lowercaseQuery = query.toLowerCase()
@@ -141,7 +161,8 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
       (template) =>
         template.name.toLowerCase().includes(lowercaseQuery) ||
         template.description?.toLowerCase().includes(lowercaseQuery) ||
-        template.medicines.some((medicine) => medicine.name.toLowerCase().includes(lowercaseQuery)),
+        template.allopathicPrescriptions.some((med) => med.medicine.toLowerCase().includes(lowercaseQuery)) ||
+        template.ayurvedicPrescriptions.some((med) => med.medicine.toLowerCase().includes(lowercaseQuery)),
     )
   }
 
@@ -150,8 +171,8 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
       value={{
         templates,
         saveTemplate,
-        loadTemplate,
         deleteTemplate,
+        getTemplatesByDepartment,
         searchTemplates,
       }}
     >

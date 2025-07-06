@@ -1,41 +1,56 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Save, Pill, Leaf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { usePrescriptionTemplates, type PrescriptionMedicine } from "@/contexts/prescription-template-context"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
 import { useToast } from "@/hooks/use-toast"
 
 interface SavePrescriptionTemplateModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  allopathicMedicines: any[]
-  ayurvedicMedicines: any[]
-  department?: string
+  isOpen: boolean
+  onClose: () => void
+  ayurvedicPrescriptions: any[]
+  allopathicPrescriptions: any[]
+  department: string
 }
 
 export function SavePrescriptionTemplateModal({
-  open,
-  onOpenChange,
-  allopathicMedicines,
-  ayurvedicMedicines,
+  isOpen,
+  onClose,
+  ayurvedicPrescriptions,
+  allopathicPrescriptions,
   department,
 }: SavePrescriptionTemplateModalProps) {
-  const [name, setName] = useState("")
+  const [templateName, setTemplateName] = useState("")
   const [description, setDescription] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const { saveTemplate } = usePrescriptionTemplates()
   const { toast } = useToast()
 
+  const totalMedicines = ayurvedicPrescriptions.length + allopathicPrescriptions.length
+
+  const getCategory = () => {
+    if (ayurvedicPrescriptions.length > 0 && allopathicPrescriptions.length > 0) {
+      return "mixed"
+    } else if (ayurvedicPrescriptions.length > 0) {
+      return "ayurvedic"
+    } else {
+      return "allopathic"
+    }
+  }
+
   const handleSave = async () => {
-    if (!name.trim()) {
+    if (!templateName.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter a template name",
+        title: "Template name required",
+        description: "Please enter a name for your template",
         variant: "destructive",
       })
       return
@@ -44,58 +59,29 @@ export function SavePrescriptionTemplateModal({
     setIsLoading(true)
 
     try {
-      // Convert medicines to template format
-      const medicines: PrescriptionMedicine[] = [
-        ...allopathicMedicines.map((med) => ({
-          id: med.id || Date.now().toString(),
-          name: med.medicine,
-          dosage: med.dosage,
-          frequency: med.frequency,
-          duration: med.duration,
-          instructions: med.instructions,
-          type: "allopathic" as const,
-        })),
-        ...ayurvedicMedicines.map((med) => ({
-          id: med.id || Date.now().toString(),
-          name: med.medicine,
-          dosage: med.dosage,
-          frequency: med.frequency,
-          duration: med.duration,
-          instructions: med.instructions,
-          type: "ayurvedic" as const,
-        })),
-      ]
-
-      // Determine category
-      let category: "allopathic" | "ayurvedic" | "mixed" = "mixed"
-      if (allopathicMedicines.length > 0 && ayurvedicMedicines.length === 0) {
-        category = "allopathic"
-      } else if (ayurvedicMedicines.length > 0 && allopathicMedicines.length === 0) {
-        category = "ayurvedic"
-      }
-
       saveTemplate({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        medicines,
-        category,
+        name: templateName.trim(),
+        description: description.trim(),
         department,
+        category: getCategory(),
+        allopathicPrescriptions,
+        ayurvedicPrescriptions,
         createdBy: "Current Doctor", // In real app, get from auth context
       })
 
       toast({
-        title: "Success",
-        description: "Prescription template saved successfully",
+        title: "Template saved successfully",
+        description: `"${templateName}" has been saved to your templates`,
       })
 
       // Reset form
-      setName("")
+      setTemplateName("")
       setDescription("")
-      onOpenChange(false)
+      onClose()
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save template",
+        title: "Error saving template",
+        description: "Please try again",
         variant: "destructive",
       })
     } finally {
@@ -103,60 +89,75 @@ export function SavePrescriptionTemplateModal({
     }
   }
 
-  const totalMedicines = allopathicMedicines.length + ayurvedicMedicines.length
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Save Prescription Template</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Save className="h-5 w-5 text-green-600" />
+            Save Prescription Template
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
-              This template will include {totalMedicines} medicine{totalMedicines !== 1 ? "s" : ""}:
-            </p>
-            <ul className="text-xs text-blue-600 mt-1 space-y-1">
-              {allopathicMedicines.length > 0 && (
-                <li>
-                  • {allopathicMedicines.length} Allopathic medicine{allopathicMedicines.length !== 1 ? "s" : ""}
-                </li>
-              )}
-              {ayurvedicMedicines.length > 0 && (
-                <li>
-                  • {ayurvedicMedicines.length} Ayurvedic medicine{ayurvedicMedicines.length !== 1 ? "s" : ""}
-                </li>
-              )}
-            </ul>
-          </div>
+          {/* Template Preview */}
+          <Card className="bg-gray-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Template Preview</span>
+                <Badge variant="outline" className="capitalize">
+                  {getCategory()}
+                </Badge>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="template-name">Template Name *</Label>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {allopathicPrescriptions.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Pill className="h-3 w-3 text-blue-600" />
+                    <span>{allopathicPrescriptions.length} Allopathic</span>
+                  </div>
+                )}
+                {ayurvedicPrescriptions.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Leaf className="h-3 w-3 text-green-600" />
+                    <span>{ayurvedicPrescriptions.length} Ayurvedic</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Template Name */}
+          <div>
+            <Label htmlFor="templateName">Template Name *</Label>
             <Input
-              id="template-name"
+              id="templateName"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
               placeholder="e.g., Common Cold Treatment"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              className="mt-1"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="template-description">Description (Optional)</Label>
+          {/* Description */}
+          <div>
+            <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
-              id="template-description"
-              placeholder="Brief description of when to use this template..."
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of when to use this template..."
+              className="mt-1"
               rows={3}
             />
           </div>
 
+          {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isLoading || !name.trim()}>
+            <Button onClick={handleSave} disabled={isLoading}>
               {isLoading ? "Saving..." : "Save Template"}
             </Button>
           </div>
