@@ -5,395 +5,432 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Stethoscope,
-  Pill,
-  Leaf,
-  Activity,
   User,
   Calendar,
-  Clock,
-  Save,
-  FileText,
-  CheckCircle2,
-  Eye,
+  Phone,
+  MapPin,
+  AlertTriangle,
   Heart,
+  Activity,
+  Save,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react"
-
-import { ClinicalNotesSection } from "./consultation/clinical-notes-section"
-import { DiagnosisSection } from "./consultation/diagnosis-section"
-import { VitalSignsSection } from "./consultation/vital-signs-section"
-import { AllopathicPrescription } from "./consultation/allopathic-prescription"
-import { AyurvedicPrescription } from "./consultation/ayurvedic-prescription"
-import { AdvancedAnalysisSection } from "./consultation/advanced-analysis-section"
-import { ReferencePanel } from "./consultation/reference-panel"
-import { PrescriptionPreview } from "./consultation/prescription-preview"
-import { PrescriptionTemplateManager } from "./prescription-template-manager"
-import { useConsultation } from "@/contexts/consultation-context"
 import { toast } from "sonner"
+
+// Import consultation components
+import { ClinicalNotesSection } from "@/components/consultation/clinical-notes-section"
+import { DiagnosisSection } from "@/components/consultation/diagnosis-section"
+import { VitalSignsSection } from "@/components/consultation/vital-signs-section"
+import { AyurvedicAnalysis } from "@/components/consultation/ayurvedic-analysis"
+import { OphthalmologyAnalysis } from "@/components/consultation/ophthalmology-analysis"
+import { AllopathicPrescription } from "@/components/consultation/allopathic-prescription"
+import { AyurvedicPrescription } from "@/components/consultation/ayurvedic-prescription"
+import { PrescriptionTemplateManager } from "@/components/prescription-template-manager"
+import { CompleteVisitModal } from "@/components/modals/complete-visit-modal"
+
+// Import contexts
+import { useConsultation } from "@/contexts/consultation-context"
+import { useDoctor } from "@/contexts/doctor-context"
 
 interface IntegratedConsultationProps {
   patientId: string
-  patientData: {
-    id: string
-    name: string
-    age: number
-    gender: string
-    bloodGroup: string
-    allergies: string[]
-    medicalHistory: string[]
-  }
-  department: string
-  doctorName: string
-  onCompleteVisit?: () => Promise<boolean>
+  visitId?: string
+  readOnly?: boolean
 }
 
-export function IntegratedConsultation({
-  patientId,
-  patientData,
-  department,
-  doctorName,
-  onCompleteVisit,
-}: IntegratedConsultationProps) {
-  const {
-    activeConsultation,
-    updateConsultationData,
-    saveConsultation,
-    completeVisit,
-    hasUnsavedChanges,
-    isConsultationSaved,
-  } = useConsultation()
+export function IntegratedConsultation({ patientId, visitId, readOnly = false }: IntegratedConsultationProps) {
+  const { selectedDoctor } = useDoctor()
+  const { consultationData, updateConsultationData, saveConsultation, isLoading } = useConsultation()
 
-  // Consultation data state with safe defaults
-  const [consultationData, setConsultationData] = useState({
-    clinicalNotes: "",
-    provisionalDiagnosis: [] as string[],
-    vitals: {},
-    prescriptions: {
-      allopathic: [] as any[],
-      ayurvedic: [] as any[],
-    },
-    advancedAnalysis: {},
-  })
-
-  const [showPrescriptionPreview, setShowPrescriptionPreview] = useState(false)
+  // Local state for UI management
   const [isSaving, setIsSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
-  // Load data from active consultation
-  useEffect(() => {
-    if (activeConsultation) {
-      setConsultationData({
-        clinicalNotes: activeConsultation.clinicalNotes || "",
-        provisionalDiagnosis: activeConsultation.provisionalDiagnosis || [],
-        vitals: activeConsultation.vitals || {},
-        prescriptions: {
-          allopathic: activeConsultation.prescriptions?.allopathic || [],
-          ayurvedic: activeConsultation.prescriptions?.ayurvedic || [],
-        },
-        advancedAnalysis: {
-          ayurvedicAnalysis: activeConsultation.ayurvedicAnalysis || {},
-          ophthalmologyAnalysis: activeConsultation.ophthalmologyAnalysis || {},
-        },
-      })
-    }
-  }, [activeConsultation])
-
-  // Update consultation context when local data changes
-  const updateConsultation = (updates: any) => {
-    const newData = { ...consultationData, ...updates }
-    setConsultationData(newData)
-
-    // Update the consultation context
-    updateConsultationData({
-      clinicalNotes: newData.clinicalNotes,
-      provisionalDiagnosis: newData.provisionalDiagnosis,
-      vitals: newData.vitals,
-      prescriptions: newData.prescriptions,
-      ayurvedicAnalysis: newData.advancedAnalysis?.ayurvedicAnalysis,
-      ophthalmologyAnalysis: newData.advancedAnalysis?.ophthalmologyAnalysis,
-    })
+  // Default consultation data structure
+  const defaultConsultationData = {
+    patientId,
+    visitId: visitId || `visit-${Date.now()}`,
+    doctorId: selectedDoctor?.id || "doctor-1",
+    department: selectedDoctor?.department || "General Medicine",
+    clinicalNotes: "",
+    diagnoses: [],
+    vitals: {
+      temperature: "",
+      bloodPressure: "",
+      heartRate: "",
+      respiratoryRate: "",
+      oxygenSaturation: "",
+      weight: "",
+      height: "",
+      bmi: "",
+    },
+    prescriptions: {
+      allopathic: [],
+      ayurvedic: [],
+    },
+    ayurvedicAnalysis: {
+      prakriti: "",
+      vikriti: "",
+      agni: "",
+      ama: "",
+      ojas: "",
+      srotas: "",
+      recommendations: "",
+    },
+    ophthalmologyAnalysis: {
+      visualAcuity: { right: "", left: "" },
+      refraction: { right: "", left: "" },
+      intraocularPressure: { right: "", left: "" },
+      fundusExamination: "",
+      anteriorSegment: "",
+      recommendations: "",
+    },
+    status: "in-progress",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   }
 
-  const handleSaveConsultation = async () => {
+  // Use consultation data or fallback to default
+  const currentConsultationData = consultationData || defaultConsultationData
+
+  // Mock patient data
+  const patientData = {
+    id: patientId,
+    name: "Rajesh Kumar",
+    age: 45,
+    gender: "Male",
+    phone: "+91 98765 43210",
+    address: "123 Main Street, Mumbai, Maharashtra",
+    bloodGroup: "B+",
+    allergies: ["Penicillin", "Dust"],
+    chronicConditions: ["Hypertension", "Diabetes Type 2"],
+    lastVisit: "2024-01-15",
+    emergencyContact: "+91 98765 43211",
+  }
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (hasUnsavedChanges && !readOnly) {
+      const timer = setTimeout(async () => {
+        await handleSave(true) // Silent save
+      }, 3000) // Auto-save after 3 seconds of inactivity
+
+      return () => clearTimeout(timer)
+    }
+  }, [hasUnsavedChanges, currentConsultationData])
+
+  const handleDataChange = (section: string, data: any) => {
+    updateConsultationData({
+      ...currentConsultationData,
+      [section]: data,
+      updatedAt: new Date().toISOString(),
+    })
+    setHasUnsavedChanges(true)
+  }
+
+  const handleSave = async (silent = false) => {
     setIsSaving(true)
     try {
-      const success = await saveConsultation()
-      if (success) {
+      await saveConsultation(currentConsultationData)
+      setHasUnsavedChanges(false)
+      setLastSaved(new Date())
+      if (!silent) {
         toast.success("Consultation saved successfully")
       }
     } catch (error) {
-      toast.error("Failed to save consultation")
+      if (!silent) {
+        toast.error("Failed to save consultation")
+      }
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleCompleteVisit = async () => {
-    try {
-      let success = false
-      if (onCompleteVisit) {
-        success = await onCompleteVisit()
-      } else {
-        success = await completeVisit()
-      }
-
-      if (success) {
-        toast.success("Visit completed successfully!")
-      }
-    } catch (error) {
-      toast.error("Failed to complete visit")
+  const handleLoadTemplate = (template: any) => {
+    const updatedData = {
+      ...currentConsultationData,
+      prescriptions: {
+        allopathic: template.allopathicMedicines || [],
+        ayurvedic: template.ayurvedicMedicines || [],
+      },
+      updatedAt: new Date().toISOString(),
     }
+    updateConsultationData(updatedData)
+    setHasUnsavedChanges(true)
   }
 
-  // Check if department supports advanced analysis
-  const hasAdvancedAnalysis = ["ayurveda", "ophthalmology"].includes(department.toLowerCase())
+  const handleCompleteVisit = () => {
+    setShowCompleteModal(true)
+  }
+
+  const getSaveStatusIcon = () => {
+    if (isSaving) return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+    if (hasUnsavedChanges) return <AlertTriangle className="h-4 w-4 text-amber-600" />
+    return <CheckCircle2 className="h-4 w-4 text-green-600" />
+  }
+
+  const getSaveStatusText = () => {
+    if (isSaving) return "Saving..."
+    if (hasUnsavedChanges) return "Unsaved changes"
+    if (lastSaved) return `Saved ${lastSaved.toLocaleTimeString()}`
+    return "All changes saved"
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Patient Header - Simplified */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <User className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">{patientData.name}</CardTitle>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  <span>
-                    {patientData.age} years • {patientData.gender}
-                  </span>
-                  <Badge variant="outline">{department}</Badge>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date().toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {new Date().toLocaleTimeString()}
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-6">
+        {/* Patient Header */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">{patientData.name}</h1>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                    <span>
+                      {patientData.age} years • {patientData.gender}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {patientData.phone}
+                    </span>
+                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                      {patientData.bloodGroup}
+                    </Badge>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasUnsavedChanges && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  Unsaved Changes
-                </Badge>
-              )}
-              {isConsultationSaved && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Saved
-                </Badge>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
-      {/* Prescription Template Manager - Compact */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Prescription Templates
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+              <div className="text-right">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                  {getSaveStatusIcon()}
+                  <span>{getSaveStatusText()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={() => handleSave()} disabled={isSaving || readOnly}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button onClick={handleCompleteVisit} disabled={readOnly}>
+                    Complete Visit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Prescription Template Manager */}
+        {!readOnly && (
           <PrescriptionTemplateManager
-            allopathicMedicines={consultationData.prescriptions.allopathic || []}
-            ayurvedicMedicines={consultationData.prescriptions.ayurvedic || []}
-            onLoadTemplate={(template) => {
-              updateConsultation({
-                prescriptions: {
-                  allopathic: template.allopathicPrescriptions || [],
-                  ayurvedic: template.ayurvedicPrescriptions || [],
-                },
-              })
-            }}
-            department={department}
+            allopathicMedicines={currentConsultationData.prescriptions?.allopathic || []}
+            ayurvedicMedicines={currentConsultationData.prescriptions?.ayurvedic || []}
+            onLoadTemplate={handleLoadTemplate}
+            department={currentConsultationData.department}
           />
-        </CardContent>
-      </Card>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content - 3 columns */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Clinical Assessment - Combined */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-blue-600" />
-                Clinical Assessment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ClinicalNotesSection
-                data={consultationData.clinicalNotes}
-                onChange={(data) => updateConsultation({ clinicalNotes: data })}
-              />
-              <Separator />
-              <DiagnosisSection
-                department={department}
-                data={consultationData.provisionalDiagnosis}
-                onChange={(data) => updateConsultation({ provisionalDiagnosis: data })}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Vital Signs */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-red-500" />
-                Vital Signs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VitalSignsSection
-                patientId={patientId}
-                onVitalSignsUpdate={(vitals) => {
-                  const vitalData = vitals.reduce((acc, vital) => {
-                    acc[vital.id] = vital.value
-                    return acc
-                  }, {} as any)
-                  updateConsultation({ vitals: vitalData })
-                }}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Advanced Analysis - Only for specific departments */}
-          {hasAdvancedAnalysis && (
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Consultation Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Clinical Assessment */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {department.toLowerCase() === "ayurveda" ? (
-                    <Heart className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-blue-600" />
-                  )}
-                  Advanced Analysis - {department}
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  Clinical Assessment
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <AdvancedAnalysisSection
-                  department={department}
-                  data={consultationData.advancedAnalysis}
-                  onChange={(data) => updateConsultation({ advancedAnalysis: data })}
+              <CardContent className="space-y-6">
+                <ClinicalNotesSection
+                  data={currentConsultationData.clinicalNotes || ""}
+                  onChange={(data) => handleDataChange("clinicalNotes", data)}
+                  readOnly={readOnly}
                 />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Prescriptions - Side by side */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Allopathic Prescriptions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Pill className="h-5 w-5 text-blue-600" />
-                  Allopathic Prescriptions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AllopathicPrescription
-                  department={department}
-                  data={consultationData.prescriptions.allopathic}
-                  onChange={(data) =>
-                    updateConsultation({
-                      prescriptions: { ...consultationData.prescriptions, allopathic: data },
-                    })
-                  }
+                <Separator />
+                <DiagnosisSection
+                  data={currentConsultationData.diagnoses || []}
+                  onChange={(data) => handleDataChange("diagnoses", data)}
+                  readOnly={readOnly}
                 />
               </CardContent>
             </Card>
 
-            {/* Ayurvedic Prescriptions */}
+            {/* Vital Signs */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5 text-green-600" />
-                  Ayurvedic Prescriptions
+                  <Heart className="h-5 w-5 text-red-600" />
+                  Vital Signs
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <AyurvedicPrescription
-                  data={consultationData.prescriptions.ayurvedic}
-                  onChange={(data) =>
-                    updateConsultation({
-                      prescriptions: { ...consultationData.prescriptions, ayurvedic: data },
-                    })
-                  }
+                <VitalSignsSection
+                  data={currentConsultationData.vitals || {}}
+                  onChange={(data) => handleDataChange("vitals", data)}
+                  readOnly={readOnly}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Advanced Analysis - Department Specific */}
+            {currentConsultationData.department === "Ayurveda" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ayurvedic Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AyurvedicAnalysis
+                    data={currentConsultationData.ayurvedicAnalysis || {}}
+                    onChange={(data) => handleDataChange("ayurvedicAnalysis", data)}
+                    readOnly={readOnly}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {currentConsultationData.department === "Ophthalmology" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ophthalmology Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <OphthalmologyAnalysis
+                    data={currentConsultationData.ophthalmologyAnalysis || {}}
+                    onChange={(data) => handleDataChange("ophthalmologyAnalysis", data)}
+                    readOnly={readOnly}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Prescriptions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <AllopathicPrescription
+                    department={currentConsultationData.department}
+                    data={currentConsultationData.prescriptions?.allopathic || []}
+                    onChange={(data) =>
+                      handleDataChange("prescriptions", {
+                        ...currentConsultationData.prescriptions,
+                        allopathic: data,
+                      })
+                    }
+                    readOnly={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <AyurvedicPrescription
+                    data={currentConsultationData.prescriptions?.ayurvedic || []}
+                    onChange={(data) =>
+                      handleDataChange("prescriptions", {
+                        ...currentConsultationData.prescriptions,
+                        ayurvedic: data,
+                      })
+                    }
+                    readOnly={readOnly}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Reference Panel */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-base">Patient Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  <div className="space-y-4">
+                    {/* Allergies */}
+                    <div>
+                      <h4 className="font-medium text-sm text-red-600 mb-2 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Allergies
+                      </h4>
+                      <div className="space-y-1">
+                        {patientData.allergies.map((allergy, index) => (
+                          <Badge key={index} variant="destructive" className="text-xs">
+                            {allergy}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Chronic Conditions */}
+                    <div>
+                      <h4 className="font-medium text-sm text-amber-600 mb-2">Chronic Conditions</h4>
+                      <div className="space-y-1">
+                        {patientData.chronicConditions.map((condition, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {condition}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Contact Information */}
+                    <div>
+                      <h4 className="font-medium text-sm text-gray-700 mb-2">Contact</h4>
+                      <div className="space-y-2 text-xs text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3 w-3" />
+                          <span>{patientData.phone}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-3 w-3 mt-0.5" />
+                          <span>{patientData.address}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Last Visit */}
+                    <div>
+                      <h4 className="font-medium text-sm text-gray-700 mb-2">Last Visit</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Calendar className="h-3 w-3" />
+                        <span>{patientData.lastVisit}</span>
+                      </div>
+                    </div>
+
+                    {/* Emergency Contact */}
+                    <div>
+                      <h4 className="font-medium text-sm text-gray-700 mb-2">Emergency Contact</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Phone className="h-3 w-3" />
+                        <span>{patientData.emergencyContact}</span>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Reference Panel - 1 column */}
-        <div className="lg:col-span-1">
-          <ReferencePanel consultationData={consultationData} patientData={patientData} />
-        </div>
+        {/* Complete Visit Modal */}
+        <CompleteVisitModal
+          isOpen={showCompleteModal}
+          onClose={() => setShowCompleteModal(false)}
+          consultationData={currentConsultationData}
+          patientData={patientData}
+        />
       </div>
-
-      {/* Action Buttons - Simplified */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowPrescriptionPreview(true)}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Preview Prescription
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleSaveConsultation}
-                disabled={isSaving}
-                className="flex items-center gap-2 bg-transparent"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Consultation"}
-              </Button>
-
-              <Button onClick={handleCompleteVisit} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
-                <CheckCircle2 className="h-4 w-4" />
-                Complete Visit
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Prescription Preview Modal */}
-      {showPrescriptionPreview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Prescription Preview</h2>
-              <Button variant="ghost" onClick={() => setShowPrescriptionPreview(false)}>
-                ×
-              </Button>
-            </div>
-            <div className="p-6">
-              <PrescriptionPreview
-                patientData={patientData}
-                consultationData={consultationData}
-                department={department}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

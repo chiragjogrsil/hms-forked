@@ -1,12 +1,21 @@
 "use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Stethoscope, Settings, Users, Activity, TestTube } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Stethoscope, Settings, ChevronDown, User, LogOut, HelpCircle } from "lucide-react"
 
 export function TopNavigation() {
   const pathname = usePathname()
+  const [servicesOpen, setServicesOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -15,97 +24,101 @@ export function TopNavigation() {
     return pathname.startsWith(path)
   }
 
+  const servicesItems = [
+    { href: "/appointments", label: "Appointments" },
+    { href: "/queue", label: "Queue Management" },
+    { href: "/billing", label: "Billing" },
+    { href: "/pharmacy", label: "Pharmacy" },
+    { href: "/interdepartmental", label: "Interdepartmental" },
+    { href: "/reports", label: "Reports" },
+    { href: "/departments", label: "Departments" },
+  ]
+
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left side - Logo and Navigation */}
-        <div className="flex items-center space-x-8">
-          {/* Logo */}
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        {/* Logo */}
+        <div className="mr-8">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">Hospital Management</span>
+            <Stethoscope className="h-6 w-6 text-primary" />
+            <span className="font-bold text-lg">Hospital Management</span>
           </Link>
-
-          {/* Navigation Items */}
-          <nav className="flex items-center space-x-6">
-            <Link
-              href="/"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive("/") ? "bg-teal-100 text-teal-700" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              <Activity className="h-4 w-4" />
-              <span>Dashboard</span>
-            </Link>
-
-            <Link
-              href="/patients"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive("/patients")
-                  ? "bg-teal-100 text-teal-700"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              <span>Patients</span>
-            </Link>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive("/services") ||
-                    isActive("/procedures") ||
-                    isActive("/laboratory") ||
-                    isActive("/radiology")
-                      ? "bg-teal-100 text-teal-700"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
-                >
-                  <TestTube className="h-4 w-4" />
-                  <span>Services & Procedures</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/laboratory" className="flex items-center space-x-2">
-                    <TestTube className="h-4 w-4" />
-                    <span>Laboratory</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/radiology" className="flex items-center space-x-2">
-                    <Activity className="h-4 w-4" />
-                    <span>Radiology</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/procedures" className="flex items-center space-x-2">
-                    <Stethoscope className="h-4 w-4" />
-                    <span>Procedures</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
         </div>
 
-        {/* Right side - Actions */}
-        <div className="flex items-center space-x-4">
+        {/* Main Navigation */}
+        <nav className="flex items-center space-x-6 text-sm font-medium">
+          <Link
+            href="/"
+            className={`transition-colors hover:text-foreground/80 ${
+              isActive("/") ? "text-foreground" : "text-foreground/60"
+            }`}
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/patients"
+            className={`transition-colors hover:text-foreground/80 ${
+              isActive("/patients") ? "text-foreground" : "text-foreground/60"
+            }`}
+          >
+            Patients
+          </Link>
+
+          {/* Services Dropdown */}
+          <DropdownMenu open={servicesOpen} onOpenChange={setServicesOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`h-auto p-0 font-medium text-sm transition-colors hover:text-foreground/80 ${
+                  servicesItems.some((item) => isActive(item.href)) ? "text-foreground" : "text-foreground/60"
+                }`}
+              >
+                Services & Procedures
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {servicesItems.map((item) => (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link
+                    href={item.href}
+                    className={`w-full ${isActive(item.href) ? "bg-accent text-accent-foreground" : ""}`}
+                  >
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </nav>
+
+        {/* Right Side Actions */}
+        <div className="ml-auto flex items-center space-x-4">
+          {/* Settings Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
                 <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-              <DropdownMenuItem>System Preferences</DropdownMenuItem>
-              <DropdownMenuItem>Help & Support</DropdownMenuItem>
-              <DropdownMenuItem>Sign Out</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                System Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Help & Support
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
