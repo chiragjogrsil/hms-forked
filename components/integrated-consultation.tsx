@@ -23,6 +23,8 @@ import {
   Eye,
   Brain,
   CheckCircle2,
+  Leaf,
+  Camera,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -46,13 +48,32 @@ import { useDoctor } from "@/contexts/doctor-context"
 
 interface IntegratedConsultationProps {
   patientId: string
-  visitId: string
+  visitId?: string
+}
+
+// Default consultation data structure
+const defaultConsultationData = {
+  clinicalNotes: "",
+  diagnoses: [],
+  vitals: {},
+  prescriptions: {
+    allopathic: [],
+    ayurvedic: [],
+  },
+  labTests: [],
+  radiologyTests: [],
+  procedures: [],
+  advancedAnalysis: {},
 }
 
 export function IntegratedConsultation({ patientId, visitId }: IntegratedConsultationProps) {
-  const { consultationData, updateConsultationData, saveConsultation, hasUnsavedChanges } = useConsultation()
+  const { activeConsultation, updateConsultationData, saveConsultation, hasUnsavedChanges, isConsultationSaved } =
+    useConsultation()
+
   const { currentDoctor } = useDoctor()
 
+  // Local state for consultation data with safe defaults
+  const [consultationData, setConsultationData] = useState(defaultConsultationData)
   const [showPreview, setShowPreview] = useState(false)
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -75,6 +96,51 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
     department: currentDoctor?.department || "General Medicine",
   }
 
+  // Load data from active consultation with safe defaults
+  useEffect(() => {
+    if (activeConsultation) {
+      setConsultationData({
+        clinicalNotes: activeConsultation.clinicalNotes || "",
+        diagnoses: activeConsultation.provisionalDiagnosis || activeConsultation.diagnosis || [],
+        vitals: activeConsultation.vitals || {},
+        prescriptions: {
+          allopathic: activeConsultation.prescriptions?.allopathic || [],
+          ayurvedic: activeConsultation.prescriptions?.ayurvedic || [],
+        },
+        labTests: activeConsultation.investigationsOrdered?.filter((i) => i.category === "laboratory") || [],
+        radiologyTests: activeConsultation.investigationsOrdered?.filter((i) => i.category === "radiology") || [],
+        procedures: activeConsultation.investigationsOrdered?.filter((i) => i.category === "procedure") || [],
+        advancedAnalysis: {
+          ayurvedicAnalysis: activeConsultation.ayurvedicAnalysis || {},
+          ophthalmologyAnalysis: activeConsultation.ophthalmologyAnalysis || {},
+        },
+      })
+    }
+  }, [activeConsultation])
+
+  // Update consultation context when local data changes
+  const updateLocalConsultationData = (updates: Partial<typeof consultationData>) => {
+    const newData = { ...consultationData, ...updates }
+    setConsultationData(newData)
+
+    // Update the consultation context
+    if (updateConsultationData) {
+      updateConsultationData({
+        clinicalNotes: newData.clinicalNotes,
+        provisionalDiagnosis: newData.diagnoses,
+        vitals: newData.vitals,
+        prescriptions: newData.prescriptions,
+        investigationsOrdered: [
+          ...newData.labTests.map((test: any) => ({ ...test, category: "laboratory" })),
+          ...newData.radiologyTests.map((test: any) => ({ ...test, category: "radiology" })),
+          ...newData.procedures.map((test: any) => ({ ...test, category: "procedure" })),
+        ],
+        ayurvedicAnalysis: newData.advancedAnalysis?.ayurvedicAnalysis,
+        ophthalmologyAnalysis: newData.advancedAnalysis?.ophthalmologyAnalysis,
+      })
+    }
+  }
+
   // Auto-save functionality
   useEffect(() => {
     if (hasUnsavedChanges) {
@@ -84,15 +150,17 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
 
       return () => clearTimeout(autoSaveTimer)
     }
-  }, [hasUnsavedChanges, consultationData])
+  }, [hasUnsavedChanges])
 
   const handleSave = async (silent = false) => {
     setIsSaving(true)
     try {
-      await saveConsultation()
-      setLastSaved(new Date())
-      if (!silent) {
-        toast.success("Consultation saved successfully")
+      if (saveConsultation) {
+        await saveConsultation()
+        setLastSaved(new Date())
+        if (!silent) {
+          toast.success("Consultation saved successfully")
+        }
       }
     } catch (error) {
       if (!silent) {
@@ -193,10 +261,10 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
               </CardHeader>
               <CardContent>
                 <PrescriptionTemplateManager
-                  allopathicMedicines={consultationData.prescriptions.allopathic || []}
-                  ayurvedicMedicines={consultationData.prescriptions.ayurvedic || []}
+                  allopathicMedicines={consultationData.prescriptions?.allopathic || []}
+                  ayurvedicMedicines={consultationData.prescriptions?.ayurvedic || []}
                   onLoadTemplate={(template) => {
-                    updateConsultationData({
+                    updateLocalConsultationData({
                       prescriptions: {
                         allopathic: template.allopathicMedicines || [],
                         ayurvedic: template.ayurvedicMedicines || [],
@@ -204,6 +272,7 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                     })
                     toast.success("Template loaded successfully")
                   }}
+                  department={patientData.department}
                 />
               </CardContent>
             </Card>
@@ -219,8 +288,8 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 </CardHeader>
                 <CardContent>
                   <ClinicalNotesSection
-                    notes={consultationData.clinicalNotes || ""}
-                    onNotesChange={(notes) => updateConsultationData({ clinicalNotes: notes })}
+                    data={consultationData.clinicalNotes || ""}
+                    onChange={(notes) => updateLocalConsultationData({ clinicalNotes: notes })}
                   />
                 </CardContent>
               </Card>
@@ -234,8 +303,9 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 </CardHeader>
                 <CardContent>
                   <DiagnosisSection
-                    diagnoses={consultationData.diagnoses || []}
-                    onDiagnosesChange={(diagnoses) => updateConsultationData({ diagnoses })}
+                    department={patientData.department}
+                    data={consultationData.diagnoses || []}
+                    onChange={(diagnoses) => updateLocalConsultationData({ diagnoses })}
                   />
                 </CardContent>
               </Card>
@@ -251,8 +321,14 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
               </CardHeader>
               <CardContent>
                 <VitalSignsSection
-                  vitals={consultationData.vitals || {}}
-                  onVitalsChange={(vitals) => updateConsultationData({ vitals })}
+                  patientId={patientId}
+                  onVitalSignsUpdate={(vitals) => {
+                    const vitalData = vitals.reduce((acc, vital) => {
+                      acc[vital.id] = vital.value
+                      return acc
+                    }, {} as any)
+                    updateLocalConsultationData({ vitals: vitalData })
+                  }}
                 />
               </CardContent>
             </Card>
@@ -269,8 +345,8 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 <CardContent>
                   <AdvancedAnalysisSection
                     department={patientData.department}
-                    analysisData={consultationData.advancedAnalysis || {}}
-                    onAnalysisChange={(analysisData) => updateConsultationData({ advancedAnalysis: analysisData })}
+                    data={consultationData.advancedAnalysis || {}}
+                    onChange={(analysisData) => updateLocalConsultationData({ advancedAnalysis: analysisData })}
                   />
                 </CardContent>
               </Card>
@@ -287,9 +363,10 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 </CardHeader>
                 <CardContent>
                   <AllopathicPrescription
-                    medicines={consultationData.prescriptions.allopathic || []}
-                    onMedicinesChange={(medicines) =>
-                      updateConsultationData({
+                    department={patientData.department}
+                    data={consultationData.prescriptions?.allopathic || []}
+                    onChange={(medicines) =>
+                      updateLocalConsultationData({
                         prescriptions: {
                           ...consultationData.prescriptions,
                           allopathic: medicines,
@@ -303,15 +380,15 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Pill className="h-5 w-5 text-green-600" />
+                    <Leaf className="h-5 w-5 text-green-600" />
                     Ayurvedic Prescription
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <AyurvedicPrescription
-                    medicines={consultationData.prescriptions.ayurvedic || []}
-                    onMedicinesChange={(medicines) =>
-                      updateConsultationData({
+                    data={consultationData.prescriptions?.ayurvedic || []}
+                    onChange={(medicines) =>
+                      updateLocalConsultationData({
                         prescriptions: {
                           ...consultationData.prescriptions,
                           ayurvedic: medicines,
@@ -334,8 +411,10 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 </CardHeader>
                 <CardContent>
                   <LaboratorySection
-                    prescribedTests={consultationData.labTests || []}
-                    onTestsChange={(tests) => updateConsultationData({ labTests: tests })}
+                    patientId={patientId}
+                    patientName={patientData.name}
+                    selectedTests={consultationData.labTests || []}
+                    onTestsChange={(tests) => updateLocalConsultationData({ labTests: tests })}
                   />
                 </CardContent>
               </Card>
@@ -343,14 +422,16 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
+                    <Camera className="h-5 w-5" />
                     Radiology
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <RadiologySection
-                    prescribedScans={consultationData.radiologyTests || []}
-                    onScansChange={(scans) => updateConsultationData({ radiologyTests: scans })}
+                    patientId={patientId}
+                    patientName={patientData.name}
+                    selectedTests={consultationData.radiologyTests || []}
+                    onTestsChange={(scans) => updateLocalConsultationData({ radiologyTests: scans })}
                   />
                 </CardContent>
               </Card>
@@ -364,8 +445,11 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
                 </CardHeader>
                 <CardContent>
                   <ProceduresSection
-                    prescribedProcedures={consultationData.procedures || []}
-                    onProceduresChange={(procedures) => updateConsultationData({ procedures })}
+                    patientId={patientId}
+                    patientName={patientData.name}
+                    selectedDepartment={patientData.department}
+                    selectedProcedures={consultationData.procedures || []}
+                    onProceduresChange={(procedures) => updateLocalConsultationData({ procedures })}
                   />
                 </CardContent>
               </Card>
@@ -475,7 +559,7 @@ export function IntegratedConsultation({ patientId, visitId }: IntegratedConsult
         isOpen={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
         patientId={patientId}
-        visitId={visitId}
+        visitId={visitId || ""}
         consultationData={consultationData}
       />
     </div>
