@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format } from "date-fns"
-import { CalendarIcon, Clock, User, CreditCard, FileText } from "lucide-react"
+import { CalendarIcon, Clock, User, MapPin, CreditCard, AlertCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import {
   Dialog,
   DialogContent,
@@ -16,18 +17,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
+import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 
 const appointmentSchema = z.object({
   category: z.enum(["general", "specialized"], {
@@ -36,16 +37,12 @@ const appointmentSchema = z.object({
   patientName: z.string().min(2, {
     message: "Patient name must be at least 2 characters.",
   }),
-  phone: z.string().min(10, {
-    message: "Phone number must be at least 10 digits.",
+  patientPhone: z.string().min(10, {
+    message: "Please enter a valid phone number.",
   }),
-  email: z
-    .string()
-    .email({
-      message: "Please enter a valid email address.",
-    })
-    .optional()
-    .or(z.literal("")),
+  patientEmail: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
   department: z.string({
     required_error: "Please select a department.",
   }),
@@ -79,120 +76,56 @@ const appointmentCategories = [
     name: "Specialized Procedure",
     description: "Specialist consultations, procedures, and advanced treatments",
     fee: 1200,
-    icon: FileText,
+    icon: CreditCard,
   },
 ]
 
 const departmentsByCategory = {
-  general: [
-    { value: "general-medicine", label: "General Medicine" },
-    { value: "family-medicine", label: "Family Medicine" },
-    { value: "internal-medicine", label: "Internal Medicine" },
-    { value: "pediatrics", label: "Pediatrics" },
-    { value: "emergency", label: "Emergency Medicine" },
-  ],
+  general: ["General Medicine", "Family Medicine", "Internal Medicine", "Pediatrics", "Emergency Medicine"],
   specialized: [
-    { value: "cardiology", label: "Cardiology" },
-    { value: "orthopedics", label: "Orthopedics" },
-    { value: "neurology", label: "Neurology" },
-    { value: "dermatology", label: "Dermatology" },
-    { value: "ophthalmology", label: "Ophthalmology" },
-    { value: "ent", label: "ENT" },
-    { value: "gynecology", label: "Gynecology" },
-    { value: "urology", label: "Urology" },
-    { value: "psychiatry", label: "Psychiatry" },
-    { value: "ayurveda", label: "Ayurveda" },
-    { value: "dental", label: "Dental" },
-    { value: "physiotherapy", label: "Physiotherapy" },
+    "Cardiology",
+    "Orthopedics",
+    "Neurology",
+    "Dermatology",
+    "Ophthalmology",
+    "ENT",
+    "Gynecology",
+    "Urology",
+    "Psychiatry",
+    "Ayurveda",
+    "Dental",
+    "Physiotherapy",
   ],
 }
 
 const doctorsByDepartment = {
-  "general-medicine": [
-    { value: "dr-smith", label: "Dr. John Smith" },
-    { value: "dr-johnson", label: "Dr. Sarah Johnson" },
-  ],
-  "family-medicine": [
-    { value: "dr-brown", label: "Dr. Michael Brown" },
-    { value: "dr-davis", label: "Dr. Emily Davis" },
-  ],
-  "internal-medicine": [
-    { value: "dr-wilson", label: "Dr. Robert Wilson" },
-    { value: "dr-taylor", label: "Dr. Lisa Taylor" },
-  ],
-  pediatrics: [
-    { value: "dr-anderson", label: "Dr. James Anderson" },
-    { value: "dr-thomas", label: "Dr. Maria Thomas" },
-  ],
-  emergency: [
-    { value: "dr-martinez", label: "Dr. Carlos Martinez" },
-    { value: "dr-garcia", label: "Dr. Ana Garcia" },
-  ],
-  cardiology: [
-    { value: "dr-heart", label: "Dr. Richard Heart" },
-    { value: "dr-cardiac", label: "Dr. Jennifer Cardiac" },
-  ],
-  orthopedics: [
-    { value: "dr-bone", label: "Dr. David Bone" },
-    { value: "dr-joint", label: "Dr. Susan Joint" },
-  ],
-  neurology: [
-    { value: "dr-brain", label: "Dr. William Brain" },
-    { value: "dr-nerve", label: "Dr. Patricia Nerve" },
-  ],
-  dermatology: [
-    { value: "dr-skin", label: "Dr. Mark Skin" },
-    { value: "dr-derma", label: "Dr. Linda Derma" },
-  ],
-  ophthalmology: [
-    { value: "dr-eye", label: "Dr. Kevin Eye" },
-    { value: "dr-vision", label: "Dr. Nancy Vision" },
-  ],
-  ent: [
-    { value: "dr-throat", label: "Dr. Paul Throat" },
-    { value: "dr-ear", label: "Dr. Helen Ear" },
-  ],
-  gynecology: [
-    { value: "dr-women", label: "Dr. Rachel Women" },
-    { value: "dr-female", label: "Dr. Michelle Female" },
-  ],
-  urology: [
-    { value: "dr-kidney", label: "Dr. Steven Kidney" },
-    { value: "dr-bladder", label: "Dr. Karen Bladder" },
-  ],
-  psychiatry: [
-    { value: "dr-mind", label: "Dr. Daniel Mind" },
-    { value: "dr-mental", label: "Dr. Laura Mental" },
-  ],
-  ayurveda: [
-    { value: "dr-ayur", label: "Dr. Raj Ayur" },
-    { value: "dr-veda", label: "Dr. Priya Veda" },
-  ],
-  dental: [
-    { value: "dr-tooth", label: "Dr. Tom Tooth" },
-    { value: "dr-dental", label: "Dr. Amy Dental" },
-  ],
-  physiotherapy: [
-    { value: "dr-physio", label: "Dr. Chris Physio" },
-    { value: "dr-therapy", label: "Dr. Jessica Therapy" },
-  ],
+  "General Medicine": ["Dr. Rajesh Kumar", "Dr. Priya Sharma", "Dr. Amit Singh"],
+  "Family Medicine": ["Dr. Sunita Patel", "Dr. Ravi Gupta"],
+  "Internal Medicine": ["Dr. Meera Joshi", "Dr. Vikram Rao"],
+  Pediatrics: ["Dr. Kavita Nair", "Dr. Suresh Reddy"],
+  "Emergency Medicine": ["Dr. Anita Das", "Dr. Rohit Verma"],
+  Cardiology: ["Dr. Ashok Mehta", "Dr. Deepa Agarwal"],
+  Orthopedics: ["Dr. Sanjay Khanna", "Dr. Neha Chopra"],
+  Neurology: ["Dr. Ramesh Iyer", "Dr. Pooja Malhotra"],
+  Dermatology: ["Dr. Kiran Bhat", "Dr. Arjun Pillai"],
+  Ophthalmology: ["Dr. Shweta Jain", "Dr. Manoj Tiwari"],
+  ENT: ["Dr. Rekha Sood", "Dr. Ajay Bansal"],
+  Gynecology: ["Dr. Nisha Arun", "Dr. Seema Kapoor"],
+  Urology: ["Dr. Prakash Yadav", "Dr. Ritu Saxena"],
+  Psychiatry: ["Dr. Mohan Lal", "Dr. Anjali Mishra"],
+  Ayurveda: ["Dr. Vaidya Krishnan", "Dr. Lakshmi Devi"],
+  Dental: ["Dr. Rajiv Dental", "Dr. Smita Oral"],
+  Physiotherapy: ["Dr. Physio Kumar", "Dr. Rehab Sharma"],
 }
 
 const appointmentTypesByCategory = {
-  general: [
-    { value: "consultation", label: "General Consultation" },
-    { value: "checkup", label: "Health Check-up" },
-    { value: "followup", label: "Follow-up Visit" },
-    { value: "vaccination", label: "Vaccination" },
-    { value: "prescription", label: "Prescription Renewal" },
-  ],
+  general: ["New Consultation", "Follow-up Visit", "Health Check-up", "Vaccination", "Medical Certificate"],
   specialized: [
-    { value: "consultation", label: "Specialist Consultation" },
-    { value: "procedure", label: "Medical Procedure" },
-    { value: "surgery", label: "Minor Surgery" },
-    { value: "therapy", label: "Therapy Session" },
-    { value: "diagnostic", label: "Diagnostic Test" },
-    { value: "treatment", label: "Treatment Session" },
+    "Specialist Consultation",
+    "Procedure Consultation",
+    "Pre-operative Assessment",
+    "Post-operative Follow-up",
+    "Treatment Planning",
   ],
 }
 
@@ -204,7 +137,6 @@ const timeSlots = [
   "11:00 AM",
   "11:30 AM",
   "12:00 PM",
-  "12:30 PM",
   "02:00 PM",
   "02:30 PM",
   "03:00 PM",
@@ -212,31 +144,19 @@ const timeSlots = [
   "04:00 PM",
   "04:30 PM",
   "05:00 PM",
-  "05:30 PM",
 ]
 
 interface AppointmentBookingDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAppointmentCreated?: (appointment: any) => void
 }
 
-export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCreated }: AppointmentBookingDialogProps) {
+export function AppointmentBookingDialog({ open, onOpenChange }: AppointmentBookingDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
 
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      category: undefined,
-      patientName: "",
-      phone: "",
-      email: "",
-      department: "",
-      doctor: "",
-      appointmentType: "",
-      date: undefined,
-      time: "",
       notes: "",
     },
   })
@@ -245,14 +165,16 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
   const watchedDepartment = form.watch("department")
 
   // Reset dependent fields when category changes
-  const handleCategoryChange = (value: string) => {
+  const handleCategoryChange = (category: string) => {
+    form.setValue("category", category as "general" | "specialized")
     form.setValue("department", "")
     form.setValue("doctor", "")
     form.setValue("appointmentType", "")
   }
 
   // Reset doctor when department changes
-  const handleDepartmentChange = (value: string) => {
+  const handleDepartmentChange = (department: string) => {
+    form.setValue("department", department)
     form.setValue("doctor", "")
   }
 
@@ -264,44 +186,13 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       const selectedCategory = appointmentCategories.find((cat) => cat.id === data.category)
-      const selectedDepartment = departmentsByCategory[data.category as keyof typeof departmentsByCategory]?.find(
-        (dept) => dept.value === data.department,
-      )
-      const selectedDoctor = doctorsByDepartment[data.department as keyof typeof doctorsByDepartment]?.find(
-        (doc) => doc.value === data.doctor,
-      )
-      const selectedType = appointmentTypesByCategory[data.category as keyof typeof appointmentTypesByCategory]?.find(
-        (type) => type.value === data.appointmentType,
-      )
-
-      const newAppointment = {
-        id: `app-${Date.now()}`,
-        patientName: data.patientName,
-        phone: data.phone,
-        email: data.email,
-        department: selectedDepartment?.label,
-        doctor: selectedDoctor?.label,
-        appointmentType: selectedType?.label,
-        date: data.date.toISOString(),
-        time: data.time,
-        status: "scheduled",
-        fee: selectedCategory?.fee,
-        category: data.category,
-        notes: data.notes,
-        paymentStatus: "pending",
-      }
-
-      // Call the callback if provided
-      if (onAppointmentCreated) {
-        onAppointmentCreated(newAppointment)
-      }
+      const appointmentId = `APT-${Date.now()}`
 
       toast({
         title: "Appointment Booked Successfully!",
-        description: `Appointment scheduled for ${data.patientName} on ${format(data.date, "PPP")} at ${data.time}`,
+        description: `Appointment ID: ${appointmentId} for ${data.patientName} on ${format(data.date, "PPP")} at ${data.time}. Fee: ₹${selectedCategory?.fee}`,
       })
 
-      // Reset form and close dialog
       form.reset()
       onOpenChange(false)
     } catch (error) {
@@ -315,26 +206,22 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
     }
   }
 
-  const selectedCategory = appointmentCategories.find((cat) => cat.id === watchedCategory)
-  const availableDepartments = watchedCategory
-    ? departmentsByCategory[watchedCategory as keyof typeof departmentsByCategory]
-    : []
+  const availableDepartments = watchedCategory ? departmentsByCategory[watchedCategory] : []
   const availableDoctors = watchedDepartment
-    ? doctorsByDepartment[watchedDepartment as keyof typeof doctorsByDepartment]
+    ? doctorsByDepartment[watchedDepartment as keyof typeof doctorsByDepartment] || []
     : []
-  const availableAppointmentTypes = watchedCategory
-    ? appointmentTypesByCategory[watchedCategory as keyof typeof appointmentTypesByCategory]
-    : []
+  const availableAppointmentTypes = watchedCategory ? appointmentTypesByCategory[watchedCategory] : []
+  const selectedCategory = appointmentCategories.find((cat) => cat.id === watchedCategory)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
             Book New Appointment
           </DialogTitle>
-          <DialogDescription>Fill in the details below to schedule a new appointment.</DialogDescription>
+          <DialogDescription>Fill in the details below to book a new appointment for the patient.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -348,10 +235,7 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                   <FormLabel className="text-base font-semibold">Appointment Category</FormLabel>
                   <FormControl>
                     <RadioGroup
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        handleCategoryChange(value)
-                      }}
+                      onValueChange={handleCategoryChange}
                       value={field.value}
                       className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     >
@@ -360,13 +244,11 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                         return (
                           <div key={category.id}>
                             <RadioGroupItem value={category.id} id={category.id} className="peer sr-only" />
-                            <label htmlFor={category.id} className="flex cursor-pointer">
+                            <Label htmlFor={category.id} className="flex cursor-pointer">
                               <Card
                                 className={cn(
-                                  "w-full transition-all hover:shadow-md",
-                                  field.value === category.id
-                                    ? "border-primary bg-primary/5 shadow-md"
-                                    : "border-muted hover:border-primary/50",
+                                  "flex-1 transition-all hover:shadow-md",
+                                  field.value === category.id && "border-primary bg-primary/5",
                                 )}
                               >
                                 <CardHeader className="pb-3">
@@ -375,14 +257,12 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                                       <Icon className="h-5 w-5" />
                                       {category.name}
                                     </div>
-                                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                      ₹{category.fee}
-                                    </Badge>
+                                    <Badge variant="secondary">₹{category.fee}</Badge>
                                   </CardTitle>
                                   <CardDescription className="text-sm">{category.description}</CardDescription>
                                 </CardHeader>
                               </Card>
-                            </label>
+                            </Label>
                           </div>
                         )
                       })}
@@ -393,15 +273,15 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
               )}
             />
 
-            {/* Multi-day procedure info */}
+            {/* Multi-day procedure info for specialized */}
             {watchedCategory === "specialized" && (
               <Card className="bg-amber-50 border-amber-200">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-amber-600 mt-0.5" />
+                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                     <div className="text-sm text-amber-800">
                       <p className="font-medium">Multi-Day Procedure Information</p>
-                      <p className="mt-1">
+                      <p>
                         Specialized procedures may require multiple sessions. Additional appointments will be
                         automatically scheduled based on your treatment plan.
                       </p>
@@ -411,6 +291,8 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
               </Card>
             )}
 
+            <Separator />
+
             {/* Patient Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -418,13 +300,13 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                 Patient Information
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="patientName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Patient Name *</FormLabel>
+                      <FormLabel>Patient Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter patient name" {...field} />
                       </FormControl>
@@ -435,10 +317,10 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
 
                 <FormField
                   control={form.control}
-                  name="phone"
+                  name="patientPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number *</FormLabel>
+                      <FormLabel>Phone Number</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter phone number" {...field} />
                       </FormControl>
@@ -446,21 +328,21 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter email address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="patientEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter email address" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <Separator />
@@ -468,7 +350,7 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
             {/* Appointment Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
+                <MapPin className="h-5 w-5" />
                 Appointment Details
               </h3>
 
@@ -478,15 +360,8 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Department *</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value)
-                          handleDepartmentChange(value)
-                        }}
-                        value={field.value}
-                        disabled={!watchedCategory}
-                      >
+                      <FormLabel>Department</FormLabel>
+                      <Select onValueChange={handleDepartmentChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select department" />
@@ -494,8 +369,8 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                         </FormControl>
                         <SelectContent>
                           {availableDepartments.map((dept) => (
-                            <SelectItem key={dept.value} value={dept.value}>
-                              {dept.label}
+                            <SelectItem key={dept} value={dept}>
+                              {dept}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -510,8 +385,8 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                   name="doctor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Doctor *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!watchedDepartment}>
+                      <FormLabel>Doctor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select doctor" />
@@ -519,8 +394,8 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                         </FormControl>
                         <SelectContent>
                           {availableDoctors.map((doctor) => (
-                            <SelectItem key={doctor.value} value={doctor.value}>
-                              {doctor.label}
+                            <SelectItem key={doctor} value={doctor}>
+                              {doctor}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -529,45 +404,43 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={form.control}
-                name="appointmentType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Appointment Type *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!watchedCategory}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select appointment type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableAppointmentTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="appointmentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Appointment Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select appointment type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableAppointmentTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="date"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Appointment Date *</FormLabel>
+                    <FormItem>
+                      <FormLabel>Appointment Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground",
@@ -592,35 +465,35 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Appointment Time *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select time" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {timeSlots.map((time) => (
-                            <SelectItem key={time} value={time}>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {time}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
+
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Appointment Time</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select time slot" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {timeSlots.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {time}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -630,11 +503,14 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
                     <FormLabel>Additional Notes (Optional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Any additional information or special requirements..."
+                        placeholder="Any special requirements or notes for the appointment..."
                         className="resize-none"
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Include any special requirements, symptoms, or additional information.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -643,22 +519,25 @@ export function AppointmentBookingDialog({ open, onOpenChange, onAppointmentCrea
 
             {/* Fee Summary */}
             {selectedCategory && (
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-blue-900">Consultation Fee</span>
+              <>
+                <Separator />
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-blue-900">Consultation Fee</span>
+                      </div>
+                      <Badge variant="secondary" className="text-lg font-bold">
+                        ₹{selectedCategory.fee}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-base px-3 py-1">
-                      ₹{selectedCategory.fee}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-blue-700 mt-2">
-                    Payment can be made at the time of consultation or in advance.
-                  </p>
-                </CardContent>
-              </Card>
+                    <p className="text-sm text-blue-700 mt-2">
+                      Payment can be made at the time of consultation or through advance booking.
+                    </p>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </form>
         </Form>

@@ -1,6 +1,4 @@
 "use client"
-
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,11 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Stethoscope, Settings, ChevronDown, User, LogOut, HelpCircle, TestTube, Zap } from "lucide-react"
+import { Stethoscope, Settings, User, LogOut, HelpCircle } from "lucide-react"
 
 export function TopNavigation() {
   const pathname = usePathname()
-  const [servicesOpen, setServicesOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -23,11 +20,6 @@ export function TopNavigation() {
     }
     return pathname.startsWith(path)
   }
-
-  const servicesItems = [
-    { href: "/services/laboratory", label: "Laboratory Tests", icon: TestTube },
-    { href: "/services/radiology", label: "Radiology Tests", icon: Zap },
-  ]
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -58,37 +50,14 @@ export function TopNavigation() {
           >
             Patients
           </Link>
-
-          {/* Services Dropdown */}
-          <DropdownMenu open={servicesOpen} onOpenChange={setServicesOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`h-auto p-0 font-medium text-sm transition-colors hover:text-foreground/80 ${
-                  servicesItems.some((item) => isActive(item.href)) ? "text-foreground" : "text-foreground/60"
-                }`}
-              >
-                Services
-                <ChevronDown className="ml-1 h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              {servicesItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link
-                      href={item.href}
-                      className={`w-full flex items-center gap-2 ${isActive(item.href) ? "bg-accent text-accent-foreground" : ""}`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                )
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            href="/services"
+            className={`transition-colors hover:text-foreground/80 ${
+              isActive("/services") ? "text-foreground" : "text-foreground/60"
+            }`}
+          >
+            Services
+          </Link>
         </nav>
 
         {/* Right Side Actions */}
