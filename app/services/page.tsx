@@ -7,298 +7,291 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Filter, CheckCircle2, Eye, Plus } from "lucide-react"
-import { DataTable } from "@/components/ui/data-table"
-import type { ColumnDef } from "@tanstack/react-table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Search, TestTube, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 // Mock data for lab tests across all patients
 const mockLabTests = [
   {
-    id: "test-001",
-    patientId: "PAT-001",
+    id: "LT001",
     patientName: "John Doe",
-    patientAge: 45,
+    patientId: "P001",
+    age: 45,
     testName: "Complete Blood Count",
     testCode: "CBC",
-    prescribedBy: "Dr. Sharma",
-    prescribedDate: "2024-01-15",
-    priority: "urgent",
-    status: "pending",
     department: "Hematology",
-    estimatedTime: "30 mins",
-    notes: "Check for anemia and infection markers",
-    visitId: "visit-001",
+    prescribedBy: "Dr. Smith",
+    prescribedDate: "2024-01-15",
+    priority: "Routine",
+    status: "Pending",
+    dueDate: "2024-01-16",
   },
   {
-    id: "test-002",
-    patientId: "PAT-002",
+    id: "LT002",
     patientName: "Jane Smith",
-    patientAge: 32,
-    testName: "Lipid Profile",
-    testCode: "LIPID",
-    prescribedBy: "Dr. Gupta",
-    prescribedDate: "2024-01-14",
-    priority: "routine",
-    status: "in-progress",
-    department: "Biochemistry",
-    estimatedTime: "45 mins",
-    notes: "Follow-up for cholesterol management",
-    visitId: "visit-002",
-    startedAt: "2024-01-15T09:30:00",
-    technician: "Tech. Patel",
-  },
-  {
-    id: "test-003",
-    patientId: "PAT-003",
-    patientName: "Mike Johnson",
-    patientAge: 28,
-    testName: "HbA1c",
-    testCode: "HBA1C",
-    prescribedBy: "Dr. Kumar",
-    prescribedDate: "2024-01-13",
-    priority: "routine",
-    status: "completed",
-    department: "Biochemistry",
-    estimatedTime: "20 mins",
-    notes: "Diabetes monitoring",
-    visitId: "visit-003",
-    completedAt: "2024-01-14T14:20:00",
-    technician: "Tech. Singh",
-    result: "Normal",
-  },
-  {
-    id: "test-004",
-    patientId: "PAT-004",
-    patientName: "Sarah Wilson",
-    patientAge: 55,
+    patientId: "P002",
+    age: 32,
     testName: "Liver Function Test",
     testCode: "LFT",
-    prescribedBy: "Dr. Patel",
-    prescribedDate: "2024-01-15",
-    priority: "urgent",
-    status: "pending",
     department: "Biochemistry",
-    estimatedTime: "40 mins",
-    notes: "Elevated liver enzymes in previous test",
-    visitId: "visit-004",
+    prescribedBy: "Dr. Johnson",
+    prescribedDate: "2024-01-15",
+    priority: "Urgent",
+    status: "In Progress",
+    dueDate: "2024-01-15",
   },
   {
-    id: "test-005",
-    patientId: "PAT-005",
-    patientName: "Robert Brown",
-    patientAge: 38,
+    id: "LT003",
+    patientName: "Mike Wilson",
+    patientId: "P003",
+    age: 28,
     testName: "Thyroid Function Test",
     testCode: "TFT",
-    prescribedBy: "Dr. Sharma",
-    prescribedDate: "2024-01-12",
-    priority: "routine",
-    status: "completed",
     department: "Endocrinology",
-    estimatedTime: "35 mins",
-    notes: "Regular thyroid monitoring",
-    visitId: "visit-005",
-    completedAt: "2024-01-13T11:45:00",
-    technician: "Tech. Kumar",
-    result: "Abnormal",
+    prescribedBy: "Dr. Brown",
+    prescribedDate: "2024-01-14",
+    priority: "Routine",
+    status: "Completed",
+    dueDate: "2024-01-15",
+    completedDate: "2024-01-15",
+  },
+  {
+    id: "LT004",
+    patientName: "Sarah Davis",
+    patientId: "P004",
+    age: 55,
+    testName: "Lipid Profile",
+    testCode: "LP",
+    department: "Biochemistry",
+    prescribedBy: "Dr. Wilson",
+    prescribedDate: "2024-01-15",
+    priority: "Routine",
+    status: "Pending",
+    dueDate: "2024-01-16",
+  },
+  {
+    id: "LT005",
+    patientName: "Robert Brown",
+    patientId: "P005",
+    age: 38,
+    testName: "Blood Glucose",
+    testCode: "BG",
+    department: "Biochemistry",
+    prescribedBy: "Dr. Davis",
+    prescribedDate: "2024-01-15",
+    priority: "Urgent",
+    status: "In Progress",
+    dueDate: "2024-01-15",
   },
 ]
-
-type LabTest = (typeof mockLabTests)[0]
 
 export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [departmentFilter, setDepartmentFilter] = useState("all")
+  const [activeTab, setActiveTab] = useState("all")
+  const { toast } = useToast()
 
-  const getStatusBadge = (status: string, priority?: string) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge
-            className={`${priority === "urgent" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"} hover:bg-current`}
-          >
-            {priority === "urgent" ? "Urgent Pending" : "Pending"}
-          </Badge>
-        )
-      case "in-progress":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">In Progress</Badge>
-      case "completed":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
-  const getPriorityBadge = (priority: string) => {
-    return priority === "urgent" ? (
-      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Urgent</Badge>
-    ) : (
-      <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Routine</Badge>
-    )
-  }
-
-  const handleStartTest = (testId: string) => {
-    console.log("Starting test:", testId)
-    // In a real app, this would update the test status to "in-progress"
-  }
-
-  const handleCompleteTest = (testId: string) => {
-    console.log("Completing test:", testId)
-    // In a real app, this would open a modal to enter results and complete the test
-  }
-
-  const handleViewResults = (testId: string) => {
-    console.log("Viewing results for test:", testId)
-    // In a real app, this would open the test results
-  }
-
+  // Filter tests based on search and filters
   const filteredTests = mockLabTests.filter((test) => {
     const matchesSearch =
       test.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       test.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.testCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       test.patientId.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || test.status === statusFilter
-    const matchesPriority = priorityFilter === "all" || test.priority === priorityFilter
-    const matchesDepartment = departmentFilter === "all" || test.department === departmentFilter
+    const matchesStatus = statusFilter === "all" || test.status.toLowerCase() === statusFilter.toLowerCase()
+    const matchesPriority = priorityFilter === "all" || test.priority.toLowerCase() === priorityFilter.toLowerCase()
+    const matchesDepartment =
+      departmentFilter === "all" || test.department.toLowerCase() === departmentFilter.toLowerCase()
+    const matchesTab = activeTab === "all" || test.status.toLowerCase().replace(" ", "") === activeTab.toLowerCase()
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesDepartment
+    return matchesSearch && matchesStatus && matchesPriority && matchesDepartment && matchesTab
   })
 
-  const pendingTests = filteredTests.filter((test) => test.status === "pending")
-  const inProgressTests = filteredTests.filter((test) => test.status === "in-progress")
-  const completedTests = filteredTests.filter((test) => test.status === "completed")
+  // Get counts for overview cards
+  const pendingCount = mockLabTests.filter((test) => test.status === "Pending").length
+  const inProgressCount = mockLabTests.filter((test) => test.status === "In Progress").length
+  const completedCount = mockLabTests.filter((test) => test.status === "Completed").length
 
-  const columns: ColumnDef<LabTest>[] = [
-    {
-      accessorKey: "patientName",
-      header: "Patient",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.patientName}</div>
-          <div className="text-sm text-muted-foreground">
-            {row.original.patientId} • Age {row.original.patientAge}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "testName",
-      header: "Test",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.testName}</div>
-          <div className="text-sm text-muted-foreground">{row.original.testCode}</div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "department",
-      header: "Department",
-    },
-    {
-      accessorKey: "prescribedBy",
-      header: "Prescribed By",
-    },
-    {
-      accessorKey: "prescribedDate",
-      header: "Date",
-      cell: ({ row }) => new Date(row.original.prescribedDate).toLocaleDateString(),
-    },
-    {
-      accessorKey: "priority",
-      header: "Priority",
-      cell: ({ row }) => getPriorityBadge(row.original.priority),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => getStatusBadge(row.original.status, row.original.priority),
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => {
-        const test = row.original
+  const handleStartTest = (testId: string, testName: string, patientName: string) => {
+    toast({
+      title: "Test Started",
+      description: `${testName} for ${patientName} has been started.`,
+      duration: 4000,
+    })
+  }
+
+  const handleCompleteTest = (testId: string, testName: string, patientName: string) => {
+    toast({
+      title: "Test Completed",
+      description: `${testName} for ${patientName} has been completed. Results can now be entered.`,
+      duration: 4000,
+    })
+  }
+
+  const handleViewResults = (testId: string, testName: string, patientName: string) => {
+    toast({
+      title: "View Results",
+      description: `Opening results for ${testName} - ${patientName}`,
+      duration: 3000,
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Pending":
         return (
-          <div className="flex items-center gap-2">
-            {test.status === "pending" && (
-              <Button size="sm" onClick={() => handleStartTest(test.id)}>
-                <Plus className="h-4 w-4 mr-1" />
-                Start
-              </Button>
-            )}
-            {test.status === "in-progress" && (
-              <Button size="sm" onClick={() => handleCompleteTest(test.id)}>
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Complete
-              </Button>
-            )}
-            {test.status === "completed" && (
-              <Button size="sm" variant="outline" onClick={() => handleViewResults(test.id)}>
-                <Eye className="h-4 w-4 mr-1" />
-                View
-              </Button>
-            )}
-          </div>
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
         )
-      },
-    },
-  ]
+      case "In Progress":
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            <TestTube className="w-3 h-3 mr-1" />
+            In Progress
+          </Badge>
+        )
+      case "Completed":
+        return (
+          <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Completed
+          </Badge>
+        )
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  const getPriorityBadge = (priority: string) => {
+    return priority === "Urgent" ? (
+      <Badge variant="destructive" className="bg-red-100 text-red-800">
+        <AlertCircle className="w-3 h-3 mr-1" />
+        Urgent
+      </Badge>
+    ) : (
+      <Badge variant="outline">Routine</Badge>
+    )
+  }
+
+  const getActionButton = (test: any) => {
+    switch (test.status) {
+      case "Pending":
+        return (
+          <Button
+            size="sm"
+            onClick={() => handleStartTest(test.id, test.testName, test.patientName)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Start
+          </Button>
+        )
+      case "In Progress":
+        return (
+          <Button
+            size="sm"
+            onClick={() => handleCompleteTest(test.id, test.testName, test.patientName)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Complete
+          </Button>
+        )
+      case "Completed":
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewResults(test.id, test.testName, test.patientName)}
+          >
+            View
+          </Button>
+        )
+      default:
+        return null
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Laboratory Services</h1>
-          <p className="text-muted-foreground">Manage lab tests across all patients</p>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Laboratory Services</h2>
+        <div className="flex items-center space-x-2">
+          <TestTube className="h-5 w-5" />
+          <span className="text-sm text-muted-foreground">Lab Technician Dashboard</span>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            {pendingTests.length} Pending
-          </Badge>
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-            {inProgressTests.length} In Progress
-          </Badge>
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-            {completedTests.length} Completed Today
-          </Badge>
-        </div>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Tests</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
+            <p className="text-xs text-muted-foreground">Awaiting processing</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <TestTube className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
+            <p className="text-xs text-muted-foreground">Currently processing</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+            <p className="text-xs text-muted-foreground">Results available</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardTitle>Filter Tests</CardTitle>
+          <CardDescription>Search and filter laboratory tests across all patients</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search patients, tests..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by patient name, test name, or patient ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Status" />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="in progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Priority" />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by priority" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Priority</SelectItem>
@@ -307,89 +300,98 @@ export default function ServicesPage() {
               </SelectContent>
             </Select>
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Departments" />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by department" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                <SelectItem value="Hematology">Hematology</SelectItem>
-                <SelectItem value="Biochemistry">Biochemistry</SelectItem>
-                <SelectItem value="Endocrinology">Endocrinology</SelectItem>
+                <SelectItem value="hematology">Hematology</SelectItem>
+                <SelectItem value="biochemistry">Biochemistry</SelectItem>
+                <SelectItem value="endocrinology">Endocrinology</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("")
-                setStatusFilter("all")
-                setPriorityFilter("all")
-                setDepartmentFilter("all")
-              }}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Clear Filters
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabs for different views */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Tests ({filteredTests.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({pendingTests.length})</TabsTrigger>
-          <TabsTrigger value="in-progress">In Progress ({inProgressTests.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedTests.length})</TabsTrigger>
-        </TabsList>
+      {/* Tests Table with Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Laboratory Tests</CardTitle>
+          <CardDescription>Manage laboratory tests across all patients</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All Tests ({mockLabTests.length})</TabsTrigger>
+              <TabsTrigger value="pending">Pending ({pendingCount})</TabsTrigger>
+              <TabsTrigger value="inprogress">In Progress ({inProgressCount})</TabsTrigger>
+              <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Laboratory Tests</CardTitle>
-              <CardDescription>Complete list of all lab tests across patients</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable columns={columns} data={filteredTests} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pending">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Tests</CardTitle>
-              <CardDescription>Tests that need to be started</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable columns={columns} data={pendingTests} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="in-progress">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tests In Progress</CardTitle>
-              <CardDescription>Currently running tests</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable columns={columns} data={inProgressTests} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="completed">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Tests</CardTitle>
-              <CardDescription>Tests completed today</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTable columns={columns} data={completedTests} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <TabsContent value={activeTab} className="mt-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Test Details</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Prescribed By</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          No tests found matching your criteria
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTests.map((test) => (
+                        <TableRow key={test.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{test.patientName}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {test.patientId} • Age {test.age}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{test.testName}</div>
+                              <div className="text-sm text-muted-foreground">{test.testCode}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{test.department}</TableCell>
+                          <TableCell>{test.prescribedBy}</TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="text-sm">Prescribed: {test.prescribedDate}</div>
+                              <div className="text-sm text-muted-foreground">Due: {test.dueDate}</div>
+                              {test.completedDate && (
+                                <div className="text-sm text-green-600">Completed: {test.completedDate}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{getPriorityBadge(test.priority)}</TableCell>
+                          <TableCell>{getStatusBadge(test.status)}</TableCell>
+                          <TableCell>{getActionButton(test)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }
