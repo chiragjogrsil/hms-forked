@@ -1,808 +1,515 @@
 "use client"
 
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Search,
+  Filter,
   TestTube,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Camera,
-  Stethoscope,
+  Scan,
   Heart,
   Brain,
   Eye,
-  Filter,
+  Stethoscope,
+  Clock,
   Users,
+  MapPin,
+  User,
+  ArrowLeft,
+  MoreHorizontal,
+  Play,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-// Department configuration with detailed information
+// Department configuration with icons and colors
 const departments = {
+  all: {
+    id: "all",
+    name: "All Departments",
+    icon: Stethoscope,
+    color: "text-gray-600",
+    bgColor: "bg-gray-50",
+    description: "View services across all departments",
+    staff: 45,
+    avgWaitTime: "18min",
+    services: ["All Services"],
+  },
   laboratory: {
+    id: "laboratory",
     name: "Laboratory",
     icon: TestTube,
-    color: "blue",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
     description: "Blood tests, urine analysis, and diagnostic testing",
-    services: [
-      "Complete Blood Count",
-      "Liver Function Test",
-      "Kidney Function Test",
-      "Lipid Profile",
-      "Thyroid Function",
-      "Blood Sugar",
-      "Urine Analysis",
-      "Stool Analysis",
-    ],
     staff: 12,
-    avgWaitTime: "15 mins",
+    avgWaitTime: "15min",
+    services: ["Blood Test", "Urine Analysis", "Culture", "Biochemistry"],
   },
   radiology: {
+    id: "radiology",
     name: "Radiology",
-    icon: Camera,
-    color: "purple",
-    description: "Medical imaging and diagnostic scans",
-    services: ["X-Ray", "CT Scan", "MRI", "Ultrasound", "Mammography", "Bone Density", "Nuclear Medicine"],
+    icon: Scan,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    description: "X-rays, CT scans, MRI, and ultrasound imaging",
     staff: 8,
-    avgWaitTime: "25 mins",
+    avgWaitTime: "25min",
+    services: ["X-Ray", "CT Scan", "MRI", "Ultrasound"],
   },
   cardiology: {
+    id: "cardiology",
     name: "Cardiology",
     icon: Heart,
-    color: "red",
-    description: "Heart and cardiovascular system diagnostics",
-    services: ["ECG", "Echocardiogram", "Stress Test", "Holter Monitor", "Cardiac Catheterization", "Angiography"],
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    description: "Heart diagnostics and cardiovascular testing",
     staff: 6,
-    avgWaitTime: "20 mins",
+    avgWaitTime: "20min",
+    services: ["ECG", "Echo", "Stress Test", "Holter Monitor"],
   },
   neurology: {
+    id: "neurology",
     name: "Neurology",
     icon: Brain,
-    color: "green",
-    description: "Nervous system and brain diagnostics",
-    services: ["EEG", "EMG", "Nerve Conduction", "Sleep Study", "Neuropsychological Testing", "Brain Mapping"],
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    description: "Brain and nervous system diagnostics",
     staff: 4,
-    avgWaitTime: "30 mins",
+    avgWaitTime: "30min",
+    services: ["EEG", "EMG", "Nerve Conduction", "Brain MRI"],
   },
   ophthalmology: {
+    id: "ophthalmology",
     name: "Ophthalmology",
     icon: Eye,
-    color: "amber",
+    color: "text-green-600",
+    bgColor: "bg-green-50",
     description: "Eye examinations and vision testing",
-    services: ["Visual Field Test", "OCT", "Fundus Photography", "Tonometry", "Refraction", "Color Vision Test"],
     staff: 5,
-    avgWaitTime: "18 mins",
+    avgWaitTime: "18min",
+    services: ["Eye Exam", "OCT", "Visual Field", "Retinal Scan"],
   },
   general: {
-    name: "General Services",
+    id: "general",
+    name: "General",
     icon: Stethoscope,
-    color: "gray",
-    description: "General medical procedures and tests",
-    services: ["Pulmonary Function", "Audiometry", "Endoscopy", "Biopsy", "Vaccination", "Health Checkup"],
+    color: "text-teal-600",
+    bgColor: "bg-teal-50",
+    description: "General medical procedures and consultations",
     staff: 10,
-    avgWaitTime: "12 mins",
+    avgWaitTime: "12min",
+    services: ["Consultation", "Physical Exam", "Vital Signs", "General Procedure"],
   },
 }
 
-// Enhanced mock data with more realistic department distribution
+// Mock service data
 const mockServices = [
-  // Laboratory Tests
   {
-    id: "LAB001",
+    id: "SRV-001",
     patientName: "John Doe",
-    patientId: "P001",
-    age: 45,
-    serviceName: "Complete Blood Count",
-    serviceCode: "CBC",
+    patientId: "P12345",
+    service: "Blood Test",
     department: "laboratory",
-    prescribedBy: "Dr. Smith",
-    prescribedDate: "2024-01-15",
-    priority: "Routine",
-    status: "Pending",
-    dueDate: "2024-01-16",
-    estimatedDuration: "30 mins",
-    notes: "Check for anemia and infection markers",
-    technician: null,
-    room: "Lab-A1",
+    status: "pending",
+    requestTime: "09:30 AM",
+    room: "Lab-A",
+    technician: "Sarah Johnson",
+    priority: "normal",
+    estimatedTime: "15min",
   },
   {
-    id: "LAB002",
+    id: "SRV-002",
     patientName: "Jane Smith",
-    patientId: "P002",
-    age: 32,
-    serviceName: "Liver Function Test",
-    serviceCode: "LFT",
-    department: "laboratory",
-    prescribedBy: "Dr. Johnson",
-    prescribedDate: "2024-01-15",
-    priority: "Urgent",
-    status: "In Progress",
-    dueDate: "2024-01-15",
-    estimatedDuration: "45 mins",
-    technician: "Tech. Patel",
-    notes: "Elevated enzymes in previous test",
-    room: "Lab-B2",
-  },
-  {
-    id: "LAB003",
-    patientName: "Michael Brown",
-    patientId: "P009",
-    age: 28,
-    serviceName: "Thyroid Function Test",
-    serviceCode: "TFT",
-    department: "laboratory",
-    prescribedBy: "Dr. Wilson",
-    prescribedDate: "2024-01-14",
-    priority: "Routine",
-    status: "Completed",
-    dueDate: "2024-01-15",
-    completedDate: "2024-01-15",
-    estimatedDuration: "25 mins",
-    technician: "Tech. Kumar",
-    notes: "Follow-up for hyperthyroidism",
-    room: "Lab-A1",
-  },
-  // Radiology Tests
-  {
-    id: "RAD001",
-    patientName: "Mike Wilson",
-    patientId: "P003",
-    age: 28,
-    serviceName: "Chest X-Ray",
-    serviceCode: "CXR",
+    patientId: "P12346",
+    service: "X-Ray",
     department: "radiology",
-    prescribedBy: "Dr. Brown",
-    prescribedDate: "2024-01-14",
-    priority: "Routine",
-    status: "Completed",
-    dueDate: "2024-01-15",
-    completedDate: "2024-01-15",
-    estimatedDuration: "15 mins",
-    technician: "Rad. Tech Kumar",
-    notes: "Follow-up for pneumonia",
-    room: "X-Ray Room 1",
+    status: "in-progress",
+    requestTime: "10:15 AM",
+    room: "Rad-1",
+    technician: "Mike Chen",
+    priority: "urgent",
+    estimatedTime: "20min",
   },
   {
-    id: "RAD002",
-    patientName: "Sarah Davis",
-    patientId: "P004",
-    age: 55,
-    serviceName: "Brain MRI",
-    serviceCode: "MRI-BRAIN",
-    department: "radiology",
-    prescribedBy: "Dr. Wilson",
-    prescribedDate: "2024-01-15",
-    priority: "Urgent",
-    status: "Pending",
-    dueDate: "2024-01-16",
-    estimatedDuration: "60 mins",
-    notes: "Investigate headaches and dizziness",
-    room: "MRI Suite 1",
-  },
-  {
-    id: "RAD003",
-    patientName: "Emma Johnson",
-    patientId: "P010",
-    age: 42,
-    serviceName: "Abdominal Ultrasound",
-    serviceCode: "USG-ABD",
-    department: "radiology",
-    prescribedBy: "Dr. Martinez",
-    prescribedDate: "2024-01-15",
-    priority: "Routine",
-    status: "In Progress",
-    dueDate: "2024-01-15",
-    estimatedDuration: "30 mins",
-    technician: "Rad. Tech Singh",
-    notes: "Abdominal pain evaluation",
-    room: "Ultrasound Room 2",
-  },
-  // Cardiology Tests
-  {
-    id: "CAR001",
+    id: "SRV-003",
     patientName: "Robert Brown",
-    patientId: "P005",
-    age: 38,
-    serviceName: "Electrocardiogram",
-    serviceCode: "ECG",
+    patientId: "P12347",
+    service: "ECG",
     department: "cardiology",
-    prescribedBy: "Dr. Davis",
-    prescribedDate: "2024-01-15",
-    priority: "Urgent",
-    status: "In Progress",
-    dueDate: "2024-01-15",
-    estimatedDuration: "20 mins",
-    technician: "Cardiac Tech Singh",
-    notes: "Chest pain evaluation",
-    room: "Cardio Room 1",
+    status: "completed",
+    requestTime: "08:45 AM",
+    room: "Card-2",
+    technician: "Lisa Wang",
+    priority: "normal",
+    estimatedTime: "10min",
   },
   {
-    id: "CAR002",
-    patientName: "Lisa Anderson",
-    patientId: "P006",
-    age: 42,
-    serviceName: "Echocardiogram",
-    serviceCode: "ECHO",
-    department: "cardiology",
-    prescribedBy: "Dr. Martinez",
-    prescribedDate: "2024-01-14",
-    priority: "Routine",
-    status: "Completed",
-    dueDate: "2024-01-15",
-    completedDate: "2024-01-15",
-    estimatedDuration: "45 mins",
-    technician: "Echo Tech Patel",
-    notes: "Routine cardiac assessment",
-    room: "Echo Room 1",
-  },
-  // Neurology Tests
-  {
-    id: "NEU001",
-    patientName: "David Garcia",
-    patientId: "P007",
-    age: 35,
-    serviceName: "Electroencephalogram",
-    serviceCode: "EEG",
-    department: "neurology",
-    prescribedBy: "Dr. Thompson",
-    prescribedDate: "2024-01-15",
-    priority: "Routine",
-    status: "Pending",
-    dueDate: "2024-01-16",
-    estimatedDuration: "90 mins",
-    notes: "Seizure evaluation",
-    room: "Neuro Lab 1",
-  },
-  // Ophthalmology Tests
-  {
-    id: "OPH001",
-    patientName: "Maria Rodriguez",
-    patientId: "P008",
-    age: 60,
-    serviceName: "Optical Coherence Tomography",
-    serviceCode: "OCT",
+    id: "SRV-004",
+    patientName: "Emily Davis",
+    patientId: "P12348",
+    service: "Eye Exam",
     department: "ophthalmology",
-    prescribedBy: "Dr. Lee",
-    prescribedDate: "2024-01-15",
-    priority: "Routine",
-    status: "In Progress",
-    dueDate: "2024-01-15",
-    estimatedDuration: "30 mins",
-    technician: "Ophthalmic Tech Wilson",
-    notes: "Diabetic retinopathy screening",
-    room: "Eye Exam Room 2",
+    status: "pending",
+    requestTime: "11:20 AM",
+    room: "Oph-1",
+    technician: "Dr. Patel",
+    priority: "normal",
+    estimatedTime: "25min",
   },
-  // General Services
   {
-    id: "GEN001",
-    patientName: "Alex Thompson",
-    patientId: "P011",
-    age: 25,
-    serviceName: "Pulmonary Function Test",
-    serviceCode: "PFT",
-    department: "general",
-    prescribedBy: "Dr. Adams",
-    prescribedDate: "2024-01-15",
-    priority: "Routine",
-    status: "Pending",
-    dueDate: "2024-01-16",
-    estimatedDuration: "40 mins",
-    notes: "Asthma evaluation",
-    room: "PFT Room 1",
+    id: "SRV-005",
+    patientName: "Michael Wilson",
+    patientId: "P12349",
+    service: "CT Scan",
+    department: "radiology",
+    status: "in-progress",
+    requestTime: "09:00 AM",
+    room: "Rad-2",
+    technician: "Alex Kumar",
+    priority: "urgent",
+    estimatedTime: "30min",
+  },
+  {
+    id: "SRV-006",
+    patientName: "Sarah Taylor",
+    patientId: "P12350",
+    service: "Urine Analysis",
+    department: "laboratory",
+    status: "completed",
+    requestTime: "08:30 AM",
+    room: "Lab-B",
+    technician: "Tom Rodriguez",
+    priority: "normal",
+    estimatedTime: "10min",
   },
 ]
 
 export default function ServicesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedDepartment, setSelectedDepartment] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [activeTab, setActiveTab] = useState("all")
-  const { toast } = useToast()
 
-  // Filter services based on search and filters
+  // Filter services based on selected department and other filters
   const filteredServices = mockServices.filter((service) => {
-    const matchesSearch =
-      service.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.serviceCode.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || service.status.toLowerCase() === statusFilter.toLowerCase()
-    const matchesPriority = priorityFilter === "all" || service.priority.toLowerCase() === priorityFilter.toLowerCase()
     const matchesDepartment = selectedDepartment === "all" || service.department === selectedDepartment
-    const matchesTab = activeTab === "all" || service.status.toLowerCase().replace(" ", "") === activeTab.toLowerCase()
+    const matchesSearch =
+      searchQuery === "" ||
+      service.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.service.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === "all" || service.status === statusFilter
+    const matchesPriority = priorityFilter === "all" || service.priority === priorityFilter
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesDepartment && matchesTab
+    return matchesDepartment && matchesSearch && matchesStatus && matchesPriority
   })
 
-  // Get counts for overview cards
-  const getStatusCount = (status: string) => {
-    const filtered =
-      selectedDepartment === "all" ? mockServices : mockServices.filter((s) => s.department === selectedDepartment)
-    return filtered.filter((service) => service.status === status).length
-  }
-
-  const pendingCount = getStatusCount("Pending")
-  const inProgressCount = getStatusCount("In Progress")
-  const completedCount = getStatusCount("Completed")
-  const totalCount =
-    selectedDepartment === "all"
-      ? mockServices.length
-      : mockServices.filter((s) => s.department === selectedDepartment).length
-
-  // Get department statistics
-  const departmentStats = Object.entries(departments).map(([key, dept]) => ({
-    key,
-    ...dept,
-    count: mockServices.filter((service) => service.department === key).length,
-    pending: mockServices.filter((service) => service.department === key && service.status === "Pending").length,
-    inProgress: mockServices.filter((service) => service.department === key && service.status === "In Progress").length,
-    completed: mockServices.filter((service) => service.department === key && service.status === "Completed").length,
-  }))
-
-  const handleStartService = (serviceId: string, serviceName: string, patientName: string) => {
-    toast({
-      title: "Service Started",
-      description: `${serviceName} for ${patientName} has been started.`,
-      duration: 4000,
-    })
-  }
-
-  const handleCompleteService = (serviceId: string, serviceName: string, patientName: string) => {
-    toast({
-      title: "Service Completed",
-      description: `${serviceName} for ${patientName} has been completed. Results can now be entered.`,
-      duration: 4000,
-    })
-  }
-
-  const handleViewResults = (serviceId: string, serviceName: string, patientName: string) => {
-    toast({
-      title: "View Results",
-      description: `Opening results for ${serviceName} - ${patientName}`,
-      duration: 3000,
-    })
+  // Get counts for each status
+  const getStatusCounts = (dept: string) => {
+    const deptServices = dept === "all" ? mockServices : mockServices.filter((s) => s.department === dept)
+    return {
+      pending: deptServices.filter((s) => s.status === "pending").length,
+      inProgress: deptServices.filter((s) => s.status === "in-progress").length,
+      completed: deptServices.filter((s) => s.status === "completed").length,
+    }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "pending":
         return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-            <Clock className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
             Pending
           </Badge>
         )
-      case "In Progress":
+      case "in-progress":
         return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            <TestTube className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
             In Progress
           </Badge>
         )
-      case "Completed":
+      case "completed":
         return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
             Completed
           </Badge>
         )
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>
     }
   }
 
   const getPriorityBadge = (priority: string) => {
-    return priority === "Urgent" ? (
-      <Badge variant="destructive" className="bg-red-100 text-red-800">
-        <AlertCircle className="w-3 h-3 mr-1" />
-        Urgent
-      </Badge>
-    ) : (
-      <Badge variant="outline">Routine</Badge>
-    )
-  }
-
-  const getDepartmentBadge = (departmentKey: string) => {
-    const dept = departments[departmentKey as keyof typeof departments]
-    if (!dept) return <Badge variant="outline">{departmentKey}</Badge>
-
-    const Icon = dept.icon
-    const colorClasses = {
-      blue: "bg-blue-100 text-blue-800",
-      purple: "bg-purple-100 text-purple-800",
-      red: "bg-red-100 text-red-800",
-      green: "bg-green-100 text-green-800",
-      amber: "bg-amber-100 text-amber-800",
-      gray: "bg-gray-100 text-gray-800",
-    }
-
-    return (
-      <Badge variant="secondary" className={colorClasses[dept.color as keyof typeof colorClasses]}>
-        <Icon className="w-3 h-3 mr-1" />
-        {dept.name}
-      </Badge>
-    )
-  }
-
-  const getActionButton = (service: any) => {
-    switch (service.status) {
-      case "Pending":
+    switch (priority) {
+      case "urgent":
         return (
-          <Button
-            size="sm"
-            onClick={() => handleStartService(service.id, service.serviceName, service.patientName)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Start
-          </Button>
+          <Badge variant="destructive" className="text-xs">
+            Urgent
+          </Badge>
         )
-      case "In Progress":
+      case "normal":
         return (
-          <Button
-            size="sm"
-            onClick={() => handleCompleteService(service.id, service.serviceName, service.patientName)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Complete
-          </Button>
-        )
-      case "Completed":
-        return (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewResults(service.id, service.serviceName, service.patientName)}
-          >
-            View Results
-          </Button>
+          <Badge variant="secondary" className="text-xs">
+            Normal
+          </Badge>
         )
       default:
-        return null
+        return (
+          <Badge variant="outline" className="text-xs">
+            {priority}
+          </Badge>
+        )
     }
   }
 
-  const clearAllFilters = () => {
-    setSearchTerm("")
-    setStatusFilter("all")
-    setPriorityFilter("all")
-    setSelectedDepartment("all")
-  }
-
-  const selectedDeptInfo =
-    selectedDepartment !== "all" ? departments[selectedDepartment as keyof typeof departments] : null
+  const selectedDeptInfo = departments[selectedDepartment as keyof typeof departments]
+  const statusCounts = getStatusCounts(selectedDepartment)
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Medical Services</h2>
-          {selectedDeptInfo && (
-            <p className="text-muted-foreground mt-1">
-              {selectedDeptInfo.name} Department - {selectedDeptInfo.description}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          <TestTube className="h-5 w-5" />
-          <span className="text-sm text-muted-foreground">
-            {selectedDepartment === "all" ? "All Departments" : selectedDeptInfo?.name}
-          </span>
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Services</h1>
+            <p className="text-gray-600 mt-1">Manage and track medical services across departments</p>
+          </div>
         </div>
       </div>
 
-      {/* Department Selection Dropdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Department</CardTitle>
-          <CardDescription>Choose a department to view and manage its services</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-1">
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <div className="flex items-center space-x-2">
-                      <Filter className="h-4 w-4" />
-                      <span>All Departments</span>
+      {/* Department Selection and Info */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Department:</span>
+          </div>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(departments).map((dept) => {
+                const Icon = dept.icon
+                const counts = getStatusCounts(dept.id)
+                const totalServices = counts.pending + counts.inProgress + counts.completed
+
+                return (
+                  <SelectItem key={dept.id} value={dept.id}>
+                    <div className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${dept.color}`} />
+                      <span>{dept.name}</span>
+                      {totalServices > 0 && (
+                        <Badge variant="secondary" className="text-xs ml-auto">
+                          {totalServices}
+                        </Badge>
+                      )}
                     </div>
                   </SelectItem>
-                  {Object.entries(departments).map(([key, dept]) => {
-                    const Icon = dept.icon
-                    const count = mockServices.filter((service) => service.department === key).length
-                    return (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center space-x-2">
-                            <Icon className="h-4 w-4" />
-                            <span>{dept.name}</span>
-                          </div>
-                          <Badge variant="secondary" className="ml-2">
-                            {count}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
 
-            {selectedDeptInfo && (
-              <div className="lg:col-span-2">
-                <div className="flex items-center space-x-4 p-3 bg-muted/50 rounded-lg">
-                  <selectedDeptInfo.icon className="h-8 w-8 text-primary" />
-                  <div>
-                    <div className="font-medium">{selectedDeptInfo.name} Department</div>
-                    <div className="text-sm text-muted-foreground">{selectedDeptInfo.description}</div>
-                  </div>
-                  <div className="ml-auto flex items-center space-x-4 text-sm">
-                    <div className="text-center">
-                      <div className="font-medium">{selectedDeptInfo.staff}</div>
-                      <div className="text-muted-foreground">Staff</div>
+        {/* Selected Department Info */}
+        {selectedDepartment !== "all" && (
+          <Card className={`${selectedDeptInfo.bgColor} border-l-4 border-l-current ${selectedDeptInfo.color}`}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <selectedDeptInfo.icon className={`h-5 w-5 ${selectedDeptInfo.color} mt-0.5`} />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{selectedDeptInfo.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{selectedDeptInfo.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{selectedDeptInfo.staff} staff</span>
                     </div>
-                    <div className="text-center">
-                      <div className="font-medium">{selectedDeptInfo.avgWaitTime}</div>
-                      <div className="text-muted-foreground">Avg Wait</div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{selectedDeptInfo.avgWaitTime} avg wait</span>
                     </div>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {statusCounts.pending} Pending
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {statusCounts.inProgress} Active
+                  </Badge>
+                </div>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Overview Cards for Selected Department */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Awaiting processing</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <TestTube className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{inProgressCount}</div>
-            <p className="text-xs text-muted-foreground">Currently processing</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedCount}</div>
-            <p className="text-xs text-muted-foreground">Results available</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Stethoscope className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{totalCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {selectedDepartment === "all" ? "All departments" : selectedDeptInfo?.name}
-            </p>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Department Info Card (when specific department is selected) */}
-      {selectedDeptInfo && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <selectedDeptInfo.icon className="h-5 w-5" />
-              {selectedDeptInfo.name} Department
-            </CardTitle>
-            <CardDescription>{selectedDeptInfo.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm font-medium">Staff</div>
-                  <div className="text-lg font-bold">{selectedDeptInfo.staff}</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm font-medium">Avg Wait Time</div>
-                  <div className="text-lg font-bold">{selectedDeptInfo.avgWaitTime}</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <TestTube className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm font-medium">Services Available</div>
-                  <div className="text-lg font-bold">{selectedDeptInfo.services.length}</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-sm font-medium mb-2">Available Services:</div>
-              <div className="flex flex-wrap gap-1">
-                {selectedDeptInfo.services.map((service) => (
-                  <Badge key={service} variant="outline" className="text-xs">
-                    {service}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Filters */}
+      {/* Services Management */}
       <Card>
         <CardHeader>
-          <CardTitle>Filter Services</CardTitle>
-          <CardDescription>
-            Search and filter services
-            {selectedDepartment !== "all" && ` in ${selectedDeptInfo?.name} department`}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <selectedDeptInfo.icon className={`h-5 w-5 ${selectedDeptInfo.color}`} />
+                {selectedDepartment === "all" ? "All Services" : `${selectedDeptInfo.name} Services`}
+              </CardTitle>
+              <CardDescription>
+                {selectedDepartment === "all"
+                  ? "View and manage services across all departments"
+                  : `Manage ${selectedDeptInfo.name.toLowerCase()} services and procedures`}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                {statusCounts.pending} Pending
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {statusCounts.inProgress} Active
+              </Badge>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                {statusCounts.completed} Completed
+              </Badge>
+            </div>
+          </div>
         </CardHeader>
+
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <div className="lg:col-span-2">
+          {/* Filters and Search */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by patient, service, or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  placeholder="Search by patient name, ID, or service..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Priority</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
                 <SelectItem value="urgent">Urgent</SelectItem>
-                <SelectItem value="routine">Routine</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={clearAllFilters} className="bg-transparent">
-              Clear Filters
-            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Services Table with Tabs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {selectedDepartment === "all" ? "All Medical Services" : `${selectedDeptInfo?.name} Services`}
-          </CardTitle>
-          <CardDescription>
-            Manage and track service requests
-            {selectedDepartment !== "all" && ` for ${selectedDeptInfo?.name} department`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All ({totalCount})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({pendingCount})</TabsTrigger>
-              <TabsTrigger value="inprogress">In Progress ({inProgressCount})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
-            </TabsList>
+          {/* Services List */}
+          <div className="space-y-3">
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <TestTube className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="font-medium">No services found</p>
+                <p className="text-sm">Try adjusting your filters or search criteria</p>
+              </div>
+            ) : (
+              filteredServices.map((service) => {
+                const deptInfo = departments[service.department as keyof typeof departments]
+                const DeptIcon = deptInfo.icon
 
-            <TabsContent value={activeTab} className="mt-4">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Service Details</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Prescribed By</TableHead>
-                      <TableHead>Schedule</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredServices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          No services found matching your criteria
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredServices.map((service) => (
-                        <TableRow key={service.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{service.patientName}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {service.patientId} • Age {service.age}
+                return (
+                  <Card key={service.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${deptInfo.bgColor}`}>
+                            <DeptIcon className={`h-5 w-5 ${deptInfo.color}`} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-gray-900">{service.patientName}</h3>
+                              <Badge variant="outline" className="text-xs">
+                                {service.patientId}
+                              </Badge>
+                              {getPriorityBadge(service.priority)}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span className="font-medium">{service.service}</span>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                <span>{service.room}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span>{service.technician}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>{service.requestTime}</span>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{service.serviceName}</div>
-                              <div className="text-sm text-muted-foreground">{service.serviceCode}</div>
-                              {service.room && (
-                                <div className="text-xs text-muted-foreground">Room: {service.room}</div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {getDepartmentBadge(service.department)}
-                              {service.technician && (
-                                <div className="text-xs text-muted-foreground">Tech: {service.technician}</div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{service.prescribedBy}</div>
-                            <div className="text-xs text-muted-foreground">{service.estimatedDuration}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="text-sm">Prescribed: {service.prescribedDate}</div>
-                              <div className="text-sm text-muted-foreground">Due: {service.dueDate}</div>
-                              {service.completedDate && (
-                                <div className="text-sm text-green-600">Completed: {service.completedDate}</div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{getPriorityBadge(service.priority)}</TableCell>
-                          <TableCell>{getStatusBadge(service.status)}</TableCell>
-                          <TableCell>{getActionButton(service)}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          </Tabs>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {getStatusBadge(service.status)}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem>
+                                <Play className="mr-2 h-4 w-4" />
+                                Start Service
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Mark Complete
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <AlertCircle className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

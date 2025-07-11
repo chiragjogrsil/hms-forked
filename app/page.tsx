@@ -633,7 +633,7 @@ export default function Dashboard() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="border-teal-200 text-teal-600 hover:bg-teal-50 font-medium"
+                className="border-teal-200 text-teal-600 hover:bg-teal-50 font-medium bg-transparent"
               >
                 <Link href="/appointments/list">
                   View All
