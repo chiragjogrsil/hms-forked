@@ -8,50 +8,90 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, TestTube, Clock, CheckCircle, AlertCircle, Camera, Stethoscope, Heart, Brain, Eye } from "lucide-react"
+import {
+  Search,
+  TestTube,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Camera,
+  Stethoscope,
+  Heart,
+  Brain,
+  Eye,
+  Filter,
+  Users,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-// Service types configuration
-const serviceTypes = {
+// Department configuration with detailed information
+const departments = {
   laboratory: {
-    name: "Laboratory Tests",
+    name: "Laboratory",
     icon: TestTube,
     color: "blue",
-    departments: ["Hematology", "Biochemistry", "Microbiology", "Pathology", "Immunology"],
+    description: "Blood tests, urine analysis, and diagnostic testing",
+    services: [
+      "Complete Blood Count",
+      "Liver Function Test",
+      "Kidney Function Test",
+      "Lipid Profile",
+      "Thyroid Function",
+      "Blood Sugar",
+      "Urine Analysis",
+      "Stool Analysis",
+    ],
+    staff: 12,
+    avgWaitTime: "15 mins",
   },
   radiology: {
-    name: "Imaging Studies",
+    name: "Radiology",
     icon: Camera,
     color: "purple",
-    departments: ["X-Ray", "CT Scan", "MRI", "Ultrasound", "Nuclear Medicine"],
+    description: "Medical imaging and diagnostic scans",
+    services: ["X-Ray", "CT Scan", "MRI", "Ultrasound", "Mammography", "Bone Density", "Nuclear Medicine"],
+    staff: 8,
+    avgWaitTime: "25 mins",
   },
   cardiology: {
-    name: "Cardiac Tests",
+    name: "Cardiology",
     icon: Heart,
     color: "red",
-    departments: ["ECG", "Echo", "Stress Test", "Holter Monitor", "Cardiac Catheterization"],
+    description: "Heart and cardiovascular system diagnostics",
+    services: ["ECG", "Echocardiogram", "Stress Test", "Holter Monitor", "Cardiac Catheterization", "Angiography"],
+    staff: 6,
+    avgWaitTime: "20 mins",
   },
   neurology: {
-    name: "Neurological Tests",
+    name: "Neurology",
     icon: Brain,
     color: "green",
-    departments: ["EEG", "EMG", "Nerve Conduction", "Sleep Study", "Neuropsychological"],
+    description: "Nervous system and brain diagnostics",
+    services: ["EEG", "EMG", "Nerve Conduction", "Sleep Study", "Neuropsychological Testing", "Brain Mapping"],
+    staff: 4,
+    avgWaitTime: "30 mins",
   },
   ophthalmology: {
-    name: "Eye Examinations",
+    name: "Ophthalmology",
     icon: Eye,
     color: "amber",
-    departments: ["Visual Field", "OCT", "Fundus Photography", "Tonometry", "Refraction"],
+    description: "Eye examinations and vision testing",
+    services: ["Visual Field Test", "OCT", "Fundus Photography", "Tonometry", "Refraction", "Color Vision Test"],
+    staff: 5,
+    avgWaitTime: "18 mins",
   },
   general: {
-    name: "General Tests",
+    name: "General Services",
     icon: Stethoscope,
     color: "gray",
-    departments: ["Pulmonary Function", "Audiometry", "Endoscopy", "Biopsy", "Other"],
+    description: "General medical procedures and tests",
+    services: ["Pulmonary Function", "Audiometry", "Endoscopy", "Biopsy", "Vaccination", "Health Checkup"],
+    staff: 10,
+    avgWaitTime: "12 mins",
   },
 }
 
-// Mock data for all types of tests/services
+// Enhanced mock data with more realistic department distribution
 const mockServices = [
   // Laboratory Tests
   {
@@ -61,8 +101,7 @@ const mockServices = [
     age: 45,
     serviceName: "Complete Blood Count",
     serviceCode: "CBC",
-    serviceType: "laboratory",
-    department: "Hematology",
+    department: "laboratory",
     prescribedBy: "Dr. Smith",
     prescribedDate: "2024-01-15",
     priority: "Routine",
@@ -70,6 +109,8 @@ const mockServices = [
     dueDate: "2024-01-16",
     estimatedDuration: "30 mins",
     notes: "Check for anemia and infection markers",
+    technician: null,
+    room: "Lab-A1",
   },
   {
     id: "LAB002",
@@ -78,8 +119,7 @@ const mockServices = [
     age: 32,
     serviceName: "Liver Function Test",
     serviceCode: "LFT",
-    serviceType: "laboratory",
-    department: "Biochemistry",
+    department: "laboratory",
     prescribedBy: "Dr. Johnson",
     prescribedDate: "2024-01-15",
     priority: "Urgent",
@@ -88,6 +128,26 @@ const mockServices = [
     estimatedDuration: "45 mins",
     technician: "Tech. Patel",
     notes: "Elevated enzymes in previous test",
+    room: "Lab-B2",
+  },
+  {
+    id: "LAB003",
+    patientName: "Michael Brown",
+    patientId: "P009",
+    age: 28,
+    serviceName: "Thyroid Function Test",
+    serviceCode: "TFT",
+    department: "laboratory",
+    prescribedBy: "Dr. Wilson",
+    prescribedDate: "2024-01-14",
+    priority: "Routine",
+    status: "Completed",
+    dueDate: "2024-01-15",
+    completedDate: "2024-01-15",
+    estimatedDuration: "25 mins",
+    technician: "Tech. Kumar",
+    notes: "Follow-up for hyperthyroidism",
+    room: "Lab-A1",
   },
   // Radiology Tests
   {
@@ -97,8 +157,7 @@ const mockServices = [
     age: 28,
     serviceName: "Chest X-Ray",
     serviceCode: "CXR",
-    serviceType: "radiology",
-    department: "X-Ray",
+    department: "radiology",
     prescribedBy: "Dr. Brown",
     prescribedDate: "2024-01-14",
     priority: "Routine",
@@ -108,6 +167,7 @@ const mockServices = [
     estimatedDuration: "15 mins",
     technician: "Rad. Tech Kumar",
     notes: "Follow-up for pneumonia",
+    room: "X-Ray Room 1",
   },
   {
     id: "RAD002",
@@ -116,8 +176,7 @@ const mockServices = [
     age: 55,
     serviceName: "Brain MRI",
     serviceCode: "MRI-BRAIN",
-    serviceType: "radiology",
-    department: "MRI",
+    department: "radiology",
     prescribedBy: "Dr. Wilson",
     prescribedDate: "2024-01-15",
     priority: "Urgent",
@@ -125,6 +184,25 @@ const mockServices = [
     dueDate: "2024-01-16",
     estimatedDuration: "60 mins",
     notes: "Investigate headaches and dizziness",
+    room: "MRI Suite 1",
+  },
+  {
+    id: "RAD003",
+    patientName: "Emma Johnson",
+    patientId: "P010",
+    age: 42,
+    serviceName: "Abdominal Ultrasound",
+    serviceCode: "USG-ABD",
+    department: "radiology",
+    prescribedBy: "Dr. Martinez",
+    prescribedDate: "2024-01-15",
+    priority: "Routine",
+    status: "In Progress",
+    dueDate: "2024-01-15",
+    estimatedDuration: "30 mins",
+    technician: "Rad. Tech Singh",
+    notes: "Abdominal pain evaluation",
+    room: "Ultrasound Room 2",
   },
   // Cardiology Tests
   {
@@ -134,8 +212,7 @@ const mockServices = [
     age: 38,
     serviceName: "Electrocardiogram",
     serviceCode: "ECG",
-    serviceType: "cardiology",
-    department: "ECG",
+    department: "cardiology",
     prescribedBy: "Dr. Davis",
     prescribedDate: "2024-01-15",
     priority: "Urgent",
@@ -144,6 +221,7 @@ const mockServices = [
     estimatedDuration: "20 mins",
     technician: "Cardiac Tech Singh",
     notes: "Chest pain evaluation",
+    room: "Cardio Room 1",
   },
   {
     id: "CAR002",
@@ -152,8 +230,7 @@ const mockServices = [
     age: 42,
     serviceName: "Echocardiogram",
     serviceCode: "ECHO",
-    serviceType: "cardiology",
-    department: "Echo",
+    department: "cardiology",
     prescribedBy: "Dr. Martinez",
     prescribedDate: "2024-01-14",
     priority: "Routine",
@@ -163,6 +240,7 @@ const mockServices = [
     estimatedDuration: "45 mins",
     technician: "Echo Tech Patel",
     notes: "Routine cardiac assessment",
+    room: "Echo Room 1",
   },
   // Neurology Tests
   {
@@ -172,8 +250,7 @@ const mockServices = [
     age: 35,
     serviceName: "Electroencephalogram",
     serviceCode: "EEG",
-    serviceType: "neurology",
-    department: "EEG",
+    department: "neurology",
     prescribedBy: "Dr. Thompson",
     prescribedDate: "2024-01-15",
     priority: "Routine",
@@ -181,6 +258,7 @@ const mockServices = [
     dueDate: "2024-01-16",
     estimatedDuration: "90 mins",
     notes: "Seizure evaluation",
+    room: "Neuro Lab 1",
   },
   // Ophthalmology Tests
   {
@@ -190,8 +268,7 @@ const mockServices = [
     age: 60,
     serviceName: "Optical Coherence Tomography",
     serviceCode: "OCT",
-    serviceType: "ophthalmology",
-    department: "OCT",
+    department: "ophthalmology",
     prescribedBy: "Dr. Lee",
     prescribedDate: "2024-01-15",
     priority: "Routine",
@@ -200,6 +277,25 @@ const mockServices = [
     estimatedDuration: "30 mins",
     technician: "Ophthalmic Tech Wilson",
     notes: "Diabetic retinopathy screening",
+    room: "Eye Exam Room 2",
+  },
+  // General Services
+  {
+    id: "GEN001",
+    patientName: "Alex Thompson",
+    patientId: "P011",
+    age: 25,
+    serviceName: "Pulmonary Function Test",
+    serviceCode: "PFT",
+    department: "general",
+    prescribedBy: "Dr. Adams",
+    prescribedDate: "2024-01-15",
+    priority: "Routine",
+    status: "Pending",
+    dueDate: "2024-01-16",
+    estimatedDuration: "40 mins",
+    notes: "Asthma evaluation",
+    room: "PFT Room 1",
   },
 ]
 
@@ -207,18 +303,9 @@ export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [serviceTypeFilter, setServiceTypeFilter] = useState("all")
-  const [departmentFilter, setDepartmentFilter] = useState("all")
+  const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [activeTab, setActiveTab] = useState("all")
   const { toast } = useToast()
-
-  // Get available departments based on selected service type
-  const getAvailableDepartments = () => {
-    if (serviceTypeFilter === "all") {
-      return Object.values(serviceTypes).flatMap((type) => type.departments)
-    }
-    return serviceTypes[serviceTypeFilter as keyof typeof serviceTypes]?.departments || []
-  }
 
   // Filter services based on search and filters
   const filteredServices = mockServices.filter((service) => {
@@ -230,23 +317,35 @@ export default function ServicesPage() {
 
     const matchesStatus = statusFilter === "all" || service.status.toLowerCase() === statusFilter.toLowerCase()
     const matchesPriority = priorityFilter === "all" || service.priority.toLowerCase() === priorityFilter.toLowerCase()
-    const matchesServiceType = serviceTypeFilter === "all" || service.serviceType === serviceTypeFilter
-    const matchesDepartment = departmentFilter === "all" || service.department === departmentFilter
+    const matchesDepartment = selectedDepartment === "all" || service.department === selectedDepartment
     const matchesTab = activeTab === "all" || service.status.toLowerCase().replace(" ", "") === activeTab.toLowerCase()
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesServiceType && matchesDepartment && matchesTab
+    return matchesSearch && matchesStatus && matchesPriority && matchesDepartment && matchesTab
   })
 
   // Get counts for overview cards
-  const pendingCount = mockServices.filter((service) => service.status === "Pending").length
-  const inProgressCount = mockServices.filter((service) => service.status === "In Progress").length
-  const completedCount = mockServices.filter((service) => service.status === "Completed").length
+  const getStatusCount = (status: string) => {
+    const filtered =
+      selectedDepartment === "all" ? mockServices : mockServices.filter((s) => s.department === selectedDepartment)
+    return filtered.filter((service) => service.status === status).length
+  }
 
-  // Get service type statistics
-  const serviceTypeStats = Object.keys(serviceTypes).map((type) => ({
-    type,
-    count: mockServices.filter((service) => service.serviceType === type).length,
-    ...serviceTypes[type as keyof typeof serviceTypes],
+  const pendingCount = getStatusCount("Pending")
+  const inProgressCount = getStatusCount("In Progress")
+  const completedCount = getStatusCount("Completed")
+  const totalCount =
+    selectedDepartment === "all"
+      ? mockServices.length
+      : mockServices.filter((s) => s.department === selectedDepartment).length
+
+  // Get department statistics
+  const departmentStats = Object.entries(departments).map(([key, dept]) => ({
+    key,
+    ...dept,
+    count: mockServices.filter((service) => service.department === key).length,
+    pending: mockServices.filter((service) => service.department === key && service.status === "Pending").length,
+    inProgress: mockServices.filter((service) => service.department === key && service.status === "In Progress").length,
+    completed: mockServices.filter((service) => service.department === key && service.status === "Completed").length,
   }))
 
   const handleStartService = (serviceId: string, serviceName: string, patientName: string) => {
@@ -312,11 +411,11 @@ export default function ServicesPage() {
     )
   }
 
-  const getServiceTypeBadge = (serviceType: string) => {
-    const type = serviceTypes[serviceType as keyof typeof serviceTypes]
-    if (!type) return <Badge variant="outline">{serviceType}</Badge>
+  const getDepartmentBadge = (departmentKey: string) => {
+    const dept = departments[departmentKey as keyof typeof departments]
+    if (!dept) return <Badge variant="outline">{departmentKey}</Badge>
 
-    const Icon = type.icon
+    const Icon = dept.icon
     const colorClasses = {
       blue: "bg-blue-100 text-blue-800",
       purple: "bg-purple-100 text-purple-800",
@@ -327,9 +426,9 @@ export default function ServicesPage() {
     }
 
     return (
-      <Badge variant="secondary" className={colorClasses[type.color as keyof typeof colorClasses]}>
+      <Badge variant="secondary" className={colorClasses[dept.color as keyof typeof colorClasses]}>
         <Icon className="w-3 h-3 mr-1" />
-        {type.name}
+        {dept.name}
       </Badge>
     )
   }
@@ -363,7 +462,7 @@ export default function ServicesPage() {
             variant="outline"
             onClick={() => handleViewResults(service.id, service.serviceName, service.patientName)}
           >
-            View
+            View Results
           </Button>
         )
       default:
@@ -375,25 +474,76 @@ export default function ServicesPage() {
     setSearchTerm("")
     setStatusFilter("all")
     setPriorityFilter("all")
-    setServiceTypeFilter("all")
-    setDepartmentFilter("all")
+    setSelectedDepartment("all")
   }
+
+  const selectedDeptInfo =
+    selectedDepartment !== "all" ? departments[selectedDepartment as keyof typeof departments] : null
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Medical Services</h2>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Medical Services</h2>
+          {selectedDeptInfo && (
+            <p className="text-muted-foreground mt-1">
+              {selectedDeptInfo.name} Department - {selectedDeptInfo.description}
+            </p>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           <TestTube className="h-5 w-5" />
-          <span className="text-sm text-muted-foreground">Multi-Department Service Dashboard</span>
+          <span className="text-sm text-muted-foreground">
+            {selectedDepartment === "all" ? "All Departments" : selectedDeptInfo?.name}
+          </span>
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+      {/* Department Selection Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md ${selectedDepartment === "all" ? "ring-2 ring-primary" : ""}`}
+          onClick={() => setSelectedDepartment("all")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">All Departments</CardTitle>
+            <Filter className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockServices.length}</div>
+            <p className="text-xs text-muted-foreground">Total Services</p>
+          </CardContent>
+        </Card>
+
+        {departmentStats.map((dept) => {
+          const Icon = dept.icon
+          const isSelected = selectedDepartment === dept.key
+          return (
+            <Card
+              key={dept.key}
+              className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary" : ""}`}
+              onClick={() => setSelectedDepartment(dept.key)}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{dept.name}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{dept.count}</div>
+                <p className="text-xs text-muted-foreground">
+                  {dept.pending}P • {dept.inProgress}IP • {dept.completed}C
+                </p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Overview Cards for Selected Department */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Services</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
@@ -423,48 +573,77 @@ export default function ServicesPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Services</CardTitle>
+            <CardTitle className="text-sm font-medium">Total</CardTitle>
             <Stethoscope className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{mockServices.length}</div>
-            <p className="text-xs text-muted-foreground">All departments</p>
+            <div className="text-2xl font-bold text-gray-600">{totalCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {selectedDepartment === "all" ? "All departments" : selectedDeptInfo?.name}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Service Type Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Service Types Overview</CardTitle>
-          <CardDescription>Distribution of services across different departments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-            {serviceTypeStats.map((stat) => {
-              const Icon = stat.icon
-              return (
-                <div key={stat.type} className="flex items-center space-x-2 p-2 rounded-lg border">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm font-medium">{stat.name}</div>
-                    <div className="text-lg font-bold">{stat.count}</div>
-                  </div>
+      {/* Department Info Card (when specific department is selected) */}
+      {selectedDeptInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <selectedDeptInfo.icon className="h-5 w-5" />
+              {selectedDeptInfo.name} Department
+            </CardTitle>
+            <CardDescription>{selectedDeptInfo.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium">Staff</div>
+                  <div className="text-lg font-bold">{selectedDeptInfo.staff}</div>
                 </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium">Avg Wait Time</div>
+                  <div className="text-lg font-bold">{selectedDeptInfo.avgWaitTime}</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TestTube className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium">Services Available</div>
+                  <div className="text-lg font-bold">{selectedDeptInfo.services.length}</div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-2">Available Services:</div>
+              <div className="flex flex-wrap gap-1">
+                {selectedDeptInfo.services.map((service) => (
+                  <Badge key={service} variant="outline" className="text-xs">
+                    {service}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Filter Services</CardTitle>
-          <CardDescription>Search and filter medical services across all departments</CardDescription>
+          <CardDescription>
+            Search and filter services
+            {selectedDepartment !== "all" && ` in ${selectedDeptInfo?.name} department`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -476,32 +655,6 @@ export default function ServicesPage() {
                 />
               </div>
             </div>
-            <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Service Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(serviceTypes).map(([key, type]) => (
-                  <SelectItem key={key} value={key}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {getAvailableDepartments().map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -523,10 +676,8 @@ export default function ServicesPage() {
                 <SelectItem value="routine">Routine</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="mt-4">
-            <Button variant="outline" onClick={clearAllFilters} className="w-full md:w-auto bg-transparent">
-              Clear All Filters
+            <Button variant="outline" onClick={clearAllFilters} className="bg-transparent">
+              Clear Filters
             </Button>
           </div>
         </CardContent>
@@ -535,13 +686,18 @@ export default function ServicesPage() {
       {/* Services Table with Tabs */}
       <Card>
         <CardHeader>
-          <CardTitle>Medical Services</CardTitle>
-          <CardDescription>Manage medical services across all departments and specialties</CardDescription>
+          <CardTitle>
+            {selectedDepartment === "all" ? "All Medical Services" : `${selectedDeptInfo?.name} Services`}
+          </CardTitle>
+          <CardDescription>
+            Manage and track service requests
+            {selectedDepartment !== "all" && ` for ${selectedDeptInfo?.name} department`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All Services ({mockServices.length})</TabsTrigger>
+              <TabsTrigger value="all">All ({totalCount})</TabsTrigger>
               <TabsTrigger value="pending">Pending ({pendingCount})</TabsTrigger>
               <TabsTrigger value="inprogress">In Progress ({inProgressCount})</TabsTrigger>
               <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
@@ -554,9 +710,9 @@ export default function ServicesPage() {
                     <TableRow>
                       <TableHead>Patient</TableHead>
                       <TableHead>Service Details</TableHead>
-                      <TableHead>Type & Department</TableHead>
+                      <TableHead>Department</TableHead>
                       <TableHead>Prescribed By</TableHead>
-                      <TableHead>Dates</TableHead>
+                      <TableHead>Schedule</TableHead>
                       <TableHead>Priority</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -584,26 +740,22 @@ export default function ServicesPage() {
                             <div>
                               <div className="font-medium">{service.serviceName}</div>
                               <div className="text-sm text-muted-foreground">{service.serviceCode}</div>
-                              {service.estimatedDuration && (
-                                <div className="text-xs text-muted-foreground">
-                                  Duration: {service.estimatedDuration}
-                                </div>
+                              {service.room && (
+                                <div className="text-xs text-muted-foreground">Room: {service.room}</div>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1">
-                              {getServiceTypeBadge(service.serviceType)}
-                              <div className="text-sm text-muted-foreground">{service.department}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="text-sm">{service.prescribedBy}</div>
+                              {getDepartmentBadge(service.department)}
                               {service.technician && (
                                 <div className="text-xs text-muted-foreground">Tech: {service.technician}</div>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{service.prescribedBy}</div>
+                            <div className="text-xs text-muted-foreground">{service.estimatedDuration}</div>
                           </TableCell>
                           <TableCell>
                             <div>
