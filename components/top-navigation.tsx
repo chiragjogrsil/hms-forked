@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Stethoscope, Settings, ChevronDown, User, LogOut, HelpCircle } from "lucide-react"
+import { Stethoscope, Settings, ChevronDown, User, LogOut, HelpCircle, TestTube, Zap } from "lucide-react"
 
 export function TopNavigation() {
   const pathname = usePathname()
@@ -25,10 +25,8 @@ export function TopNavigation() {
   }
 
   const servicesItems = [
-    { href: "/appointments", label: "Appointments" },
-    { href: "/billing", label: "Billing" },
-    { href: "/pharmacy", label: "Pharmacy" },
-    { href: "/reports", label: "Reports" },
+    { href: "/services/laboratory", label: "Laboratory Tests", icon: TestTube },
+    { href: "/services/radiology", label: "Radiology Tests", icon: Zap },
   ]
 
   return (
@@ -75,16 +73,20 @@ export function TopNavigation() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
-              {servicesItems.map((item) => (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link
-                    href={item.href}
-                    className={`w-full ${isActive(item.href) ? "bg-accent text-accent-foreground" : ""}`}
-                  >
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+              {servicesItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <DropdownMenuItem key={item.href} asChild>
+                    <Link
+                      href={item.href}
+                      className={`w-full flex items-center gap-2 ${isActive(item.href) ? "bg-accent text-accent-foreground" : ""}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
