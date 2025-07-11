@@ -10,8 +10,8 @@ export default function ServicesLoading() {
       </div>
 
       {/* Overview Cards Skeleton */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -25,6 +25,27 @@ export default function ServicesLoading() {
         ))}
       </div>
 
+      {/* Service Type Statistics Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-96" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-2 p-2 rounded-lg border">
+                <Skeleton className="h-4 w-4" />
+                <div>
+                  <Skeleton className="h-4 w-16 mb-1" />
+                  <Skeleton className="h-6 w-8" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters Skeleton */}
       <Card>
         <CardHeader>
@@ -32,11 +53,16 @@ export default function ServicesLoading() {
           <Skeleton className="h-4 w-96" />
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-            <Skeleton className="h-10 flex-1" />
-            <Skeleton className="h-10 w-[180px]" />
-            <Skeleton className="h-10 w-[180px]" />
-            <Skeleton className="h-10 w-[180px]" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <div className="lg:col-span-2">
+              <Skeleton className="h-10 w-full" />
+            </div>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+          <div className="mt-4">
+            <Skeleton className="h-10 w-32" />
           </div>
         </CardContent>
       </Card>
