@@ -41,12 +41,10 @@ export function NewConsultationModal({ isOpen, onClose, patientId, patientName }
     { value: "ophthalmology", label: "Ophthalmology" },
   ]
 
-  // Removed "follow-up" since it's now handled in the dedicated follow-up section
   const consultationTypes = [
     { value: "emergency", label: "Emergency" },
+    { value: "follow-up", label: "Follow up" },
     { value: "routine", label: "Routine checkup" },
-    { value: "screening", label: "Health screening" },
-    { value: "consultation", label: "General consultation" },
   ]
 
   return (
@@ -125,17 +123,6 @@ export function NewConsultationModal({ isOpen, onClose, patientId, patientName }
               <div className="bg-gray-50 p-3 rounded-lg border">
                 <p className="text-sm font-medium">{formData.doctor}</p>
                 <p className="text-xs text-gray-600">Current Session Doctor</p>
-              </div>
-            </div>
-
-            {/* Info about follow-up consultations */}
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="flex items-start gap-2">
-                <div className="text-blue-600 text-xs font-medium mt-0.5">💡 Note:</div>
-                <div className="text-xs text-blue-700">
-                  <strong>For follow-up consultations:</strong> Use the dedicated "Follow-up Consultation" section to
-                  load previous visit data and continue patient care.
-                </div>
               </div>
             </div>
           </form>

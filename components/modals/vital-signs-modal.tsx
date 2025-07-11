@@ -225,7 +225,7 @@ export default function VitalSignsModal({
                 <FormItem>
                   <FormLabel>Additional Notes</FormLabel>
                   <FormControl>
-                    <Input placeholder="Any additional observations or notes" {...field} />
+                    <Input placeholder="Any additional observations" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

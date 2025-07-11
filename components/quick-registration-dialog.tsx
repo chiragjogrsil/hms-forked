@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { useEffect } from "react"
 
@@ -155,11 +155,7 @@ export function QuickRegistrationDialog({ open, onOpenChange, onPatientRegistere
                   <FormItem>
                     <FormLabel>First Name *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="John"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                      />
+                      <Input placeholder="John" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -173,11 +169,7 @@ export function QuickRegistrationDialog({ open, onOpenChange, onPatientRegistere
                   <FormItem>
                     <FormLabel>Last Name *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Doe"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                      />
+                      <Input placeholder="Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -192,11 +184,7 @@ export function QuickRegistrationDialog({ open, onOpenChange, onPatientRegistere
                 <FormItem>
                   <FormLabel>C/O (Care Of)</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Guardian or caretaker name"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                    />
+                    <Input placeholder="Guardian or caretaker name" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -279,11 +267,7 @@ export function QuickRegistrationDialog({ open, onOpenChange, onPatientRegistere
                   <FormItem>
                     <FormLabel>Mobile Number *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="+91 9876543210"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                      />
+                      <Input placeholder="+91 9876543210" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -323,11 +307,7 @@ export function QuickRegistrationDialog({ open, onOpenChange, onPatientRegistere
                 <FormItem>
                   <FormLabel>Reason for Visit *</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Brief description of the reason for visit"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                    />
+                    <Input placeholder="Brief description of the reason for visit" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

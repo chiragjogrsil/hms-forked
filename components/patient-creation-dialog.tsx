@@ -4,7 +4,8 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Calendar, User, Phone, MapPin, Heart, FileText, Save, X, CalendarIcon } from 'lucide-react'
+import { CalendarIcon, User, Phone, MapPin, Heart, FileText, Save, X } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -13,7 +14,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -338,11 +338,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>First Name *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="John"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Input placeholder="John" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -355,11 +351,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Last Name *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Doe"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Input placeholder="Doe" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -374,11 +366,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                       <FormItem>
                         <FormLabel>C/O (Care Of)</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Guardian or caretaker name"
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                          />
+                          <Input placeholder="Guardian or caretaker name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -407,7 +395,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                               </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
+                              <Calendar
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
@@ -463,11 +451,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Mobile Number *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="+91 9876543210"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Input placeholder="+91 9876543210" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -521,11 +505,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Address *</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Enter complete address"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Textarea placeholder="Enter complete address" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -539,11 +519,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Email ID</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="john.doe@example.com"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Input placeholder="john.doe@example.com" {...field} />
                           </FormControl>
                           <FormDescription>Optional, for sending reports and receipts</FormDescription>
                           <FormMessage />
@@ -568,11 +544,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Emergency Contact Name *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Contact person name"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Input placeholder="Contact person name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -587,11 +559,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>Emergency Contact Phone *</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="+91 9876543210"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="+91 9876543210" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -649,11 +617,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>Aadhaar ID</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="1234 5678 9012"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="1234 5678 9012" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -697,11 +661,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>Occupation</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="Patient's occupation"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="Patient's occupation" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -715,11 +675,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>File Number</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="File reference number"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="File reference number" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -735,11 +691,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>Referred By</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="Doctor or referrer name"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="Doctor or referrer name" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -753,11 +705,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                           <FormItem>
                             <FormLabel>Referrer's Phone</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="+91 9876543210"
-                                value={field.value || ""}
-                                onChange={field.onChange}
-                              />
+                              <Input placeholder="+91 9876543210" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -782,11 +730,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Known Allergies</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="List any known allergies (comma separated)"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Textarea placeholder="List any known allergies (comma separated)" {...field} />
                           </FormControl>
                           <FormDescription>e.g., Penicillin, Shellfish, Peanuts</FormDescription>
                           <FormMessage />
@@ -801,11 +745,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Medical History</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Previous medical conditions (comma separated)"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Textarea placeholder="Previous medical conditions (comma separated)" {...field} />
                           </FormControl>
                           <FormDescription>e.g., Diabetes, Hypertension, Heart Disease</FormDescription>
                           <FormMessage />
@@ -820,11 +760,7 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                         <FormItem>
                           <FormLabel>Current Medications</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Current medications (comma separated)"
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                            />
+                            <Textarea placeholder="Current medications (comma separated)" {...field} />
                           </FormControl>
                           <FormDescription>e.g., Metformin 500mg, Lisinopril 10mg</FormDescription>
                           <FormMessage />

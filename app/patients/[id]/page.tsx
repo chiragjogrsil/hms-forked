@@ -43,7 +43,6 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { StreamlinedFollowUp } from "@/components/streamlined-follow-up"
 
 // Mock patient data
 const mockPatient = {
@@ -208,7 +207,6 @@ export default function PatientDetailsPage() {
   })
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
-  const [showFollowUpMode, setShowFollowUpMode] = useState(false)
 
   const handleScheduleMeeting = () => {
     const generatedLink =
@@ -740,271 +738,225 @@ export default function PatientDetailsPage() {
         </TabsContent>
 
         <TabsContent value="consultation" className="space-y-6">
-          {/* Add toggle buttons at the top */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Consultation Mode</h3>
-                  <p className="text-sm text-muted-foreground">Choose consultation type</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={!showFollowUpMode ? "default" : "outline"}
-                    onClick={() => setShowFollowUpMode(false)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Consultation
-                  </Button>
-                  <Button
-                    variant={showFollowUpMode ? "default" : "outline"}
-                    onClick={() => setShowFollowUpMode(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <History className="h-4 w-4" />
-                    Follow-up Mode
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Conditional rendering based on mode */}
-          {showFollowUpMode ? (
-            <StreamlinedFollowUp
-              patientId={patientId}
-              patientData={mockPatient}
-              department="general"
-              doctorName="Dr. Smith"
-              visitDate={new Date().toISOString().split("T")[0]}
-            />
-          ) : (
-            <>
-              {isConsultationActive && summary && (
-                <Card className="border-teal-200 bg-gradient-to-r from-slate-50 to-teal-50/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-teal-100/70 rounded-full">
-                          <Stethoscope className="h-5 w-5 text-teal-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-teal-800">Active Consultation</h3>
-                          <p className="text-sm text-teal-600">
-                            {summary.department} {summary.type} for visit on{" "}
-                            {new Date(summary.visitDate!).toLocaleDateString()}
-                            {hasUnsavedChanges && " - Auto-saving changes"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-800">
-                          In Progress
-                        </Badge>
-                      </div>
+          {isConsultationActive && summary && (
+            <Card className="border-teal-200 bg-gradient-to-r from-slate-50 to-teal-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-100/70 rounded-full">
+                      <Stethoscope className="h-5 w-5 text-teal-500" />
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-              {isConsultationActive ? (
-                <div className="space-y-6">
-                  <IntegratedConsultation
-                    key={consultationKey}
-                    patientId={patientId}
-                    patientData={mockPatient}
-                    department={activeConsultation?.department || "general"}
-                    doctorName={activeConsultation?.doctorName || "Dr. Smith"}
-                    onCompleteVisit={handleCompleteVisit}
-                  />
-
-                  {/* History Section */}
-                  {patientConsultations.length > 0 && (
-                    <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <History className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold text-slate-800">Previous Visits</h3>
-                            <p className="text-sm text-slate-600">Completed consultation history</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                          {patientConsultations.length} completed visits
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-4 max-h-96 overflow-y-auto">
-                        {patientConsultations.map((consultation, index) => (
-                          <div
-                            key={consultation.id}
-                            className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
-                                  <Stethoscope className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="font-semibold text-slate-800">
-                                    {consultation.chiefComplaint || "General Consultation"}
-                                  </h4>
-                                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      <span>{consultation.visitTime}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                                      {consultation.doctorName}
-                                    </Badge>
-                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                                      {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
-                                        consultation.department}
-                                    </Badge>
-                                  </div>
-                                  {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
-                                      <span className="text-sm text-slate-700">
-                                        {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
-                                  <FileTextIcon className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* No Active Consultation */}
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Active Consultation</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Start a new consultation to begin documenting the patient visit
+                    <div>
+                      <h3 className="font-semibold text-teal-800">Active Consultation</h3>
+                      <p className="text-sm text-teal-600">
+                        {summary.department} {summary.type} for visit on{" "}
+                        {new Date(summary.visitDate!).toLocaleDateString()}
+                        {hasUnsavedChanges && " - Auto-saving changes"}
                       </p>
-                      <Button onClick={handleNewConsultation} className="bg-teal-500 hover:bg-teal-600">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Start New Consultation
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* History Section */}
-                  <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                          <History className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold text-slate-800">Consultation History</h3>
-                          <p className="text-sm text-slate-600">Complete medical consultation records</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                        {patientConsultations.length} consultations
-                      </Badge>
                     </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="bg-slate-100 text-slate-800">
+                      In Progress
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {isConsultationActive ? (
+            <div className="space-y-6">
+              <IntegratedConsultation
+                key={consultationKey}
+                patientId={patientId}
+                patientData={mockPatient}
+                department={activeConsultation?.department || "general"}
+                doctorName={activeConsultation?.doctorName || "Dr. Smith"}
+                onCompleteVisit={handleCompleteVisit}
+              />
 
-                    <div className="space-y-4">
-                      {patientConsultations.length > 0 ? (
-                        patientConsultations.map((consultation, index) => (
-                          <div
-                            key={consultation.id}
-                            className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
-                                  <Stethoscope className="h-6 w-6 text-white" />
+              {/* History Section */}
+              {patientConsultations.length > 0 && (
+                <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <History className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-slate-800">Previous Visits</h3>
+                        <p className="text-sm text-slate-600">Completed consultation history</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                      {patientConsultations.length} completed visits
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {patientConsultations.map((consultation, index) => (
+                      <div
+                        key={consultation.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">
+                                {consultation.chiefComplaint || "General Consultation"}
+                              </h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
                                 </div>
-                                <div>
-                                  <h4 className="font-semibold text-slate-800">
-                                    {consultation.chiefComplaint || "General Consultation"}
-                                  </h4>
-                                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      <span>{consultation.visitTime}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                                      {consultation.doctorName}
-                                    </Badge>
-                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                                      {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
-                                        consultation.department}
-                                    </Badge>
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-purple-100 text-purple-800 border-purple-200"
-                                    >
-                                      {consultationTypeLabels[
-                                        consultation.consultationType as keyof typeof consultationTypeLabels
-                                      ] || consultation.consultationType}
-                                    </Badge>
-                                  </div>
-                                  {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
-                                      <span className="text-sm text-slate-700">
-                                        {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
-                                      </span>
-                                    </div>
-                                  )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{consultation.visitTime}</span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
-                                  <FileTextIcon className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                                  {consultation.doctorName}
+                                </Badge>
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                  {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
+                                    consultation.department}
+                                </Badge>
                               </div>
+                              {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
+                                <div className="mt-2">
+                                  <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
+                                  <span className="text-sm text-slate-700">
+                                    {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Stethoscope className="h-8 w-8 text-purple-600" />
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
                           </div>
-                          <p className="text-slate-600 font-medium">No consultation history yet</p>
-                          <p className="text-sm text-slate-500 mt-1">Completed consultations will appear here</p>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-            </>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* No Active Consultation */}
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Active Consultation</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Start a new consultation to begin documenting the patient visit
+                  </p>
+                  <Button onClick={handleNewConsultation} className="bg-teal-500 hover:bg-teal-600">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Start New Consultation
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* History Section */}
+              <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+                      <History className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-slate-800">Consultation History</h3>
+                      <p className="text-sm text-slate-600">Complete medical consultation records</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                    {patientConsultations.length} consultations
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {patientConsultations.length > 0 ? (
+                    patientConsultations.map((consultation, index) => (
+                      <div
+                        key={consultation.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">
+                                {consultation.chiefComplaint || "General Consultation"}
+                              </h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{consultation.visitTime}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                                  {consultation.doctorName}
+                                </Badge>
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                  {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
+                                    consultation.department}
+                                </Badge>
+                                <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                                  {consultationTypeLabels[
+                                    consultation.consultationType as keyof typeof consultationTypeLabels
+                                  ] || consultation.consultationType}
+                                </Badge>
+                              </div>
+                              {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
+                                <div className="mt-2">
+                                  <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
+                                  <span className="text-sm text-slate-700">
+                                    {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Stethoscope className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <p className="text-slate-600 font-medium">No consultation history yet</p>
+                      <p className="text-sm text-slate-500 mt-1">Completed consultations will appear here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         </TabsContent>
 
