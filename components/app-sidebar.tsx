@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, CreditCard, LayoutDashboard, Pill, Users } from "lucide-react"
+import { Activity, CreditCard, LayoutDashboard, Pill, Users, TestTube } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -21,6 +21,7 @@ export function AppSidebar() {
   const menuItems = [
     { title: "Appointment Dashboard", icon: LayoutDashboard, path: "/" },
     { title: "Patients", icon: Users, path: "/patients" },
+    { title: "Services", icon: TestTube, path: "/services" },
     { title: "Billing", icon: CreditCard, path: "/billing" },
     { title: "Pharmacy", icon: Pill, path: "/pharmacy" },
     { title: "Reports", icon: Activity, path: "/reports" },
