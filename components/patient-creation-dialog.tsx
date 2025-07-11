@@ -5,9 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { CalendarIcon, User, Phone, MapPin, Heart, FileText, Save, X } from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -15,9 +17,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
 // Enhanced form schema with comprehensive validation
 const patientFormSchema = z.object({
@@ -384,10 +385,11 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
-                                  variant="outline"
-                                  className={`w-full pl-3 text-left font-normal ${
-                                    !field.value && "text-muted-foreground"
-                                  }`}
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground",
+                                  )}
                                 >
                                   {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -398,9 +400,12 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                               <Calendar
                                 mode="single"
                                 selected={field.value}
-                                onSelect={field.onChange}
+                                onSelect={(date) => {
+                                  field.onChange(date)
+                                }}
                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                 initialFocus
+                                defaultMonth={field.value}
                               />
                             </PopoverContent>
                           </Popover>
@@ -802,15 +807,15 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                     className="bg-teal-500 hover:bg-teal-600"
                   >
                     {isSubmitting ? (
-                      <>
+                      <div className="flex items-center">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                         Creating...
-                      </>
+                      </div>
                     ) : (
-                      <>
+                      <div className="flex items-center">
                         <Save className="h-4 w-4 mr-2" />
                         Create Patient
-                      </>
+                      </div>
                     )}
                   </Button>
                 )}
