@@ -1,15 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Search, Plus, Package, TestTube } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
   DialogContent,
@@ -18,535 +15,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { TestTube, Search, AlertTriangle, Clock, DollarSign } from "lucide-react"
-import { toast } from "sonner"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { toast } from "@/components/ui/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 
-// Comprehensive lab tests database
+import { labTestPackages } from "@/data/lab-test-packages"
+
+// Available lab tests
 const labTests = [
-  // Hematology
-  {
-    id: "cbc",
-    name: "Complete Blood Count",
-    category: "Hematology",
-    price: 350,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Red blood cells, white blood cells, platelets, hemoglobin",
-  },
-  {
-    id: "esr",
-    name: "ESR (Erythrocyte Sedimentation Rate)",
-    category: "Hematology",
-    price: 200,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Inflammation marker",
-  },
-  {
-    id: "hemoglobin",
-    name: "Hemoglobin",
-    category: "Hematology",
-    price: 150,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Oxygen-carrying protein in blood",
-  },
-  {
-    id: "platelet-count",
-    name: "Platelet Count",
-    category: "Hematology",
-    price: 180,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Blood clotting cells",
-  },
-  {
-    id: "reticulocyte",
-    name: "Reticulocyte Count",
-    category: "Hematology",
-    price: 300,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Young red blood cells",
-  },
-
-  // Chemistry
-  {
-    id: "glucose-fasting",
-    name: "Glucose (Fasting)",
-    category: "Chemistry",
-    price: 120,
-    turnaroundTime: "2-4 hours",
-    fasting: true,
-    description: "Blood sugar levels after fasting",
-  },
-  {
-    id: "glucose-random",
-    name: "Glucose (Random)",
-    category: "Chemistry",
-    price: 100,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Blood sugar levels without fasting",
-  },
-  {
-    id: "creatinine",
-    name: "Creatinine",
-    category: "Chemistry",
-    price: 150,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Kidney function marker",
-  },
-  {
-    id: "urea",
-    name: "Urea/BUN",
-    category: "Chemistry",
-    price: 140,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Kidney function and protein metabolism",
-  },
-  {
-    id: "total-protein",
-    name: "Total Protein",
-    category: "Chemistry",
-    price: 160,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Overall protein levels in blood",
-  },
-  {
-    id: "albumin",
-    name: "Albumin",
-    category: "Chemistry",
-    price: 170,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Main protein made by liver",
-  },
-
-  // Lipid Profile
-  {
-    id: "total-cholesterol",
-    name: "Total Cholesterol",
-    category: "Lipid Profile",
-    price: 200,
-    turnaroundTime: "4-6 hours",
-    fasting: true,
-    description: "Total cholesterol in blood",
-  },
-  {
-    id: "hdl-cholesterol",
-    name: "HDL Cholesterol",
-    category: "Lipid Profile",
-    price: 220,
-    turnaroundTime: "4-6 hours",
-    fasting: true,
-    description: "Good cholesterol",
-  },
-  {
-    id: "ldl-cholesterol",
-    name: "LDL Cholesterol",
-    category: "Lipid Profile",
-    price: 240,
-    turnaroundTime: "4-6 hours",
-    fasting: true,
-    description: "Bad cholesterol",
-  },
-  {
-    id: "triglycerides",
-    name: "Triglycerides",
-    category: "Lipid Profile",
-    price: 200,
-    turnaroundTime: "4-6 hours",
-    fasting: true,
-    description: "Fat levels in blood",
-  },
-  {
-    id: "lipid-profile",
-    name: "Complete Lipid Profile",
-    category: "Lipid Profile",
-    price: 600,
-    turnaroundTime: "4-6 hours",
-    fasting: true,
-    description: "Comprehensive cholesterol and fat analysis",
-  },
-
-  // Liver Function
-  {
-    id: "sgpt-alt",
-    name: "SGPT/ALT",
-    category: "Liver Function",
-    price: 180,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Liver enzyme",
-  },
-  {
-    id: "sgot-ast",
-    name: "SGOT/AST",
-    category: "Liver Function",
-    price: 180,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Liver enzyme",
-  },
-  {
-    id: "bilirubin-total",
-    name: "Bilirubin (Total)",
-    category: "Liver Function",
-    price: 160,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Liver function and red blood cell breakdown",
-  },
-  {
-    id: "bilirubin-direct",
-    name: "Bilirubin (Direct)",
-    category: "Liver Function",
-    price: 170,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Conjugated bilirubin",
-  },
-  {
-    id: "alkaline-phosphatase",
-    name: "Alkaline Phosphatase",
-    category: "Liver Function",
-    price: 190,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Liver and bone enzyme",
-  },
-  {
-    id: "lft-complete",
-    name: "Liver Function Test (Complete)",
-    category: "Liver Function",
-    price: 800,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Comprehensive liver function panel",
-  },
-
-  // Thyroid Function
-  {
-    id: "tsh",
-    name: "TSH",
-    category: "Thyroid Function",
-    price: 300,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Thyroid stimulating hormone",
-  },
-  {
-    id: "t3",
-    name: "T3 (Total)",
-    category: "Thyroid Function",
-    price: 280,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Triiodothyronine",
-  },
-  {
-    id: "t4",
-    name: "T4 (Total)",
-    category: "Thyroid Function",
-    price: 280,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Thyroxine",
-  },
-  {
-    id: "free-t3",
-    name: "Free T3",
-    category: "Thyroid Function",
-    price: 350,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Free triiodothyronine",
-  },
-  {
-    id: "free-t4",
-    name: "Free T4",
-    category: "Thyroid Function",
-    price: 350,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Free thyroxine",
-  },
-  {
-    id: "thyroid-profile",
-    name: "Thyroid Profile (Complete)",
-    category: "Thyroid Function",
-    price: 1200,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Comprehensive thyroid function panel",
-  },
-
-  // Diabetes
-  {
-    id: "hba1c",
-    name: "HbA1c",
-    category: "Diabetes",
-    price: 400,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "3-month average blood sugar",
-  },
-  {
-    id: "ogtt",
-    name: "OGTT (Oral Glucose Tolerance Test)",
-    category: "Diabetes",
-    price: 500,
-    turnaroundTime: "3 hours",
-    fasting: true,
-    description: "Glucose tolerance assessment",
-  },
-  {
-    id: "c-peptide",
-    name: "C-Peptide",
-    category: "Diabetes",
-    price: 600,
-    turnaroundTime: "6-8 hours",
-    fasting: true,
-    description: "Insulin production marker",
-  },
-  {
-    id: "insulin-fasting",
-    name: "Insulin (Fasting)",
-    category: "Diabetes",
-    price: 450,
-    turnaroundTime: "6-8 hours",
-    fasting: true,
-    description: "Fasting insulin levels",
-  },
-
-  // Cardiac Markers
-  {
-    id: "troponin-i",
-    name: "Troponin I",
-    category: "Cardiac Markers",
-    price: 800,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Heart attack marker",
-  },
-  {
-    id: "troponin-t",
-    name: "Troponin T",
-    category: "Cardiac Markers",
-    price: 850,
-    turnaroundTime: "2-4 hours",
-    fasting: false,
-    description: "Heart attack marker",
-  },
-  {
-    id: "ck-mb",
-    name: "CK-MB",
-    category: "Cardiac Markers",
-    price: 400,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Heart muscle enzyme",
-  },
-  {
-    id: "ldh",
-    name: "LDH",
-    category: "Cardiac Markers",
-    price: 250,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Lactate dehydrogenase",
-  },
-
-  // Infectious Disease
-  {
-    id: "hiv",
-    name: "HIV (ELISA)",
-    category: "Infectious Disease",
-    price: 500,
-    turnaroundTime: "24 hours",
-    fasting: false,
-    description: "HIV antibody test",
-  },
-  {
-    id: "hbsag",
-    name: "HBsAg",
-    category: "Infectious Disease",
-    price: 300,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Hepatitis B surface antigen",
-  },
-  {
-    id: "anti-hcv",
-    name: "Anti-HCV",
-    category: "Infectious Disease",
-    price: 400,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Hepatitis C antibody",
-  },
-  {
-    id: "vdrl",
-    name: "VDRL",
-    category: "Infectious Disease",
-    price: 200,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Syphilis screening",
-  },
-  {
-    id: "widal",
-    name: "Widal Test",
-    category: "Infectious Disease",
-    price: 250,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Typhoid fever test",
-  },
-
-  // Vitamins & Minerals
-  {
-    id: "vitamin-d",
-    name: "Vitamin D (25-OH)",
-    category: "Vitamins & Minerals",
-    price: 800,
-    turnaroundTime: "24 hours",
-    fasting: false,
-    description: "Vitamin D deficiency assessment",
-  },
-  {
-    id: "vitamin-b12",
-    name: "Vitamin B12",
-    category: "Vitamins & Minerals",
-    price: 600,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "B12 deficiency assessment",
-  },
-  {
-    id: "folate",
-    name: "Folate",
-    category: "Vitamins & Minerals",
-    price: 500,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Folic acid levels",
-  },
-  {
-    id: "iron-studies",
-    name: "Iron Studies",
-    category: "Vitamins & Minerals",
-    price: 700,
-    turnaroundTime: "6-8 hours",
-    fasting: true,
-    description: "Iron, TIBC, ferritin",
-  },
-  {
-    id: "calcium",
-    name: "Calcium",
-    category: "Vitamins & Minerals",
-    price: 150,
-    turnaroundTime: "4-6 hours",
-    fasting: false,
-    description: "Calcium levels in blood",
-  },
-
-  // Hormones
-  {
-    id: "testosterone",
-    name: "Testosterone (Total)",
-    category: "Hormones",
-    price: 600,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Male hormone levels",
-  },
-  {
-    id: "estradiol",
-    name: "Estradiol",
-    category: "Hormones",
-    price: 550,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Female hormone levels",
-  },
-  {
-    id: "prolactin",
-    name: "Prolactin",
-    category: "Hormones",
-    price: 450,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Prolactin hormone",
-  },
-  {
-    id: "cortisol",
-    name: "Cortisol",
-    category: "Hormones",
-    price: 400,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Stress hormone",
-  },
-
-  // Tumor Markers
-  {
-    id: "psa",
-    name: "PSA (Prostate Specific Antigen)",
-    category: "Tumor Markers",
-    price: 700,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Prostate cancer marker",
-  },
-  {
-    id: "cea",
-    name: "CEA",
-    category: "Tumor Markers",
-    price: 800,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Carcinoembryonic antigen",
-  },
-  {
-    id: "ca-125",
-    name: "CA 125",
-    category: "Tumor Markers",
-    price: 900,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Ovarian cancer marker",
-  },
-  {
-    id: "ca-19-9",
-    name: "CA 19-9",
-    category: "Tumor Markers",
-    price: 850,
-    turnaroundTime: "6-8 hours",
-    fasting: false,
-    description: "Pancreatic cancer marker",
-  },
+  { value: "cbc", label: "Complete Blood Count (CBC)", price: 500, category: "Hematology" },
+  { value: "bmp", label: "Basic Metabolic Panel (BMP)", price: 600, category: "Chemistry" },
+  { value: "cmp", label: "Comprehensive Metabolic Panel (CMP)", price: 800, category: "Chemistry" },
+  { value: "lipid", label: "Lipid Panel", price: 700, category: "Chemistry" },
+  { value: "thyroid", label: "Thyroid Function Tests", price: 800, category: "Endocrinology" },
+  { value: "hba1c", label: "Hemoglobin A1C", price: 600, category: "Diabetes" },
+  { value: "urinalysis", label: "Urinalysis", price: 300, category: "Urology" },
+  { value: "liver", label: "Liver Function Tests", price: 700, category: "Chemistry" },
+  { value: "kidney", label: "Kidney Function Tests", price: 600, category: "Chemistry" },
+  { value: "electrolytes", label: "Electrolytes Panel", price: 500, category: "Chemistry" },
+  { value: "coagulation", label: "Coagulation Panel", price: 900, category: "Hematology" },
+  { value: "cardiac", label: "Cardiac Enzymes", price: 1200, category: "Cardiology" },
+  { value: "crp", label: "C-Reactive Protein (CRP)", price: 600, category: "Inflammation" },
+  { value: "esr", label: "Erythrocyte Sedimentation Rate (ESR)", price: 400, category: "Inflammation" },
+  { value: "blood-culture", label: "Blood Culture", price: 800, category: "Microbiology" },
+  { value: "covid", label: "COVID-19 Test", price: 1500, category: "Infectious Disease" },
+  { value: "glucose", label: "Glucose Test", price: 300, category: "Diabetes" },
+  { value: "iron", label: "Iron Studies", price: 800, category: "Hematology" },
+  { value: "vitamin-d", label: "Vitamin D", price: 900, category: "Vitamins" },
+  { value: "vitamin-b12", label: "Vitamin B12", price: 800, category: "Vitamins" },
 ]
 
-// Test categories for dropdown
-const testCategories = [
-  "All Categories",
-  "Hematology",
-  "Chemistry",
-  "Lipid Profile",
-  "Liver Function",
-  "Thyroid Function",
-  "Diabetes",
-  "Cardiac Markers",
-  "Infectious Disease",
-  "Vitamins & Minerals",
-  "Hormones",
-  "Tumor Markers",
-]
+// Form schema
+const formSchema = z.object({
+  selectedPackages: z.array(z.string()),
+  selectedIndividualTests: z.array(z.string()),
+  priority: z.enum(["routine", "urgent", "stat"], {
+    required_error: "Please select a priority level",
+  }),
+  indication: z.string().min(1, "Please provide clinical indication"),
+  notes: z.string().optional(),
+})
+
+type FormValues = z.infer<typeof formSchema>
 
 interface PrescribeTestsModalProps {
   isOpen: boolean
@@ -557,291 +73,482 @@ interface PrescribeTestsModalProps {
 }
 
 export function PrescribeTestsModal({ isOpen, onClose, onSuccess, patientId, patientName }: PrescribeTestsModalProps) {
-  const [selectedTests, setSelectedTests] = useState<string[]>([])
-  const [selectedCategory, setSelectedCategory] = useState("All Categories")
   const [searchTerm, setSearchTerm] = useState("")
-  const [priority, setPriority] = useState("routine")
-  const [clinicalNotes, setClinicalNotes] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [viewMode, setViewMode] = useState<"packages" | "individual">("packages")
 
-  // Filter tests based on category and search term
-  const filteredTests = labTests.filter((test) => {
-    const matchesCategory = selectedCategory === "All Categories" || test.category === selectedCategory
-    const matchesSearch =
-      test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.description.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesCategory && matchesSearch
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      selectedPackages: [],
+      selectedIndividualTests: [],
+      priority: "routine",
+      indication: "",
+      notes: "",
+    },
   })
 
-  // Group filtered tests by category
-  const groupedTests = filteredTests.reduce(
-    (acc, test) => {
-      if (!acc[test.category]) {
-        acc[test.category] = []
-      }
-      acc[test.category].push(test)
-      return acc
-    },
-    {} as Record<string, typeof labTests>,
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset({
+        selectedPackages: [],
+        selectedIndividualTests: [],
+        priority: "routine",
+        indication: "",
+        notes: "",
+      })
+      setSearchTerm("")
+      setSelectedCategory("all")
+      setViewMode("packages")
+    }
+  }, [isOpen, form])
+
+  // Get all tests included in selected packages
+  const selectedPackages = form.watch("selectedPackages")
+  const selectedIndividualTests = form.watch("selectedIndividualTests")
+
+  const testsFromPackages = selectedPackages.flatMap((packageId) => {
+    const pkg = labTestPackages.find((p) => p.id === packageId)
+    return pkg?.tests || []
+  })
+
+  // Get unique categories
+  const categories = ["all", ...Array.from(new Set(labTests.map((test) => test.category)))]
+
+  // Filter tests based on search term and category, excluding tests already in packages
+  const filteredTests = labTests.filter((test) => {
+    const matchesSearch = test.label.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory
+    const notInPackage = !testsFromPackages.includes(test.value)
+    return matchesSearch && matchesCategory && notInPackage
+  })
+
+  // Filter packages based on search term
+  const filteredPackages = labTestPackages.filter(
+    (pkg) =>
+      pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pkg.description.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const toggleTest = (testId: string) => {
-    setSelectedTests((prev) => (prev.includes(testId) ? prev.filter((id) => id !== testId) : [...prev, testId]))
-  }
+  // Calculate total price
+  const packagePrice = selectedPackages.reduce((sum, pkgId) => {
+    const pkg = labTestPackages.find((p) => p.id === pkgId)
+    return sum + (pkg?.discountedPrice || 0)
+  }, 0)
 
-  const calculateTotal = () => {
-    return selectedTests.reduce((total, testId) => {
-      const test = labTests.find((t) => t.id === testId)
-      return total + (test?.price || 0)
-    }, 0)
-  }
+  const individualTestPrice = selectedIndividualTests.reduce((sum, testId) => {
+    const test = labTests.find((test) => test.value === testId)
+    return sum + (test?.price || 0)
+  }, 0)
 
-  const getSelectedTestsDetails = () => {
-    return labTests.filter((test) => selectedTests.includes(test.id))
-  }
+  const totalPrice = packagePrice + individualTestPrice
+  const totalTests = testsFromPackages.length + selectedIndividualTests.length
 
-  const handleSubmit = () => {
-    if (selectedTests.length === 0) {
-      toast.error("Please select at least one test")
+  // Calculate savings from packages
+  const totalSavings = selectedPackages.reduce((sum, pkgId) => {
+    const pkg = labTestPackages.find((p) => p.id === pkgId)
+    return sum + ((pkg?.price || 0) - (pkg?.discountedPrice || 0))
+  }, 0)
+
+  function onSubmit(data: FormValues) {
+    // Combine all tests
+    const allTests = [...testsFromPackages, ...data.selectedIndividualTests]
+
+    if (allTests.length === 0) {
+      toast({
+        title: "No tests selected",
+        description: "Please select at least one test or package",
+        variant: "destructive",
+      })
       return
     }
 
-    // Here you would typically send the data to your backend
-    console.log({
-      patientId,
-      patientName,
-      selectedTests,
-      priority,
-      clinicalNotes,
-      totalAmount: calculateTotal(),
+    // In a real app, this would call an API to prescribe the tests
+    console.log("Prescribing tests:", {
+      ...data,
+      allTests,
+      totalTests: allTests.length,
+      totalPrice,
     })
 
-    toast.success(`${selectedTests.length} test(s) prescribed successfully`, {
-      description: `Total amount: ₹${calculateTotal()}`,
+    // Show success message
+    toast({
+      title: "Tests prescribed successfully",
+      description: `${allTests.length} tests have been prescribed for ${patientName}`,
     })
 
-    // Reset form
-    setSelectedTests([])
-    setSelectedCategory("All Categories")
-    setSearchTerm("")
-    setPriority("routine")
-    setClinicalNotes("")
-
+    // Call success callback
     onSuccess()
   }
 
-  const handleClose = () => {
-    setSelectedTests([])
-    setSelectedCategory("All Categories")
-    setSearchTerm("")
-    setPriority("routine")
-    setClinicalNotes("")
-    onClose()
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose()
+        }
+      }}
+    >
+      <DialogContent className="max-w-[95vw] w-full sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <TestTube className="h-5 w-5" />
+            <Plus className="h-5 w-5" />
             Prescribe Laboratory Tests
           </DialogTitle>
-          <DialogDescription>
-            Select laboratory tests for {patientName} (ID: {patientId})
-          </DialogDescription>
+          <DialogDescription>Select packages and individual tests for {patientName}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-          {/* Test Selection - 2/3 width */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Search and Filter Controls */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Label htmlFor="search">Search Tests</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Search by test name or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+        <div className="overflow-y-auto flex-grow pr-1">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-4">
+                {/* View Mode Toggle */}
+                <div className="flex space-x-1 rounded-lg bg-muted p-1">
+                  <Button
+                    type="button"
+                    variant={viewMode === "packages" ? "default" : "ghost"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setViewMode("packages")}
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    Test Packages
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={viewMode === "individual" ? "default" : "ghost"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setViewMode("individual")}
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    Individual Tests
+                  </Button>
                 </div>
-              </div>
-              <div className="w-64">
-                <Label htmlFor="category">Category</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {testCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Test List */}
-            <div className="max-h-96 overflow-y-auto border rounded-lg">
-              {Object.entries(groupedTests).map(([category, tests]) => (
-                <div key={category} className="p-4 border-b last:border-b-0">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">{category}</h4>
-                  <div className="space-y-2">
-                    {tests.map((test) => (
-                      <div
-                        key={test.id}
-                        className={`border rounded-lg p-3 transition-colors ${
-                          selectedTests.includes(test.id)
-                            ? "border-blue-200 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            id={test.id}
-                            checked={selectedTests.includes(test.id)}
-                            onCheckedChange={() => toggleTest(test.id)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <label htmlFor={test.id} className="cursor-pointer">
-                              <div className="font-medium text-sm">{test.name}</div>
-                              <div className="text-xs text-gray-600 mt-1">{test.description}</div>
-                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <DollarSign className="h-3 w-3" />
-                                  <span>₹{test.price}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{test.turnaroundTime}</span>
-                                </div>
-                                {test.fasting && (
-                                  <div className="flex items-center gap-1">
-                                    <AlertTriangle className="h-3 w-3 text-orange-500" />
-                                    <span className="text-orange-600">Fasting Required</span>
-                                  </div>
-                                )}
-                              </div>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                {/* Search and Filter */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={viewMode === "packages" ? "Search packages..." : "Search tests..."}
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
-                </div>
-              ))}
-
-              {filteredTests.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  <TestTube className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No tests found matching your criteria</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Order Summary - 1/3 width */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle className="text-lg">Order Summary</CardTitle>
-                <CardDescription>{selectedTests.length} test(s) selected</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {selectedTests.length > 0 ? (
-                  <>
-                    {/* Selected Tests List */}
-                    <div className="max-h-48 overflow-y-auto space-y-2">
-                      {getSelectedTestsDetails().map((test) => (
-                        <div key={test.id} className="flex justify-between items-start text-sm p-2 bg-gray-50 rounded">
-                          <div className="flex-1">
-                            <div className="font-medium">{test.name}</div>
-                            <div className="text-xs text-gray-500">{test.category}</div>
-                            {test.fasting && (
-                              <Badge variant="outline" className="text-xs mt-1 bg-orange-100 text-orange-800">
-                                Fasting Required
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-right ml-2">
-                            <div className="font-medium">₹{test.price}</div>
-                            <div className="text-xs text-gray-500">{test.turnaroundTime}</div>
-                          </div>
-                        </div>
+                  {viewMode === "individual" && (
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category) => (
+                        <Button
+                          key={category}
+                          type="button"
+                          variant={selectedCategory === category ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          {category === "all" ? "All Categories" : category}
+                        </Button>
                       ))}
                     </div>
+                  )}
+                </div>
 
-                    <Separator />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Left Panel - Available Items */}
+                  <div className="lg:col-span-2">
+                    <Label className="text-base font-medium">
+                      {viewMode === "packages" ? "Available Packages" : "Available Tests"}
+                    </Label>
+                    <div className="h-[300px] rounded-md border overflow-hidden mt-2">
+                      <ScrollArea className="h-full w-full">
+                        <div className="p-3 space-y-2">
+                          {viewMode === "packages" ? (
+                            // Package Selection
+                            filteredPackages.length > 0 ? (
+                              filteredPackages.map((pkg) => {
+                                const isSelected = selectedPackages.includes(pkg.id)
+                                const savings = pkg.price - pkg.discountedPrice
+                                const savingsPercent = Math.round((savings / pkg.price) * 100)
 
-                    {/* Priority Selection */}
-                    <div className="space-y-2">
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select value={priority} onValueChange={setPriority}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="routine">Routine</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                          <SelectItem value="stat">STAT</SelectItem>
-                        </SelectContent>
-                      </Select>
+                                return (
+                                  <FormField
+                                    key={pkg.id}
+                                    control={form.control}
+                                    name="selectedPackages"
+                                    render={({ field }) => (
+                                      <div
+                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                          isSelected ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
+                                        }`}
+                                        onClick={() => {
+                                          const updatedPackages = isSelected
+                                            ? field.value.filter((id) => id !== pkg.id)
+                                            : [...field.value, pkg.id]
+                                          field.onChange(updatedPackages)
+                                        }}
+                                      >
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1">
+                                            <div className="font-medium text-sm">{pkg.name}</div>
+                                            {pkg.popular && (
+                                              <Badge variant="secondary" className="mt-1">
+                                                Popular
+                                              </Badge>
+                                            )}
+                                            <div className="text-xs text-muted-foreground mt-1">{pkg.description}</div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                              {pkg.tests.length} tests included
+                                            </div>
+                                          </div>
+                                          <div className="text-right ml-2">
+                                            <div className="text-sm font-medium text-green-600">
+                                              ₹{pkg.discountedPrice.toFixed(2)}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground line-through">
+                                              ₹{pkg.price.toFixed(2)}
+                                            </div>
+                                            <div className="text-xs text-green-600">Save {savingsPercent}%</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  />
+                                )
+                              })
+                            ) : (
+                              <div className="p-4 text-center text-sm text-muted-foreground">No packages found</div>
+                            )
+                          ) : // Individual Test Selection
+                          filteredTests.length > 0 ? (
+                            filteredTests.map((test) => {
+                              const isSelected = selectedIndividualTests.includes(test.value)
+
+                              return (
+                                <FormField
+                                  key={test.value}
+                                  control={form.control}
+                                  name="selectedIndividualTests"
+                                  render={({ field }) => (
+                                    <div className="flex flex-row items-start space-x-3 space-y-0 p-2 hover:bg-accent rounded-md">
+                                      <Checkbox
+                                        id={`test-${test.value}`}
+                                        checked={isSelected}
+                                        onCheckedChange={(checked) => {
+                                          const updatedValue = checked
+                                            ? [...field.value, test.value]
+                                            : field.value.filter((value) => value !== test.value)
+                                          field.onChange(updatedValue)
+                                        }}
+                                      />
+                                      <Label htmlFor={`test-${test.value}`} className="flex-1 cursor-pointer text-sm">
+                                        <span className="font-medium">{test.label}</span>
+                                        <div className="text-xs text-muted-foreground">
+                                          {test.category} • ₹{test.price.toFixed(2)}
+                                        </div>
+                                      </Label>
+                                    </div>
+                                  )}
+                                />
+                              )
+                            })
+                          ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              {testsFromPackages.length > 0 && viewMode === "individual"
+                                ? "All tests in this category are already included in selected packages"
+                                : "No tests found"}
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
                     </div>
-
-                    {/* Clinical Notes */}
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Clinical Notes</Label>
-                      <Textarea
-                        id="notes"
-                        placeholder="Clinical indication, special instructions..."
-                        value={clinicalNotes}
-                        onChange={(e) => setClinicalNotes(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    {/* Total */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Subtotal:</span>
-                        <span>₹{calculateTotal()}</span>
-                      </div>
-                      <div className="flex justify-between font-bold">
-                        <span>Total Amount:</span>
-                        <span className="text-lg">₹{calculateTotal()}</span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <TestTube className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-sm">No tests selected</p>
-                    <p className="text-xs mt-1">Select tests to see summary</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+
+                  {/* Right Panel - Selected Summary */}
+                  <div>
+                    <Label className="text-base font-medium">Selected Summary</Label>
+                    <div className="mt-2 space-y-3">
+                      {/* Selected Packages */}
+                      {selectedPackages.length > 0 && (
+                        <div className="rounded-md border p-3">
+                          <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Packages ({selectedPackages.length})
+                          </div>
+                          <div className="space-y-2">
+                            {selectedPackages.map((packageId) => {
+                              const pkg = labTestPackages.find((p) => p.id === packageId)
+                              if (!pkg) return null
+
+                              return (
+                                <div key={packageId} className="text-xs bg-blue-50 rounded p-2">
+                                  <div className="font-medium">{pkg.name}</div>
+                                  <div className="text-muted-foreground">
+                                    {pkg.tests.length} tests • ₹{pkg.discountedPrice.toFixed(2)}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Selected Individual Tests */}
+                      {selectedIndividualTests.length > 0 && (
+                        <div className="rounded-md border p-3">
+                          <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <TestTube className="h-4 w-4" />
+                            Individual Tests ({selectedIndividualTests.length})
+                          </div>
+                          <div className="space-y-1">
+                            {selectedIndividualTests.map((testId) => {
+                              const test = labTests.find((t) => t.value === testId)
+                              if (!test) return null
+
+                              return (
+                                <div key={testId} className="text-xs bg-green-50 rounded p-2">
+                                  <div className="font-medium">{test.label}</div>
+                                  <div className="text-muted-foreground">₹{test.price.toFixed(2)}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Price Summary */}
+                      <div className="rounded-md border p-3 bg-gray-50">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Total Tests</span>
+                            <span className="font-medium">{totalTests}</span>
+                          </div>
+                          {packagePrice > 0 && (
+                            <div className="flex justify-between">
+                              <span>Package Price</span>
+                              <span>₹{packagePrice.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {individualTestPrice > 0 && (
+                            <div className="flex justify-between">
+                              <span>Individual Tests</span>
+                              <span>₹{individualTestPrice.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {totalSavings > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Package Savings</span>
+                              <span>-₹{totalSavings.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between font-medium text-base border-t pt-2">
+                            <span>Total</span>
+                            <span>₹{totalPrice.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {totalTests === 0 && (
+                        <div className="text-center text-sm text-muted-foreground p-4">No tests selected yet</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="indication"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Clinical Indication *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter the clinical reason for ordering these tests..."
+                          className="resize-none h-20"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>Provide the medical reason or symptoms that justify these tests</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Priority</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="routine" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Routine (24-48 hours)</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="urgent" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Urgent (4-6 hours)</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="stat" />
+                            </FormControl>
+                            <FormLabel className="font-normal">STAT (As soon as possible)</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Additional Notes</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter any special instructions or additional information..."
+                          className="resize-none h-20"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Include any special handling instructions or relevant clinical information
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </form>
+          </Form>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit}
-            disabled={selectedTests.length === 0}
+            type="button"
+            disabled={totalTests === 0}
+            onClick={form.handleSubmit(onSubmit)}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Prescribe Tests ({selectedTests.length})
+            Prescribe {totalTests} {totalTests === 1 ? "Test" : "Tests"}
           </Button>
         </DialogFooter>
       </DialogContent>

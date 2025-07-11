@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
-import { PrescriptionTemplateManager } from "@/components/prescription-template-manager"
 
 interface AllopathicPrescriptionProps {
   department: string
@@ -388,18 +387,6 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
             </Badge>
           )}
         </div>
-        {!readOnly && (
-          <PrescriptionTemplateManager
-            ayurvedicPrescriptions={[]}
-            allopathicPrescriptions={data}
-            department={department}
-            onLoadTemplate={(template) => {
-              onChange(template.allopathicPrescriptions || [])
-              setShowInitialOptions(false)
-            }}
-            readOnly={readOnly}
-          />
-        )}
       </div>
 
       {data.length === 0 && showInitialOptions ? (
@@ -510,7 +497,7 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-6 text-xs bg-transparent"
+                            className="h-6 text-xs"
                             onClick={() => addOverallDietaryConstraint(item)}
                           >
                             <Plus className="h-2 w-2 mr-1" />

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   User,
   Calendar,
@@ -27,10 +26,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Waves,
-  Eye,
-  Brain,
-  Pill,
 } from "lucide-react"
 import { IntegratedConsultation } from "@/components/integrated-consultation"
 import { useConsultation } from "@/contexts/consultation-context"
@@ -38,8 +33,6 @@ import { toast } from "sonner"
 import { LaboratorySection } from "@/components/laboratory-section"
 import { RadiologySection } from "@/components/radiology-section"
 import { ProceduresSection } from "@/components/procedures-section"
-import { PhysiotherapySection } from "@/components/physiotherapy-section"
-import { PanchkarmaSection } from "@/components/panchkarma-section"
 import {
   Dialog,
   DialogContent,
@@ -48,8 +41,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { StreamlinedFollowUp } from "@/components/streamlined-follow-up"
 
 // Mock patient data
 const mockPatient = {
@@ -71,109 +64,54 @@ const mockPatient = {
   currentMedications: ["Metformin 500mg twice daily", "Lisinopril 10mg once daily"],
 }
 
-// Medical services configuration based on departments
-const medicalServices = {
-  general: [
-    {
-      id: "laboratory",
-      name: "Laboratory Tests",
-      icon: TestTube,
-      description: "Blood tests, urine analysis, and diagnostic tests",
-    },
-    { id: "radiology", name: "Radiology", icon: Zap, description: "X-rays, CT scans, MRI, and ultrasound" },
-  ],
-  cardiology: [
-    {
-      id: "laboratory",
-      name: "Cardiac Lab Tests",
-      icon: TestTube,
-      description: "Cardiac enzymes, lipid profile, and heart markers",
-    },
-    {
-      id: "radiology",
-      name: "Cardiac Imaging",
-      icon: Zap,
-      description: "ECG, echocardiogram, cardiac CT, and angiography",
-    },
-  ],
-  orthopedics: [
-    { id: "laboratory", name: "Orthopedic Lab Tests", icon: TestTube, description: "Bone markers, inflammation tests" },
-    {
-      id: "radiology",
-      name: "Orthopedic Imaging",
-      icon: Zap,
-      description: "X-rays, MRI, CT scans for bones and joints",
-    },
-    { id: "physiotherapy", name: "Physiotherapy", icon: Waves, description: "Physical therapy and rehabilitation" },
-  ],
-  neurology: [
-    { id: "laboratory", name: "Neurological Tests", icon: TestTube, description: "CSF analysis, neurological markers" },
-    { id: "radiology", name: "Neuroimaging", icon: Brain, description: "Brain MRI, CT, PET scans, and angiography" },
-  ],
-  pediatrics: [
-    {
-      id: "laboratory",
-      name: "Pediatric Lab Tests",
-      icon: TestTube,
-      description: "Age-appropriate blood tests and screenings",
-    },
-    {
-      id: "radiology",
-      name: "Pediatric Imaging",
-      icon: Zap,
-      description: "Child-friendly imaging with minimal radiation",
-    },
-  ],
-  gynecology: [
-    {
-      id: "laboratory",
-      name: "Gynecological Tests",
-      icon: TestTube,
-      description: "Hormonal tests, pregnancy tests, PAP smears",
-    },
-    { id: "radiology", name: "Gynecological Imaging", icon: Zap, description: "Pelvic ultrasound, mammography, MRI" },
-  ],
-  ophthalmology: [
-    { id: "laboratory", name: "Eye Tests", icon: TestTube, description: "Tear film analysis, allergy tests" },
-    { id: "radiology", name: "Eye Imaging", icon: Eye, description: "OCT, fundus photography, angiography" },
-  ],
-  ayurveda: [
-    {
-      id: "laboratory",
-      name: "Ayurvedic Diagnostics",
-      icon: TestTube,
-      description: "Pulse diagnosis, constitutional analysis",
-    },
-    {
-      id: "panchkarma",
-      name: "Panchkarma Treatments",
-      icon: Heart,
-      description: "Detoxification and rejuvenation therapies",
-    },
-  ],
-  dermatology: [
-    {
-      id: "laboratory",
-      name: "Dermatological Tests",
-      icon: TestTube,
-      description: "Allergy tests, skin biopsies, cultures",
-    },
-    {
-      id: "radiology",
-      name: "Dermatological Imaging",
-      icon: Zap,
-      description: "Dermoscopy, skin imaging, UV photography",
-    },
-  ],
-  psychiatry: [
-    {
-      id: "laboratory",
-      name: "Psychiatric Assessments",
-      icon: TestTube,
-      description: "Psychological tests, cognitive assessments",
-    },
-  ],
-}
+const mockInvoices = [
+  {
+    id: "INV-2024-001",
+    date: "2024-05-15",
+    amount: 1250.0,
+    description: "Consultation and Lab Tests",
+    status: "paid",
+    items: [
+      { name: "General Consultation", amount: 500 },
+      { name: "Complete Blood Count", amount: 350 },
+      { name: "Lipid Profile", amount: 400 },
+    ],
+  },
+  {
+    id: "INV-2024-002",
+    date: "2024-04-22",
+    amount: 3500.0,
+    description: "Physiotherapy Sessions (5)",
+    status: "paid",
+    items: [
+      { name: "Initial Assessment", amount: 700 },
+      { name: "Therapy Sessions (4)", amount: 2800 },
+    ],
+  },
+  {
+    id: "INV-2024-003",
+    date: "2024-06-01",
+    amount: 1800.0,
+    description: "Radiology Services",
+    status: "pending",
+    items: [
+      { name: "X-Ray (Chest)", amount: 800 },
+      { name: "Ultrasound (Abdomen)", amount: 1000 },
+    ],
+  },
+  {
+    id: "INV-2024-004",
+    date: "2024-06-05",
+    amount: 2500.0,
+    description: "Panchkarma Treatment",
+    status: "overdue",
+    items: [
+      { name: "Consultation", amount: 500 },
+      { name: "Abhyanga", amount: 1200 },
+      { name: "Shirodhara", amount: 800 },
+    ],
+  },
+]
 
 // Department mapping for display
 const departmentLabels = {
@@ -203,8 +141,6 @@ export default function PatientDetailsPage() {
   const params = useParams()
   const patientId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
-  const [selectedDepartment, setSelectedDepartment] = useState("general")
-  const [selectedService, setSelectedService] = useState("")
   const [consultationKey, setConsultationKey] = useState(0)
   const {
     activeConsultation,
@@ -249,14 +185,6 @@ export default function PatientDetailsPage() {
     }
   }, [])
 
-  // Set default service when department changes
-  useEffect(() => {
-    const services = medicalServices[selectedDepartment as keyof typeof medicalServices] || medicalServices.general
-    if (services.length > 0) {
-      setSelectedService(services[0].id)
-    }
-  }, [selectedDepartment])
-
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [selectedPlatform, setSelectedPlatform] = useState("google-meet")
   const [meetingLink, setMeetingLink] = useState("")
@@ -279,33 +207,6 @@ export default function PatientDetailsPage() {
   })
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
-  const [showFollowUpMode, setShowFollowUpMode] = useState(false)
-
-  // Get available services for selected department
-  const availableServices =
-    medicalServices[selectedDepartment as keyof typeof medicalServices] || medicalServices.general
-
-  // Render service content based on selected service
-  const renderServiceContent = () => {
-    switch (selectedService) {
-      case "laboratory":
-        return <LaboratorySection patientId={patientId} patientName={mockPatient.name} />
-      case "radiology":
-        return <RadiologySection patientId={patientId} patientName={mockPatient.name} />
-      case "physiotherapy":
-        return <PhysiotherapySection />
-      case "panchkarma":
-        return <PanchkarmaSection />
-      default:
-        return (
-          <div className="text-center py-12">
-            <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Service Not Available</h3>
-            <p className="text-muted-foreground">The selected service is not yet implemented.</p>
-          </div>
-        )
-    }
-  }
 
   const handleScheduleMeeting = () => {
     const generatedLink =
@@ -738,7 +639,7 @@ export default function PatientDetailsPage() {
                   {/* Current Medications Section */}
                   <div className="p-4 bg-green-50/50 rounded-lg border border-green-100">
                     <div className="flex items-center gap-2 mb-3">
-                      <Pill className="h-5 w-5 text-green-600" />
+                      <TestTube className="h-5 w-5 text-green-600" />
                       <span className="text-sm font-semibold text-green-800">Current Medications</span>
                     </div>
                     <div className="space-y-2">
@@ -837,391 +738,286 @@ export default function PatientDetailsPage() {
         </TabsContent>
 
         <TabsContent value="consultation" className="space-y-6">
-          {/* Add toggle buttons at the top */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Consultation Mode</h3>
-                  <p className="text-sm text-muted-foreground">Choose consultation type</p>
+          {isConsultationActive && summary && (
+            <Card className="border-teal-200 bg-gradient-to-r from-slate-50 to-teal-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-100/70 rounded-full">
+                      <Stethoscope className="h-5 w-5 text-teal-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-teal-800">Active Consultation</h3>
+                      <p className="text-sm text-teal-600">
+                        {summary.department} {summary.type} for visit on{" "}
+                        {new Date(summary.visitDate!).toLocaleDateString()}
+                        {hasUnsavedChanges && " - Auto-saving changes"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="bg-slate-100 text-slate-800">
+                      In Progress
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={!showFollowUpMode ? "default" : "outline"}
-                    onClick={() => setShowFollowUpMode(false)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Consultation
-                  </Button>
-                  <Button
-                    variant={showFollowUpMode ? "default" : "outline"}
-                    onClick={() => setShowFollowUpMode(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <History className="h-4 w-4" />
-                    Follow-up Mode
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
+          {isConsultationActive ? (
+            <div className="space-y-6">
+              <IntegratedConsultation
+                key={consultationKey}
+                patientId={patientId}
+                patientData={mockPatient}
+                department={activeConsultation?.department || "general"}
+                doctorName={activeConsultation?.doctorName || "Dr. Smith"}
+                onCompleteVisit={handleCompleteVisit}
+              />
 
-          {/* Conditional rendering based on mode */}
-          {showFollowUpMode ? (
-            <StreamlinedFollowUp
-              patientId={patientId}
-              patientData={mockPatient}
-              department="general"
-              doctorName="Dr. Smith"
-              visitDate={new Date().toISOString().split("T")[0]}
-            />
-          ) : (
-            <>
-              {isConsultationActive && summary && (
-                <Card className="border-teal-200 bg-gradient-to-r from-slate-50 to-teal-50/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-teal-100/70 rounded-full">
-                          <Stethoscope className="h-5 w-5 text-teal-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-teal-800">Active Consultation</h3>
-                          <p className="text-sm text-teal-600">
-                            {summary.department} {summary.type} for visit on{" "}
-                            {new Date(summary.visitDate!).toLocaleDateString()}
-                            {hasUnsavedChanges && " - Auto-saving changes"}
-                          </p>
-                        </div>
+              {/* History Section */}
+              {patientConsultations.length > 0 && (
+                <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <History className="h-6 w-6 text-white" />
                       </div>
-                      <div className="flex gap-2">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-800">
-                          In Progress
-                        </Badge>
+                      <div>
+                        <h3 className="text-xl font-semibold text-slate-800">Previous Visits</h3>
+                        <p className="text-sm text-slate-600">Completed consultation history</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-              {isConsultationActive ? (
-                <div className="space-y-6">
-                  <IntegratedConsultation
-                    key={consultationKey}
-                    patientId={patientId}
-                    patientData={mockPatient}
-                    department={activeConsultation?.department || "general"}
-                    doctorName={activeConsultation?.doctorName || "Dr. Smith"}
-                    onCompleteVisit={handleCompleteVisit}
-                  />
+                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                      {patientConsultations.length} completed visits
+                    </Badge>
+                  </div>
 
-                  {/* History Section */}
-                  {patientConsultations.length > 0 && (
-                    <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <History className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold text-slate-800">Previous Visits</h3>
-                            <p className="text-sm text-slate-600">Completed consultation history</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                          {patientConsultations.length} completed visits
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-4 max-h-96 overflow-y-auto">
-                        {patientConsultations.map((consultation, index) => (
-                          <div
-                            key={consultation.id}
-                            className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
-                                  <Stethoscope className="h-6 w-6 text-white" />
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {patientConsultations.map((consultation, index) => (
+                      <div
+                        key={consultation.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">
+                                {consultation.chiefComplaint || "General Consultation"}
+                              </h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
                                 </div>
-                                <div>
-                                  <h4 className="font-semibold text-slate-800">
-                                    {consultation.chiefComplaint || "General Consultation"}
-                                  </h4>
-                                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      <span>{consultation.visitTime}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                                      {consultation.doctorName}
-                                    </Badge>
-                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                                      {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
-                                        consultation.department}
-                                    </Badge>
-                                  </div>
-                                  {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
-                                      <span className="text-sm text-slate-700">
-                                        {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
-                                      </span>
-                                    </div>
-                                  )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{consultation.visitTime}</span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-slate-300 hover:bg-slate-50 bg-transparent"
-                                >
-                                  <FileTextIcon className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                                  {consultation.doctorName}
+                                </Badge>
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                  {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
+                                    consultation.department}
+                                </Badge>
                               </div>
+                              {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
+                                <div className="mt-2">
+                                  <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
+                                  <span className="text-sm text-slate-700">
+                                    {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        ))}
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* No Active Consultation */}
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Active Consultation</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Start a new consultation to begin documenting the patient visit
+                  </p>
+                  <Button onClick={handleNewConsultation} className="bg-teal-500 hover:bg-teal-600">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Start New Consultation
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* History Section */}
+              <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+                      <History className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-slate-800">Consultation History</h3>
+                      <p className="text-sm text-slate-600">Complete medical consultation records</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                    {patientConsultations.length} consultations
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {patientConsultations.length > 0 ? (
+                    patientConsultations.map((consultation, index) => (
+                      <div
+                        key={consultation.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">
+                                {consultation.chiefComplaint || "General Consultation"}
+                              </h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{consultation.visitTime}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                                  {consultation.doctorName}
+                                </Badge>
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                  {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
+                                    consultation.department}
+                                </Badge>
+                                <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                                  {consultationTypeLabels[
+                                    consultation.consultationType as keyof typeof consultationTypeLabels
+                                  ] || consultation.consultationType}
+                                </Badge>
+                              </div>
+                              {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
+                                <div className="mt-2">
+                                  <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
+                                  <span className="text-sm text-slate-700">
+                                    {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Stethoscope className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <p className="text-slate-600 font-medium">No consultation history yet</p>
+                      <p className="text-sm text-slate-500 mt-1">Completed consultations will appear here</p>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* No Active Consultation */}
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Stethoscope className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Active Consultation</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Start a new consultation to begin documenting the patient visit
-                      </p>
-                      <Button onClick={handleNewConsultation} className="bg-teal-500 hover:bg-teal-600">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Start New Consultation
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* History Section */}
-                  <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                          <History className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold text-slate-800">Consultation History</h3>
-                          <p className="text-sm text-slate-600">Complete medical consultation records</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                        {patientConsultations.length} consultations
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                      {patientConsultations.length > 0 ? (
-                        patientConsultations.map((consultation, index) => (
-                          <div
-                            key={consultation.id}
-                            className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
-                                  <Stethoscope className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="font-semibold text-slate-800">
-                                    {consultation.chiefComplaint || "General Consultation"}
-                                  </h4>
-                                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{new Date(consultation.visitDate!).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      <span>{consultation.visitTime}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                                      {consultation.doctorName}
-                                    </Badge>
-                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                                      {departmentLabels[consultation.department as keyof typeof departmentLabels] ||
-                                        consultation.department}
-                                    </Badge>
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-purple-100 text-purple-800 border-purple-200"
-                                    >
-                                      {consultationTypeLabels[
-                                        consultation.consultationType as keyof typeof consultationTypeLabels
-                                      ] || consultation.consultationType}
-                                    </Badge>
-                                  </div>
-                                  {(consultation.provisionalDiagnosis?.length || consultation.diagnosis?.length) && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium text-slate-600">Diagnosis: </span>
-                                      <span className="text-sm text-slate-700">
-                                        {(consultation.provisionalDiagnosis || consultation.diagnosis || []).join(", ")}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-slate-300 hover:bg-slate-50 bg-transparent"
-                                >
-                                  <FileTextIcon className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Stethoscope className="h-8 w-8 text-purple-600" />
-                          </div>
-                          <p className="text-slate-600 font-medium">No consultation history yet</p>
-                          <p className="text-sm text-slate-500 mt-1">Completed consultations will appear here</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
         </TabsContent>
 
-        {/* Enhanced Services Tab with Department-based Service Selection */}
+        {/* Services, Telemedicine, Invoices, and Reports tabs remain the same as before */}
         <TabsContent value="services" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold">Medical Services</h3>
-                  <p className="text-sm text-muted-foreground">Select department and service type</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="department-select" className="text-sm font-medium">
-                      Department:
-                    </Label>
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(departmentLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="service-select" className="text-sm font-medium">
-                      Service:
-                    </Label>
-                    <Select value={selectedService} onValueChange={setSelectedService}>
-                      <SelectTrigger className="w-64">
-                        <SelectValue placeholder="Select service" />
-                      </SelectTrigger>
-                      <SelectContent className="max-w-80">
-                        {availableServices.map((service) => {
-                          const IconComponent = service.icon
-                          return (
-                            <SelectItem key={service.id} value={service.id} className="py-3">
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <IconComponent className="h-4 w-4 text-slate-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm truncate">{service.name}</div>
-                                  <div className="text-xs text-muted-foreground line-clamp-2">
-                                    {service.description}
-                                  </div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+          <div className="bg-gradient-to-br from-teal-50 via-white to-blue-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                <Activity className="h-6 w-6 text-white" />
               </div>
-            </CardHeader>
-            <CardContent>
-              {/* Service Content */}
-              <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50/30 rounded-xl p-6 border border-slate-200">
-                {renderServiceContent()}
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Medical Services</h3>
+                <p className="text-sm text-slate-600">Laboratory tests and radiology services</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <Tabs defaultValue="laboratory" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100/50 p-1 rounded-lg">
+                <TabsTrigger
+                  value="laboratory"
+                  className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <TestTube className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <span className="hidden sm:inline">Laboratory</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="radiology"
+                  className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <span className="hidden sm:inline">Radiology</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="laboratory" className="mt-6">
+                <LaboratorySection />
+              </TabsContent>
+
+              <TabsContent value="radiology" className="mt-6">
+                <RadiologySection patientId={patientId} patientName={mockPatient.name} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
 
         <TabsContent value="procedures" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold">Medical Procedures & Treatments</h3>
-                  <p className="text-sm text-muted-foreground">Select department and procedure type</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="procedure-department-select" className="text-sm font-medium">
-                      Department:
-                    </Label>
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(departmentLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+          <div className="bg-gradient-to-br from-green-50 via-white to-orange-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
+                <Heart className="h-6 w-6 text-white" />
               </div>
-            </CardHeader>
-            <CardContent>
-              {/* Procedure Content */}
-              <div className="bg-gradient-to-br from-green-50 via-white to-orange-50/30 rounded-xl p-6 border border-slate-200">
-                <ProceduresSection
-                  patientId={patientId}
-                  patientName={mockPatient.name}
-                  selectedDepartment={selectedDepartment}
-                />
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">Medical Procedures & Treatments</h3>
+                <p className="text-sm text-slate-600">Specialized therapeutic procedures</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <ProceduresSection patientId={patientId} patientName={mockPatient.name} />
+          </div>
         </TabsContent>
 
         {/* Remaining tabs content (telemedicine, invoices, reports) and modals remain the same */}

@@ -1,164 +1,128 @@
 "use client"
 
 import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Pill, Leaf, Save } from "lucide-react"
-import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { Save, Package } from "lucide-react"
+import { toast } from "sonner"
 
 interface SavePrescriptionTemplateModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  allopathicMedicines: Array<{
-    name: string
-    dosage: string
-    frequency: string
-    duration: string
-    instructions?: string
-  }>
-  ayurvedicMedicines: Array<{
-    name: string
-    dosage: string
-    frequency: string
-    duration: string
-    instructions?: string
-  }>
+  isOpen: boolean
+  onClose: () => void
+  onSave: (templateData: any) => void
+  ayurvedicPrescriptions: any[]
+  allopathicPrescriptions: any[]
   department: string
 }
 
 export function SavePrescriptionTemplateModal({
-  open,
-  onOpenChange,
-  allopathicMedicines,
-  ayurvedicMedicines,
+  isOpen,
+  onClose,
+  onSave,
+  ayurvedicPrescriptions,
+  allopathicPrescriptions,
   department,
 }: SavePrescriptionTemplateModalProps) {
-  const [name, setName] = useState("")
+  const [templateName, setTemplateName] = useState("")
   const [description, setDescription] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const { saveTemplate } = usePrescriptionTemplates()
 
-  const handleSave = async () => {
-    if (!name.trim()) return
-
-    setIsSaving(true)
-
-    try {
-      const category =
-        allopathicMedicines.length > 0 && ayurvedicMedicines.length > 0
-          ? "mixed"
-          : allopathicMedicines.length > 0
-            ? "allopathic"
-            : "ayurvedic"
-
-      await saveTemplate({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        department,
-        createdBy: "Current Doctor", // In real app, get from auth context
-        category,
-        allopathicMedicines,
-        ayurvedicMedicines,
-      })
-
-      // Reset form and close modal
-      setName("")
-      setDescription("")
-      onOpenChange(false)
-    } catch (error) {
-      console.error("Error saving template:", error)
-    } finally {
-      setIsSaving(false)
+  const handleSave = () => {
+    if (!templateName.trim()) {
+      toast.error("Please enter a template name")
+      return
     }
+
+    const templateData = {
+      name: templateName.trim(),
+      description: description.trim(),
+      department,
+      ayurvedicPrescriptions,
+      allopathicPrescriptions,
+      type:
+        ayurvedicPrescriptions.length > 0 && allopathicPrescriptions.length > 0
+          ? "mixed"
+          : ayurvedicPrescriptions.length > 0
+            ? "ayurvedic"
+            : "allopathic",
+      createdBy: "Current Doctor", // This would come from auth context
+    }
+
+    onSave(templateData)
+    toast.success("Template saved successfully!")
+    setTemplateName("")
+    setDescription("")
+    onClose()
   }
 
-  const totalMedicines = allopathicMedicines.length + ayurvedicMedicines.length
+  const totalPrescriptions = ayurvedicPrescriptions.length + allopathicPrescriptions.length
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Save className="h-5 w-5 text-blue-600" />
+            <Package className="h-5 w-5" />
             Save Prescription Template
           </DialogTitle>
-          <DialogDescription>
-            Save this prescription as a template for future use. You can load it later to quickly prescribe the same
-            medicines.
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Template Preview */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-2">Template Preview</h4>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                {department}
-              </Badge>
-              <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-                {totalMedicines} Total Medicines
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              {allopathicMedicines.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Pill className="w-4 h-4 text-green-600" />
-                  <span>{allopathicMedicines.length} Allopathic</span>
-                </div>
-              )}
-              {ayurvedicMedicines.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Leaf className="w-4 h-4 text-amber-600" />
-                  <span>{ayurvedicMedicines.length} Ayurvedic</span>
-                </div>
-              )}
+          {/* Template Summary */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-medium mb-2">Template Summary</h4>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>
+                Department: <span className="font-medium">{department}</span>
+              </p>
+              <p>
+                Ayurvedic Medicines: <span className="font-medium">{ayurvedicPrescriptions.length}</span>
+              </p>
+              <p>
+                Allopathic Medicines: <span className="font-medium">{allopathicPrescriptions.length}</span>
+              </p>
+              <p>
+                Total Prescriptions: <span className="font-medium">{totalPrescriptions}</span>
+              </p>
             </div>
           </div>
 
           {/* Template Name */}
           <div className="space-y-2">
-            <Label htmlFor="template-name">Template Name *</Label>
+            <Label htmlFor="templateName">Template Name *</Label>
             <Input
-              id="template-name"
-              placeholder="e.g., Common Cold Treatment, Post-Surgery Care"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="templateName"
+              placeholder="e.g., Diabetes Management Protocol"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
             />
           </div>
 
-          {/* Template Description */}
+          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="template-description">Description (Optional)</Label>
+            <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
-              id="template-description"
+              id="description"
               placeholder="Brief description of when to use this template..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={!name.trim() || isSaving} className="bg-blue-600 hover:bg-blue-700">
-            {isSaving ? "Saving..." : "Save Template"}
-          </Button>
-        </DialogFooter>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="bg-orange-600 hover:bg-orange-700">
+              <Save className="h-4 w-4 mr-2" />
+              Save Template
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

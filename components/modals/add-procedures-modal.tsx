@@ -23,7 +23,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Available procedures by department
 const procedures = [
@@ -202,78 +201,6 @@ const procedures = [
     duration: "1 day",
     price: 1200,
   },
-
-  // Pediatrics
-  {
-    value: "pediatric-vaccination",
-    label: "Pediatric Vaccination",
-    department: "Pediatrics",
-    sessions: 1,
-    duration: "1 day",
-    price: 300,
-  },
-  {
-    value: "pediatric-checkup",
-    label: "Pediatric Health Checkup",
-    department: "Pediatrics",
-    sessions: 1,
-    duration: "1 day",
-    price: 1200,
-  },
-
-  // Psychiatry
-  {
-    value: "psych-counseling",
-    label: "Individual Counseling Session",
-    department: "Psychiatry",
-    sessions: 8,
-    duration: "2 months",
-    price: 4000,
-  },
-  {
-    value: "psych-assessment",
-    label: "Psychological Assessment",
-    department: "Psychiatry",
-    sessions: 2,
-    duration: "1 week",
-    price: 2500,
-  },
-
-  // ENT
-  {
-    value: "ent-audiometry",
-    label: "Audiometry Test",
-    department: "ENT",
-    sessions: 1,
-    duration: "1 day",
-    price: 800,
-  },
-  {
-    value: "ent-endoscopy",
-    label: "Nasal Endoscopy",
-    department: "ENT",
-    sessions: 1,
-    duration: "1 day",
-    price: 1500,
-  },
-
-  // Dental
-  {
-    value: "dental-cleaning",
-    label: "Professional Dental Cleaning",
-    department: "Dental",
-    sessions: 1,
-    duration: "1 day",
-    price: 1000,
-  },
-  {
-    value: "dental-filling",
-    label: "Dental Filling",
-    department: "Dental",
-    sessions: 1,
-    duration: "1 day",
-    price: 1500,
-  },
 ]
 
 // Form schema
@@ -393,23 +320,18 @@ export function AddProceduresModal({ isOpen, onClose, onSuccess, patientId, pati
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="department-filter" className="text-sm font-medium whitespace-nowrap">
-                      Department:
-                    </Label>
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                      <SelectTrigger className="w-full max-w-xs">
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Departments</SelectItem>
-                        {departments.slice(1).map((department) => (
-                          <SelectItem key={department} value={department}>
-                            {department}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-wrap gap-2">
+                    {departments.map((department) => (
+                      <Button
+                        key={department}
+                        type="button"
+                        variant={selectedDepartment === department ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedDepartment(department)}
+                      >
+                        {department === "all" ? "All Departments" : department}
+                      </Button>
+                    ))}
                   </div>
                 </div>
 
