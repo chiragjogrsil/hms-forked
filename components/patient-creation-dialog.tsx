@@ -4,7 +4,7 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { CalendarIcon, User, Phone, MapPin, Heart, FileText, Save, X } from "lucide-react"
+import { CalendarIcon, User, Phone, MapPin, Heart, FileText, Save, X, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 
@@ -19,6 +19,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 // Enhanced form schema with comprehensive validation
 const patientFormSchema = z.object({
@@ -77,6 +79,46 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
+
+  const [scheduleAppointment, setScheduleAppointment] = useState(false)
+  const [appointmentDate, setAppointmentDate] = useState<Date | undefined>(new Date())
+  const [appointmentTime, setAppointmentTime] = useState("")
+  const [department, setDepartment] = useState("")
+  const [doctor, setDoctor] = useState("")
+  const [consultationType, setConsultationType] = useState("")
+
+  // Available time slots
+  const timeSlots = [
+    "09:00 AM",
+    "09:30 AM",
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
+    "01:00 PM",
+    "01:30 PM",
+    "02:00 PM",
+    "02:30 PM",
+    "03:00 PM",
+    "03:30 PM",
+    "04:00 PM",
+    "04:30 PM",
+  ]
+
+  // Department to doctors mapping
+  const departmentDoctorsMap: Record<string, string[]> = {
+    "General Medicine": ["Dr. Smith", "Dr. Johnson", "Dr. Wilson"],
+    Cardiology: ["Dr. Johnson", "Dr. Martinez", "Dr. Lee"],
+    Orthopedics: ["Dr. Williams", "Dr. Garcia", "Dr. Anderson"],
+    Pediatrics: ["Dr. Davis", "Dr. Roberts", "Dr. White"],
+    Neurology: ["Dr. Brown", "Dr. Thompson", "Dr. Harris"],
+    Dermatology: ["Dr. Miller", "Dr. Clark", "Dr. Lewis"],
+  }
+
+  // Get available doctors based on selected department
+  const availableDoctors = department ? departmentDoctorsMap[department] || [] : []
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
@@ -185,21 +227,47 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Show success toast
-      toast.success("Patient created successfully!", {
-        description: `${patientData.name} has been added to the system with ID: ${patientId}`,
-        duration: 5000,
-        action: {
-          label: "View Patient",
-          onClick: () => {
-            onPatientCreated(patientData)
-          },
-        },
-      })
+      // Create appointment if requested
+      if (scheduleAppointment && appointmentDate && appointmentTime && department && doctor && consultationType) {
+        const appointmentData = {
+          id: `app-${Date.now()}`,
+          patientId: patientId,
+          patientName: patientData.name,
+          department,
+          doctor,
+          date: appointmentDate,
+          time: appointmentTime,
+          type: consultationType,
+          appointmentType: "general",
+          fee: 1500,
+          paymentStatus: "pending",
+          status: "scheduled",
+          contactNumber: data.mobileNumber,
+          token: `Token #${Math.floor(Math.random() * 100)}`,
+        }
+
+        // Show success toast with appointment info
+        toast.success("Patient and Appointment Created!", {
+          description: `${patientData.name} registered with ID: ${patientId}. Appointment scheduled with ${doctor} on ${format(appointmentDate, "PPP")} at ${appointmentTime}.`,
+          duration: 8000,
+        })
+      } else {
+        // Show success toast for patient only
+        toast.success("Patient created successfully!", {
+          description: `${patientData.name} has been added to the system with ID: ${patientId}`,
+          duration: 5000,
+        })
+      }
 
       // Reset form and close dialog
       form.reset()
       setCurrentStep(1)
+      setScheduleAppointment(false)
+      setAppointmentDate(new Date())
+      setAppointmentTime("")
+      setDepartment("")
+      setDoctor("")
+      setConsultationType("")
       onOpenChange(false)
 
       // Call the callback with patient data
@@ -776,6 +844,139 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
                 </Card>
               </div>
             )}
+
+            {/* Appointment Scheduling Section */}
+            <Card className="border-2 border-blue-200 bg-blue-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  Schedule Appointment (Optional)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    id="schedule-appointment"
+                    checked={scheduleAppointment}
+                    onCheckedChange={setScheduleAppointment}
+                    className="data-[state=checked]:bg-blue-500"
+                  />
+                  <Label htmlFor="schedule-appointment" className="font-medium text-gray-700">
+                    Schedule an appointment for this patient
+                  </Label>
+                </div>
+
+                {scheduleAppointment && (
+                  <div className="space-y-4 pt-4 border-t border-blue-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Department *</Label>
+                        <Select value={department} onValueChange={setDepartment}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="General Medicine">General Medicine</SelectItem>
+                            <SelectItem value="Cardiology">Cardiology</SelectItem>
+                            <SelectItem value="Orthopedics">Orthopedics</SelectItem>
+                            <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                            <SelectItem value="Neurology">Neurology</SelectItem>
+                            <SelectItem value="Dermatology">Dermatology</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Doctor *</Label>
+                        <Select value={doctor} onValueChange={setDoctor} disabled={!department}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={department ? "Select doctor" : "Select department first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDoctors.map((doc) => (
+                              <SelectItem key={doc} value={doc}>
+                                {doc}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Consultation Type *</Label>
+                        <Select value={consultationType} onValueChange={setConsultationType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Consultation">Consultation</SelectItem>
+                            <SelectItem value="Follow-up">Follow-up</SelectItem>
+                            <SelectItem value="Procedure">Procedure</SelectItem>
+                            <SelectItem value="Test">Test</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Time *</Label>
+                        <Select value={appointmentTime} onValueChange={setAppointmentTime}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeSlots.map((slot) => (
+                              <SelectItem key={slot} value={slot}>
+                                {slot}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Appointment Date *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !appointmentDate && "text-muted-foreground",
+                            )}
+                          >
+                            {appointmentDate ? format(appointmentDate, "PPP") : <span>Pick a date</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={appointmentDate}
+                            onSelect={(date) => {
+                              setAppointmentDate(date)
+                            }}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            defaultMonth={appointmentDate}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {scheduleAppointment &&
+                      (!department || !doctor || !consultationType || !appointmentTime || !appointmentDate) && (
+                        <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
+                          Please fill in all appointment fields to schedule an appointment along with patient
+                          registration.
+                        </div>
+                      )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-6 border-t">
