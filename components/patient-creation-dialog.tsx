@@ -52,50 +52,12 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface PatientCreationDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onPatientCreated: (patientData: any) => void
 }
 
-// Mock data for departments and doctors
-const departments = [
-  { id: "cardiology", name: "Cardiology" },
-  { id: "neurology", name: "Neurology" },
-  { id: "orthopedics", name: "Orthopedics" },
-  { id: "pediatrics", name: "Pediatrics" },
-  { id: "general", name: "General Medicine" },
-]
-
-const doctors = [
-  { id: "dr-sharma", name: "Dr. Sharma", department: "cardiology" },
-  { id: "dr-patel", name: "Dr. Patel", department: "neurology" },
-  { id: "dr-kumar", name: "Dr. Kumar", department: "orthopedics" },
-  { id: "dr-gupta", name: "Dr. Gupta", department: "pediatrics" },
-  { id: "dr-singh", name: "Dr. Singh", department: "general" },
-]
-
-const consultationTypes = [
-  { id: "consultation", name: "Consultation" },
-  { id: "follow-up", name: "Follow-up" },
-  { id: "emergency", name: "Emergency" },
-]
-
-const timeSlots = [
-  "09:00 AM",
-  "09:30 AM",
-  "10:00 AM",
-  "10:30 AM",
-  "11:00 AM",
-  "11:30 AM",
-  "02:00 PM",
-  "02:30 PM",
-  "03:00 PM",
-  "03:30 PM",
-  "04:00 PM",
-  "04:30 PM",
-]
-
-export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCreationDialogProps) {
+export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: PatientCreationDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -134,6 +96,23 @@ export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCre
 
       // Generate patient ID
       const patientId = `PAT-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+
+      // Create patient data object
+      const patientData = {
+        id: patientId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        name: `${data.firstName} ${data.lastName}`,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+        emergencyContact: data.emergencyContact,
+        bloodGroup: data.bloodGroup,
+        allergies: data.allergies,
+        medicalHistory: data.medicalHistory,
+      }
 
       if (data.scheduleAppointment) {
         // Validate appointment fields
@@ -175,11 +154,6 @@ export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCre
             </div>
           ),
           duration: 10000,
-          action: (
-            <Button variant="outline" size="sm">
-              View Details
-            </Button>
-          ),
         })
 
         // Follow-up reminder toast
@@ -205,17 +179,12 @@ export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCre
             </div>
           ),
           duration: 6000,
-          action: (
-            <Button variant="outline" size="sm">
-              View Patient
-            </Button>
-          ),
         })
       }
 
       form.reset()
-      onSuccess()
-      onClose()
+      onPatientCreated(patientData)
+      onOpenChange(false)
     } catch (error) {
       toast({
         title: "Error",
@@ -229,11 +198,11 @@ export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCre
 
   const handleClose = () => {
     form.reset()
-    onClose()
+    onOpenChange(false)
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Patient</DialogTitle>
@@ -649,3 +618,41 @@ export function PatientCreationDialog({ isOpen, onClose, onSuccess }: PatientCre
     </Dialog>
   )
 }
+
+// Mock data for departments and doctors
+const departments = [
+  { id: "cardiology", name: "Cardiology" },
+  { id: "neurology", name: "Neurology" },
+  { id: "orthopedics", name: "Orthopedics" },
+  { id: "pediatrics", name: "Pediatrics" },
+  { id: "general", name: "General Medicine" },
+]
+
+const doctors = [
+  { id: "dr-sharma", name: "Dr. Sharma", department: "cardiology" },
+  { id: "dr-patel", name: "Dr. Patel", department: "neurology" },
+  { id: "dr-kumar", name: "Dr. Kumar", department: "orthopedics" },
+  { id: "dr-gupta", name: "Dr. Gupta", department: "pediatrics" },
+  { id: "dr-singh", name: "Dr. Singh", department: "general" },
+]
+
+const consultationTypes = [
+  { id: "consultation", name: "Consultation" },
+  { id: "follow-up", name: "Follow-up" },
+  { id: "emergency", name: "Emergency" },
+]
+
+const timeSlots = [
+  "09:00 AM",
+  "09:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "02:00 PM",
+  "02:30 PM",
+  "03:00 PM",
+  "03:30 PM",
+  "04:00 PM",
+  "04:30 PM",
+]
