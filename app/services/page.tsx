@@ -499,45 +499,71 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* Department Selection Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card
-          className={`cursor-pointer transition-all hover:shadow-md ${selectedDepartment === "all" ? "ring-2 ring-primary" : ""}`}
-          onClick={() => setSelectedDepartment("all")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">All Departments</CardTitle>
-            <Filter className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockServices.length}</div>
-            <p className="text-xs text-muted-foreground">Total Services</p>
-          </CardContent>
-        </Card>
+      {/* Department Selection Dropdown */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Department</CardTitle>
+          <CardDescription>Choose a department to view and manage its services</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center space-x-2">
+                      <Filter className="h-4 w-4" />
+                      <span>All Departments</span>
+                    </div>
+                  </SelectItem>
+                  {Object.entries(departments).map(([key, dept]) => {
+                    const Icon = dept.icon
+                    const count = mockServices.filter((service) => service.department === key).length
+                    return (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center space-x-2">
+                            <Icon className="h-4 w-4" />
+                            <span>{dept.name}</span>
+                          </div>
+                          <Badge variant="secondary" className="ml-2">
+                            {count}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {departmentStats.map((dept) => {
-          const Icon = dept.icon
-          const isSelected = selectedDepartment === dept.key
-          return (
-            <Card
-              key={dept.key}
-              className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary" : ""}`}
-              onClick={() => setSelectedDepartment(dept.key)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{dept.name}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dept.count}</div>
-                <p className="text-xs text-muted-foreground">
-                  {dept.pending}P • {dept.inProgress}IP • {dept.completed}C
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+            {selectedDeptInfo && (
+              <div className="lg:col-span-2">
+                <div className="flex items-center space-x-4 p-3 bg-muted/50 rounded-lg">
+                  <selectedDeptInfo.icon className="h-8 w-8 text-primary" />
+                  <div>
+                    <div className="font-medium">{selectedDeptInfo.name} Department</div>
+                    <div className="text-sm text-muted-foreground">{selectedDeptInfo.description}</div>
+                  </div>
+                  <div className="ml-auto flex items-center space-x-4 text-sm">
+                    <div className="text-center">
+                      <div className="font-medium">{selectedDeptInfo.staff}</div>
+                      <div className="text-muted-foreground">Staff</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium">{selectedDeptInfo.avgWaitTime}</div>
+                      <div className="text-muted-foreground">Avg Wait</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Overview Cards for Selected Department */}
       <div className="grid gap-4 md:grid-cols-4">
