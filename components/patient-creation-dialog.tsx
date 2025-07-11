@@ -224,9 +224,6 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
         status: "Active",
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       // Create appointment if requested
       if (scheduleAppointment && appointmentDate && appointmentTime && department && doctor && consultationType) {
         const appointmentData = {
@@ -243,19 +240,59 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
           paymentStatus: "pending",
           status: "scheduled",
           contactNumber: data.mobileNumber,
-          token: `Token #${Math.floor(Math.random() * 100)}`,
+          token: `Token #${Math.floor(Math.random() * 100) + 1}`,
         }
 
         // Show success toast with appointment info
-        toast.success("Patient and Appointment Created!", {
-          description: `${patientData.name} registered with ID: ${patientId}. Appointment scheduled with ${doctor} on ${format(appointmentDate, "PPP")} at ${appointmentTime}.`,
-          duration: 8000,
+        toast.success("Patient & Appointment Created Successfully!", {
+          description: (
+            <div className="space-y-2">
+              <div className="font-medium">Patient Details:</div>
+              <div>• Name: {patientData.name}</div>
+              <div>• Patient ID: {patientId}</div>
+              <div className="font-medium mt-2">Appointment Details:</div>
+              <div>• Doctor: {doctor}</div>
+              <div>• Department: {department}</div>
+              <div>• Date: {format(appointmentDate, "PPP")}</div>
+              <div>• Time: {appointmentTime}</div>
+              <div>• Type: {consultationType}</div>
+              <div>• Token: {appointmentData.token}</div>
+            </div>
+          ),
+          duration: 10000,
+          action: {
+            label: "View Details",
+            onClick: () => {
+              console.log("Appointment created:", appointmentData)
+            },
+          },
         })
+
+        // Also show a separate appointment confirmation toast
+        setTimeout(() => {
+          toast.info("Appointment Reminder", {
+            description: `Don't forget: ${patientData.name} has an appointment with ${doctor} on ${format(appointmentDate, "PPP")} at ${appointmentTime}`,
+            duration: 8000,
+          })
+        }, 2000)
       } else {
         // Show success toast for patient only
-        toast.success("Patient created successfully!", {
-          description: `${patientData.name} has been added to the system with ID: ${patientId}`,
-          duration: 5000,
+        toast.success("Patient Created Successfully!", {
+          description: (
+            <div className="space-y-1">
+              <div>• Name: {patientData.name}</div>
+              <div>• Patient ID: {patientId}</div>
+              <div>• Category: {data.category}</div>
+              <div>• Phone: {data.mobileNumber}</div>
+            </div>
+          ),
+          duration: 6000,
+          action: {
+            label: "View Patient",
+            onClick: () => {
+              onPatientCreated(patientData)
+            },
+          },
         })
       }
 
