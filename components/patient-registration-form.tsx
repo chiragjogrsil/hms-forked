@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Upload, CalendarIcon, Clock, User } from "lucide-react"
 import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -232,7 +233,7 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -244,8 +245,11 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                         initialFocus
+                        captionLayout="dropdown-buttons"
+                        fromYear={1900}
+                        toYear={new Date().getFullYear()}
                       />
                     </PopoverContent>
                   </Popover>
@@ -436,7 +440,7 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -444,7 +448,15 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                        captionLayout="dropdown-buttons"
+                        fromYear={2020}
+                        toYear={2030}
+                      />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
@@ -463,7 +475,7 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -471,7 +483,16 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear()}
+                        toYear={2030}
+                      />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
@@ -582,7 +603,10 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                             <FormControl>
                               <Button
                                 variant={"outline"}
-                                className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
+                                )}
                               >
                                 {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -596,6 +620,9 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
                               onSelect={field.onChange}
                               disabled={(date) => date < new Date()}
                               initialFocus
+                              captionLayout="dropdown-buttons"
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 1}
                             />
                           </PopoverContent>
                         </Popover>
