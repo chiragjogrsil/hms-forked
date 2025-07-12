@@ -6,36 +6,27 @@ import { useToast } from "@/hooks/use-toast"
 interface PatientCreationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onPatientCreated?: (data: any) => void
+  onPatientCreated?: (patient: any) => void
 }
 
 export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: PatientCreationDialogProps) {
   const { toast } = useToast()
 
-  const handlePatientSubmit = (data: any) => {
+  const handleSubmit = (data: any) => {
     console.log("Patient registration data:", data)
 
-    // Show success message
-    toast({
-      title: "Patient Registered Successfully",
-      description: `${data.firstName} ${data.lastName} has been registered with ID: ${data.patientId}`,
-    })
-
-    // If appointment is scheduled, show additional message
-    if (data.scheduleAppointment) {
+    // Simulate API call
+    setTimeout(() => {
       toast({
-        title: "Appointment Scheduled",
-        description: `Appointment scheduled for ${data.appointmentDate ? new Date(data.appointmentDate).toLocaleDateString() : "selected date"} at ${data.appointmentTime || "selected time"}`,
+        title: "Success!",
+        description: data.scheduleAppointment
+          ? "Patient registered and appointment scheduled successfully!"
+          : "Patient registered successfully!",
       })
-    }
 
-    // Call the callback if provided
-    if (onPatientCreated) {
-      onPatientCreated(data)
-    }
-
-    // Close the dialog
-    onOpenChange(false)
+      onPatientCreated?.(data)
+      onOpenChange(false)
+    }, 1000)
   }
 
   const handleCancel = () => {
@@ -46,12 +37,10 @@ export function PatientCreationDialog({ open, onOpenChange, onPatientCreated }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Patient Registration</DialogTitle>
-          <DialogDescription>
-            Register a new patient in the hospital management system. Fill in the required information below.
-          </DialogDescription>
+          <DialogTitle>Register New Patient</DialogTitle>
+          <DialogDescription>Enter patient information and optionally schedule an appointment</DialogDescription>
         </DialogHeader>
-        <PatientRegistrationForm onSubmit={handlePatientSubmit} onCancel={handleCancel} />
+        <PatientRegistrationForm onSubmit={handleSubmit} onCancel={handleCancel} />
       </DialogContent>
     </Dialog>
   )

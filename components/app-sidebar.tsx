@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, CreditCard, LayoutDashboard, Pill, Users, TestTube } from "lucide-react"
+import { Activity, CreditCard, LayoutDashboard, Pill, Users, TestTube, Settings } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -25,6 +25,7 @@ export function AppSidebar() {
     { title: "Billing", icon: CreditCard, path: "/billing" },
     { title: "Pharmacy", icon: Pill, path: "/pharmacy" },
     { title: "Reports", icon: Activity, path: "/reports" },
+    { title: "Settings", icon: Settings, path: "/settings" },
     { title: "Styled Dashboard", icon: LayoutDashboard, path: "/styled-dashboard" },
   ]
 
