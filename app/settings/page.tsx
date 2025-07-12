@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope } from "lucide-react"
+import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope, Construction } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SettingsSubNavigation } from "@/components/settings-sub-navigation"
 
@@ -315,6 +315,20 @@ const sampleData = {
   ],
 }
 
+// Coming Soon Component for non-implemented sections
+function ComingSoonCard({ title, description }: { title: string; description: string }) {
+  return (
+    <Card className="border-dashed">
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <Construction className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-muted-foreground text-center mb-4">{description}</p>
+        <Badge variant="secondary">Coming Soon</Badge>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -434,6 +448,9 @@ export default function SettingsPage() {
   const currentSubCategoryData = currentCategoryData?.subCategories.find((sub) => sub.id === selectedSubCategory)
   const currentData = sampleData[selectedSubCategory as keyof typeof sampleData] || []
 
+  // Check if current selection is implemented (only master data categories are implemented)
+  const isImplementedCategory = ["laboratory", "radiology", "clinical", "diagnosis"].includes(selectedCategory)
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Tree Navigation Sidebar */}
@@ -445,100 +462,117 @@ export default function SettingsPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 overflow-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            {currentCategoryData && <currentCategoryData.icon className={`h-6 w-6 ${currentCategoryData.color}`} />}
-            <h1 className="text-3xl font-bold">{currentSubCategoryData?.name}</h1>
-          </div>
-          <p className="text-muted-foreground">{currentSubCategoryData?.description}</p>
-        </div>
-
-        {/* Master Data Table */}
-        {currentSubCategoryData && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">Manage {currentSubCategoryData.name}</CardTitle>
-                  <CardDescription>
-                    {currentData.length} item{currentData.length !== 1 ? "s" : ""} in this category
-                  </CardDescription>
-                </div>
-                <Button onClick={() => handleCreate(selectedCategory, selectedSubCategory)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add {currentSubCategoryData.name.slice(0, -1)}
-                </Button>
+        {isImplementedCategory ? (
+          <>
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                {currentCategoryData && <currentCategoryData.icon className={`h-6 w-6 ${currentCategoryData.color}`} />}
+                <h1 className="text-3xl font-bold">{currentSubCategoryData?.name}</h1>
               </div>
-              <div className="flex items-center space-x-2">
-                <Search className="h-4 w-4" />
-                <Input
-                  placeholder={`Search ${currentSubCategoryData.name.toLowerCase()}...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {currentSubCategoryData.fields.map((field) => (
-                      <TableHead key={field.key}>{field.label}</TableHead>
-                    ))}
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentData
-                    .filter((item: any) =>
-                      Object.values(item).some((value) =>
-                        value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-                      ),
-                    )
-                    .map((item: any) => (
-                      <TableRow key={item.id}>
-                        {currentSubCategoryData.fields.map((field) => (
-                          <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
-                        ))}
-                        <TableCell>
-                          <ActionButtons id={item.id} masterType={currentSubCategoryData.name} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Dynamic Create Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New {getCurrentSubCategory()?.name.slice(0, -1)}</DialogTitle>
-              <DialogDescription>
-                Create a new {getCurrentSubCategory()?.name.toLowerCase().slice(0, -1)} entry.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
-              {getCurrentSubCategory()?.fields.map((field) => (
-                <div key={field.key} className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor={`field-${field.key}`} className="text-right">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </Label>
-                  {renderFormField(field)}
-                </div>
-              ))}
+              <p className="text-muted-foreground">{currentSubCategoryData?.description}</p>
             </div>
-            <DialogFooter>
-              <Button type="submit" onClick={() => setIsCreateDialogOpen(false)}>
-                Create {getCurrentSubCategory()?.name.slice(0, -1)}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
+            {/* Master Data Table */}
+            {currentSubCategoryData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">Manage {currentSubCategoryData.name}</CardTitle>
+                      <CardDescription>
+                        {currentData.length} item{currentData.length !== 1 ? "s" : ""} in this category
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate(selectedCategory, selectedSubCategory)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add {currentSubCategoryData.name.slice(0, -1)}
+                    </Button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4" />
+                    <Input
+                      placeholder={`Search ${currentSubCategoryData.name.toLowerCase()}...`}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {currentSubCategoryData.fields.map((field) => (
+                          <TableHead key={field.key}>{field.label}</TableHead>
+                        ))}
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentData
+                        .filter((item: any) =>
+                          Object.values(item).some((value) =>
+                            value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+                          ),
+                        )
+                        .map((item: any) => (
+                          <TableRow key={item.id}>
+                            {currentSubCategoryData.fields.map((field) => (
+                              <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
+                            ))}
+                            <TableCell>
+                              <ActionButtons id={item.id} masterType={currentSubCategoryData.name} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Dynamic Create Dialog */}
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New {getCurrentSubCategory()?.name.slice(0, -1)}</DialogTitle>
+                  <DialogDescription>
+                    Create a new {getCurrentSubCategory()?.name.toLowerCase().slice(0, -1)} entry.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
+                  {getCurrentSubCategory()?.fields.map((field) => (
+                    <div key={field.key} className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor={`field-${field.key}`} className="text-right">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </Label>
+                      {renderFormField(field)}
+                    </div>
+                  ))}
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={() => setIsCreateDialogOpen(false)}>
+                    Create {getCurrentSubCategory()?.name.slice(0, -1)}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        ) : (
+          // Coming Soon for non-implemented categories
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold mb-2">Settings</h1>
+              <p className="text-muted-foreground">Additional settings sections are coming soon</p>
+            </div>
+
+            <ComingSoonCard
+              title="Feature Under Development"
+              description="This settings section is currently being developed and will be available in a future update."
+            />
+          </div>
+        )}
       </div>
     </div>
   )
