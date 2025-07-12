@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Upload, CalendarIcon } from "lucide-react"
+import { Upload, CalendarIcon, Clock, User } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -16,9 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
 
-// Complete form schema with all required fields
+// Complete form schema with all required fields including appointment
 const patientFormSchema = z.object({
   firstName: z.string().min(2, {
     message: "First name must be at least 2 characters.",
@@ -48,6 +49,13 @@ const patientFormSchema = z.object({
   fileNumber: z.string().optional().or(z.literal("")),
   occupation: z.string().optional().or(z.literal("")),
   scheduleAppointment: z.boolean().optional(),
+  // Appointment fields (conditional)
+  appointmentDate: z.date().optional(),
+  appointmentTime: z.string().optional(),
+  appointmentType: z.string().optional(),
+  doctor: z.string().optional(),
+  department: z.string().optional(),
+  appointmentReason: z.string().optional(),
 })
 
 type PatientFormValues = z.infer<typeof patientFormSchema>
@@ -85,6 +93,12 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
       fileNumber: "",
       occupation: "",
       scheduleAppointment: false,
+      appointmentDate: undefined,
+      appointmentTime: "",
+      appointmentType: "consultation",
+      doctor: "",
+      department: "",
+      appointmentReason: "",
     },
     mode: "onChange",
   })
@@ -96,6 +110,47 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
     }
     onSubmit(submitData)
   }
+
+  // Available time slots
+  const timeSlots = [
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "11:00",
+    "11:30",
+    "12:00",
+    "12:30",
+    "14:00",
+    "14:30",
+    "15:00",
+    "15:30",
+    "16:00",
+    "16:30",
+    "17:00",
+    "17:30",
+  ]
+
+  // Doctors list
+  const doctors = [
+    { id: "dr-sharma", name: "Dr. Rajesh Sharma", department: "General Medicine" },
+    { id: "dr-patel", name: "Dr. Priya Patel", department: "Cardiology" },
+    { id: "dr-singh", name: "Dr. Amit Singh", department: "Orthopedics" },
+    { id: "dr-gupta", name: "Dr. Sunita Gupta", department: "Pediatrics" },
+    { id: "dr-kumar", name: "Dr. Vikash Kumar", department: "Dermatology" },
+  ]
+
+  // Departments
+  const departments = [
+    "General Medicine",
+    "Cardiology",
+    "Orthopedics",
+    "Pediatrics",
+    "Dermatology",
+    "Gynecology",
+    "Neurology",
+    "Psychiatry",
+  ]
 
   return (
     <Form {...form}>
@@ -489,23 +544,207 @@ export function PatientRegistrationForm({ onSubmit, onCancel }: PatientRegistrat
         <Separator />
 
         {/* Schedule Appointment Option */}
-        <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border">
-          <Switch
-            id="schedule-appointment"
-            checked={scheduleAppointment}
-            onCheckedChange={setScheduleAppointment}
-            className="data-[state=checked]:bg-teal-500"
-          />
-          <Label htmlFor="schedule-appointment" className="font-medium text-gray-700">
-            Schedule appointment after registration
-          </Label>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border">
+            <Switch
+              id="schedule-appointment"
+              checked={scheduleAppointment}
+              onCheckedChange={setScheduleAppointment}
+              className="data-[state=checked]:bg-teal-500"
+            />
+            <Label htmlFor="schedule-appointment" className="font-medium text-gray-700">
+              Schedule appointment after registration
+            </Label>
+          </div>
+
+          {/* Inline Appointment Details - Show when toggle is ON */}
+          {scheduleAppointment && (
+            <Card className="border-teal-200 bg-teal-50/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-teal-800">
+                  <CalendarIcon className="h-5 w-5" />
+                  Appointment Details
+                </CardTitle>
+                <CardDescription className="text-teal-600">
+                  Schedule an appointment for the patient after registration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="appointmentDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Appointment Date *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                              >
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="appointmentTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Appointment Time *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select time slot" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {timeSlots.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  {time}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select department" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept} value={dept}>
+                                {dept}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="doctor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Doctor *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select doctor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {doctors.map((doctor) => (
+                              <SelectItem key={doctor.id} value={doctor.id}>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  <div>
+                                    <div className="font-medium">{doctor.name}</div>
+                                    <div className="text-xs text-gray-500">{doctor.department}</div>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="appointmentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Appointment Type *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select appointment type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="consultation">Consultation</SelectItem>
+                          <SelectItem value="follow-up">Follow-up</SelectItem>
+                          <SelectItem value="check-up">Check-up</SelectItem>
+                          <SelectItem value="emergency">Emergency</SelectItem>
+                          <SelectItem value="procedure">Procedure</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="appointmentReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reason for Visit</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Brief description of the reason for appointment..."
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">Register Patient</Button>
+          <Button type="submit">
+            {scheduleAppointment ? "Register Patient & Schedule Appointment" : "Register Patient"}
+          </Button>
         </div>
       </form>
     </Form>
