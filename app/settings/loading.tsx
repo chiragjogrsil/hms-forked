@@ -1,58 +1,58 @@
+import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+
 export default function SettingsLoading() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2" />
-          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse" />
+          <Skeleton className="h-8 w-32 mb-2" />
+          <Skeleton className="h-4 w-64" />
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-10 w-24 bg-gray-200 rounded animate-pulse" />
-          ))}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-10 w-full" />
         </div>
+        <div className="flex-1">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
 
-        <div className="space-y-4">
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
-            ))}
-          </div>
-
-          <div className="border rounded-lg">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
-                </div>
-                <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
-              </div>
-              <div className="h-10 w-64 bg-gray-200 rounded animate-pulse" />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-6 w-32 mb-2" />
+              <Skeleton className="h-4 w-48" />
             </div>
-
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-8 gap-4">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
-                  ))}
-                </div>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="grid grid-cols-8 gap-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
-                      <div key={j} className="h-4 bg-gray-200 rounded animate-pulse" />
-                    ))}
-                  </div>
+            <Skeleton className="h-10 w-24" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-10 w-64" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex space-x-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-24" />
+              ))}
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex space-x-4">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Skeleton key={j} className="h-8 w-24" />
                 ))}
               </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Plus,
   Eye,
@@ -31,7 +31,6 @@ import {
   CreditCard,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Master Categories Configuration - Easily extensible
 const masterCategories = [
@@ -170,7 +169,6 @@ const masterCategories = [
       },
     ],
   },
-  // Future categories can be easily added here
   {
     id: "pharmacy",
     name: "Pharmacy",
@@ -268,15 +266,29 @@ const sampleData = {
       preferredLab: "Central Lab",
       units: "mg/dL",
     },
+    {
+      id: 4,
+      name: "Thyroid Function Test",
+      category: "Endocrinology",
+      cost: 600,
+      normalRange: "TSH: 0.4-4.0 mIU/L",
+      barCode: "TFT001",
+      preferredLab: "Specialty Lab",
+      units: "mIU/L",
+    },
   ],
   "lab-units": [
     { id: 1, name: "mg/dL", description: "Milligrams per deciliter" },
     { id: 2, name: "x10³/μL", description: "Thousands per microliter" },
     { id: 3, name: "mIU/L", description: "Milli-international units per liter" },
+    { id: 4, name: "g/dL", description: "Grams per deciliter" },
+    { id: 5, name: "IU/L", description: "International units per liter" },
   ],
   "lab-packages": [
-    { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting"] },
-    { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c"] },
+    { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting", "Lipid Profile"] },
+    { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c", "Urine Sugar"] },
+    { id: 3, name: "Cardiac Profile", tests: ["Lipid Profile", "Troponin", "ECG"] },
+    { id: 4, name: "Thyroid Package", tests: ["Thyroid Function Test", "T3", "T4"] },
   ],
   "imaging-tests": [
     { id: 1, name: "Chest X-Ray", category: "X-Ray", cost: 300, barCode: "CXR001", preferredLab: "Radiology Dept" },
@@ -288,28 +300,55 @@ const sampleData = {
       barCode: "CTH001",
       preferredLab: "Advanced Imaging",
     },
+    { id: 3, name: "MRI Brain", category: "MRI", cost: 8000, barCode: "MRB001", preferredLab: "Advanced Imaging" },
+    {
+      id: 4,
+      name: "Ultrasound Abdomen",
+      category: "Ultrasound",
+      cost: 800,
+      barCode: "USA001",
+      preferredLab: "Radiology Dept",
+    },
   ],
-  "radiology-packages": [{ id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] }],
+  "radiology-packages": [
+    { id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] },
+    { id: 2, name: "Neurological Imaging", tests: ["CT Scan Head", "MRI Brain"] },
+    { id: 3, name: "Cardiac Imaging", tests: ["Chest X-Ray", "ECG", "Echo"] },
+  ],
   "chief-complaints": [
     { id: 1, name: "Fever", category: "General" },
     { id: 2, name: "Headache", category: "Neurological" },
     { id: 3, name: "Chest Pain", category: "Cardiac" },
+    { id: 4, name: "Shortness of Breath", category: "Respiratory" },
+    { id: 5, name: "Abdominal Pain", category: "Gastrointestinal" },
   ],
   "medical-history": [
     { id: 1, name: "Hypertension", category: "Cardiovascular" },
     { id: 2, name: "Diabetes Mellitus", category: "Endocrine" },
+    { id: 3, name: "Asthma", category: "Respiratory" },
+    { id: 4, name: "Heart Disease", category: "Cardiovascular" },
+    { id: 5, name: "Previous Surgery", category: "Surgical" },
   ],
   investigation: [
     { id: 1, name: "Blood Investigation", category: "Laboratory" },
     { id: 2, name: "ECG", category: "Cardiac" },
+    { id: 3, name: "Chest Examination", category: "Physical" },
+    { id: 4, name: "Neurological Examination", category: "Physical" },
+    { id: 5, name: "Urine Analysis", category: "Laboratory" },
   ],
   observation: [
     { id: 1, name: "Patient appears well", category: "General" },
     { id: 2, name: "Vital signs stable", category: "Vitals" },
+    { id: 3, name: "Patient in distress", category: "General" },
+    { id: 4, name: "Respiratory distress", category: "Respiratory" },
+    { id: 5, name: "Cardiac murmur present", category: "Cardiac" },
   ],
   diagnoses: [
     { id: 1, name: "Essential Hypertension", icdCode: "I10", category: "Cardiovascular" },
     { id: 2, name: "Type 2 Diabetes Mellitus", icdCode: "E11", category: "Endocrine" },
+    { id: 3, name: "Acute Upper Respiratory Infection", icdCode: "J06.9", category: "Respiratory" },
+    { id: 4, name: "Gastroesophageal Reflux Disease", icdCode: "K21.9", category: "Gastrointestinal" },
+    { id: 5, name: "Migraine", icdCode: "G43", category: "Neurological" },
   ],
   medicines: [
     {
@@ -330,6 +369,15 @@ const sampleData = {
       strength: "250",
       unit: "mg",
     },
+    {
+      id: 3,
+      name: "Metformin",
+      genericName: "Metformin HCl",
+      category: "Antidiabetic",
+      manufacturer: "DEF Pharma",
+      strength: "500",
+      unit: "mg",
+    },
   ],
   suppliers: [
     {
@@ -339,21 +387,43 @@ const sampleData = {
       email: "contact@medsupply.com",
       address: "123 Medical Street, City",
     },
+    {
+      id: 2,
+      name: "PharmaCorp Ltd.",
+      contact: "+91-8765432109",
+      email: "info@pharmacorp.com",
+      address: "456 Pharma Avenue, City",
+    },
   ],
   "payment-methods": [
     { id: 1, name: "Cash", description: "Cash payment", isActive: true },
     { id: 2, name: "Credit Card", description: "Credit card payment", isActive: true },
+    { id: 3, name: "Debit Card", description: "Debit card payment", isActive: true },
+    { id: 4, name: "UPI", description: "UPI payment", isActive: true },
   ],
-  "insurance-providers": [{ id: 1, name: "Health Insurance Co.", contact: "+91-1234567890", coverage: 80 }],
+  "insurance-providers": [
+    { id: 1, name: "Health Insurance Co.", contact: "+91-1234567890", coverage: 80 },
+    { id: 2, name: "Medical Care Insurance", contact: "+91-2345678901", coverage: 70 },
+    { id: 3, name: "Life & Health Insurance", contact: "+91-3456789012", coverage: 90 },
+  ],
 }
 
 export default function SettingsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState("laboratory")
+  const [selectedSubCategory, setSelectedSubCategory] = useState("lab-tests")
   const [currentCategory, setCurrentCategory] = useState("")
   const [currentSubCategory, setCurrentSubCategory] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("laboratory")
   const { toast } = useToast()
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId)
+    const category = masterCategories.find((cat) => cat.id === categoryId)
+    if (category && category.subCategories.length > 0) {
+      setSelectedSubCategory(category.subCategories[0].id)
+    }
+  }
 
   const handleCreate = (categoryId: string, subCategoryId: string) => {
     setCurrentCategory(categoryId)
@@ -400,6 +470,9 @@ export default function SettingsPage() {
   const renderFieldValue = (value: any, field: any) => {
     if (field.key === "cost" && typeof value === "number") {
       return `₹${value}`
+    }
+    if (field.key === "coverage" && typeof value === "number") {
+      return `${value}%`
     }
     if (field.key === "category") {
       return <Badge variant="secondary">{value}</Badge>
@@ -466,6 +539,10 @@ export default function SettingsPage() {
     return category?.subCategories.find((sub) => sub.id === currentSubCategory)
   }
 
+  const currentCategoryData = masterCategories.find((cat) => cat.id === selectedCategory)
+  const currentSubCategoryData = currentCategoryData?.subCategories.find((sub) => sub.id === selectedSubCategory)
+  const currentData = sampleData[selectedSubCategory as keyof typeof sampleData] || []
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -475,139 +552,127 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          {masterCategories.map((category) => {
-            const IconComponent = category.icon
-            return (
-              <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
-                <IconComponent className={`h-4 w-4 ${category.color}`} />
-                <span className="hidden sm:inline">{category.name}</span>
-              </TabsTrigger>
-            )
-          })}
-        </TabsList>
-
-        {masterCategories.map((category) => (
-          <TabsContent key={category.id} value={category.id}>
-            {category.subCategories.length > 1 ? (
-              <Tabs defaultValue={category.subCategories[0].id} className="space-y-4">
-                <TabsList
-                  className="grid w-full"
-                  style={{ gridTemplateColumns: `repeat(${category.subCategories.length}, 1fr)` }}
-                >
-                  {category.subCategories.map((subCategory) => (
-                    <TabsTrigger key={subCategory.id} value={subCategory.id}>
-                      {subCategory.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                {category.subCategories.map((subCategory) => (
-                  <TabsContent key={subCategory.id} value={subCategory.id}>
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle>{subCategory.name}</CardTitle>
-                            <CardDescription>{subCategory.description}</CardDescription>
-                          </div>
-                          <Button onClick={() => handleCreate(category.id, subCategory.id)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add {subCategory.name.slice(0, -1)}
-                          </Button>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Search className="h-4 w-4" />
-                          <Input
-                            placeholder={`Search ${subCategory.name.toLowerCase()}...`}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="max-w-sm"
-                          />
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {subCategory.fields.map((field) => (
-                                <TableHead key={field.key}>{field.label}</TableHead>
-                              ))}
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {(sampleData[subCategory.id as keyof typeof sampleData] || []).map((item: any) => (
-                              <TableRow key={item.id}>
-                                {subCategory.fields.map((field) => (
-                                  <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
-                                ))}
-                                <TableCell>
-                                  <ActionButtons id={item.id} masterType={subCategory.name} />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            ) : (
-              // Single subcategory - render directly
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{category.subCategories[0].name}</CardTitle>
-                      <CardDescription>{category.subCategories[0].description}</CardDescription>
+      {/* Category and Subcategory Dropdowns */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1">
+          <Label htmlFor="category-select" className="text-sm font-medium mb-2 block">
+            Master Category
+          </Label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger id="category-select" className="w-full">
+              <SelectValue placeholder="Select a category">
+                {currentCategoryData && (
+                  <div className="flex items-center gap-2">
+                    <currentCategoryData.icon className={`h-4 w-4 ${currentCategoryData.color}`} />
+                    <span>{currentCategoryData.name}</span>
+                  </div>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {masterCategories.map((category) => {
+                const IconComponent = category.icon
+                return (
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      <IconComponent className={`h-4 w-4 ${category.color}`} />
+                      <div>
+                        <div className="font-medium">{category.name}</div>
+                        <div className="text-xs text-muted-foreground">{category.description}</div>
+                      </div>
                     </div>
-                    <Button onClick={() => handleCreate(category.id, category.subCategories[0].id)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add {category.subCategories[0].name.slice(0, -1)}
-                    </Button>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Search className="h-4 w-4" />
-                    <Input
-                      placeholder={`Search ${category.subCategories[0].name.toLowerCase()}...`}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-sm"
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {category.subCategories[0].fields.map((field) => (
-                          <TableHead key={field.key}>{field.label}</TableHead>
-                        ))}
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(sampleData[category.subCategories[0].id as keyof typeof sampleData] || []).map((item: any) => (
-                        <TableRow key={item.id}>
-                          {category.subCategories[0].fields.map((field) => (
-                            <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
-                          ))}
-                          <TableCell>
-                            <ActionButtons id={item.id} masterType={category.subCategories[0].name} />
-                          </TableCell>
-                        </TableRow>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {currentCategoryData && currentCategoryData.subCategories.length > 1 && (
+          <div className="flex-1">
+            <Label htmlFor="subcategory-select" className="text-sm font-medium mb-2 block">
+              Sub Category
+            </Label>
+            <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory}>
+              <SelectTrigger id="subcategory-select" className="w-full">
+                <SelectValue placeholder="Select a subcategory">{currentSubCategoryData?.name}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {currentCategoryData.subCategories.map((subCategory) => (
+                  <SelectItem key={subCategory.id} value={subCategory.id}>
+                    <div>
+                      <div className="font-medium">{subCategory.name}</div>
+                      <div className="text-xs text-muted-foreground">{subCategory.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+
+      {/* Master Data Table */}
+      {currentSubCategoryData && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {currentCategoryData && (
+                    <currentCategoryData.icon className={`h-5 w-5 ${currentCategoryData.color}`} />
+                  )}
+                  {currentSubCategoryData.name}
+                </CardTitle>
+                <CardDescription>{currentSubCategoryData.description}</CardDescription>
+              </div>
+              <Button onClick={() => handleCreate(selectedCategory, selectedSubCategory)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add {currentSubCategoryData.name.slice(0, -1)}
+              </Button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <Input
+                placeholder={`Search ${currentSubCategoryData.name.toLowerCase()}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {currentSubCategoryData.fields.map((field) => (
+                    <TableHead key={field.key}>{field.label}</TableHead>
+                  ))}
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentData
+                  .filter((item: any) =>
+                    Object.values(item).some((value) =>
+                      value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+                    ),
+                  )
+                  .map((item: any) => (
+                    <TableRow key={item.id}>
+                      {currentSubCategoryData.fields.map((field) => (
+                        <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
                       ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+                      <TableCell>
+                        <ActionButtons id={item.id} masterType={currentSubCategoryData.name} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dynamic Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
