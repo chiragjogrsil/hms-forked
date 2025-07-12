@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -15,11 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 // Sample data for masters
 const labTests = [
@@ -53,234 +52,166 @@ const labTests = [
     preferredLab: "Central Lab",
     units: "mg/dL",
   },
+  {
+    id: 4,
+    name: "Thyroid Function Test",
+    category: "Endocrinology",
+    cost: 600,
+    normalRange: "TSH: 0.4-4.0 mIU/L",
+    barCode: "TFT001",
+    preferredLab: "Specialty Lab",
+    units: "mIU/L",
+  },
 ]
 
 const labUnits = [
   { id: 1, name: "mg/dL", description: "Milligrams per deciliter" },
   { id: 2, name: "x10³/μL", description: "Thousands per microliter" },
-  { id: 3, name: "IU/L", description: "International units per liter" },
-  { id: 4, name: "mmol/L", description: "Millimoles per liter" },
+  { id: 3, name: "mIU/L", description: "Milli-international units per liter" },
+  { id: 4, name: "g/dL", description: "Grams per deciliter" },
 ]
 
 const labPackages = [
-  { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting", "Urine Routine"] },
-  { id: 2, name: "Cardiac Profile", tests: ["Lipid Profile", "ECG", "Troponin"] },
-  { id: 3, name: "Diabetes Package", tests: ["Blood Sugar Fasting", "HbA1c", "Urine Sugar"] },
+  { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting", "Lipid Profile"] },
+  { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c", "Urine Sugar"] },
+  { id: 3, name: "Cardiac Profile", tests: ["Lipid Profile", "Troponin", "ECG"] },
 ]
 
 const radiologyTests = [
   { id: 1, name: "Chest X-Ray", category: "X-Ray", cost: 300, barCode: "CXR001", preferredLab: "Radiology Dept" },
-  { id: 2, name: "CT Scan Head", category: "CT Scan", cost: 2500, barCode: "CTH001", preferredLab: "Radiology Dept" },
-  { id: 3, name: "MRI Brain", category: "MRI", cost: 5000, barCode: "MRB001", preferredLab: "Radiology Dept" },
+  { id: 2, name: "CT Scan Head", category: "CT Scan", cost: 2500, barCode: "CTH001", preferredLab: "Advanced Imaging" },
+  { id: 3, name: "MRI Brain", category: "MRI", cost: 8000, barCode: "MRB001", preferredLab: "Advanced Imaging" },
+  {
+    id: 4,
+    name: "Ultrasound Abdomen",
+    category: "Ultrasound",
+    cost: 800,
+    barCode: "USA001",
+    preferredLab: "Radiology Dept",
+  },
 ]
 
 const radiologyPackages = [
-  { id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Abdomen X-Ray"] },
-  { id: 2, name: "Neurological Package", tests: ["CT Scan Head", "MRI Brain"] },
+  { id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] },
+  { id: 2, name: "Neurological Imaging", tests: ["CT Scan Head", "MRI Brain"] },
 ]
 
 const clinicalNotes = {
   chiefComplaints: [
-    { id: 1, value: "Fever" },
-    { id: 2, value: "Headache" },
-    { id: 3, value: "Chest pain" },
-    { id: 4, value: "Shortness of breath" },
+    { id: 1, name: "Fever" },
+    { id: 2, name: "Headache" },
+    { id: 3, name: "Chest Pain" },
+    { id: 4, name: "Shortness of Breath" },
+    { id: 5, name: "Abdominal Pain" },
   ],
   medicalHistory: [
-    { id: 1, value: "Diabetes" },
-    { id: 2, value: "Hypertension" },
-    { id: 3, value: "Heart disease" },
-    { id: 4, value: "Asthma" },
+    { id: 1, name: "Hypertension" },
+    { id: 2, name: "Diabetes Mellitus" },
+    { id: 3, name: "Heart Disease" },
+    { id: 4, name: "Asthma" },
+    { id: 5, name: "Previous Surgery" },
   ],
   investigation: [
-    { id: 1, value: "Blood pressure monitoring" },
-    { id: 2, value: "ECG" },
-    { id: 3, value: "Chest examination" },
-    { id: 4, value: "Neurological examination" },
+    { id: 1, name: "Blood Investigation" },
+    { id: 2, name: "Urine Analysis" },
+    { id: 3, name: "ECG" },
+    { id: 4, name: "Chest X-Ray" },
+    { id: 5, name: "CT Scan" },
   ],
   observation: [
-    { id: 1, value: "Patient appears well" },
-    { id: 2, value: "Mild distress" },
-    { id: 3, value: "Acute distress" },
-    { id: 4, value: "Stable condition" },
+    { id: 1, name: "Patient appears well" },
+    { id: 2, name: "Patient in distress" },
+    { id: 3, name: "Vital signs stable" },
+    { id: 4, name: "Respiratory distress" },
+    { id: 5, name: "Cardiac murmur present" },
   ],
 }
 
 const diagnoses = [
-  { id: 1, name: "Essential Hypertension", code: "I10" },
-  { id: 2, name: "Type 2 Diabetes", code: "E11" },
-  { id: 3, name: "Acute Bronchitis", code: "J20" },
-  { id: 4, name: "Migraine", code: "G43" },
+  { id: 1, name: "Essential Hypertension", icdCode: "I10" },
+  { id: 2, name: "Type 2 Diabetes Mellitus", icdCode: "E11" },
+  { id: 3, name: "Acute Upper Respiratory Infection", icdCode: "J06.9" },
+  { id: 4, name: "Gastroesophageal Reflux Disease", icdCode: "K21.9" },
 ]
 
 export default function SettingsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedMaster, setSelectedMaster] = useState("lab-tests")
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [currentMaster, setCurrentMaster] = useState("")
+  const { toast } = useToast()
 
-  const MasterTable = ({ title, data, columns, onView, onEdit, onDelete }) => (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>Manage {title.toLowerCase()} in the system</CardDescription>
-          </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New {title.slice(0, -1)}</DialogTitle>
-                <DialogDescription>Enter the details for the new {title.toLowerCase().slice(0, -1)}</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                {columns.map((column) => (
-                  <div key={column.key} className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor={column.key} className="text-right">
-                      {column.label}
-                    </Label>
-                    {column.type === "textarea" ? (
-                      <Textarea id={column.key} className="col-span-3" />
-                    ) : column.type === "select" ? (
-                      <Select>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder={`Select ${column.label}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {column.options?.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input id={column.key} className="col-span-3" type={column.type || "text"} />
-                    )}
-                  </div>
-                ))}
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={`Search ${title.toLowerCase()}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead key={column.key}>{column.label}</TableHead>
-              ))}
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data
-              .filter((item) =>
-                Object.values(item).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase())),
-              )
-              .map((item) => (
-                <TableRow key={item.id}>
-                  {columns.map((column) => (
-                    <TableCell key={column.key}>
-                      {column.render ? column.render(item[column.key], item) : item[column.key]}
-                    </TableCell>
-                  ))}
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => onView?.(item)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onEdit?.(item)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onDelete?.(item)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+  const handleCreate = (masterType: string) => {
+    setCurrentMaster(masterType)
+    setIsCreateDialogOpen(true)
+  }
+
+  const handleEdit = (id: number, masterType: string) => {
+    toast({
+      title: "Edit Item",
+      description: `Editing ${masterType} with ID: ${id}`,
+    })
+  }
+
+  const handleDelete = (id: number, masterType: string) => {
+    toast({
+      title: "Delete Item",
+      description: `Deleted ${masterType} with ID: ${id}`,
+      variant: "destructive",
+    })
+  }
+
+  const handleView = (id: number, masterType: string) => {
+    toast({
+      title: "View Item",
+      description: `Viewing details for ${masterType} with ID: ${id}`,
+    })
+  }
+
+  const ActionButtons = ({ id, masterType }: { id: number; masterType: string }) => (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={() => handleView(id, masterType)}>
+        <Eye className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => handleEdit(id, masterType)}>
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => handleDelete(id, masterType)}>
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
   )
 
-  const labTestColumns = [
-    { key: "name", label: "Test Name" },
-    { key: "category", label: "Category", render: (value) => <Badge variant="secondary">{value}</Badge> },
-    { key: "cost", label: "Cost", render: (value) => `₹${value}` },
-    { key: "normalRange", label: "Normal Range" },
-    { key: "barCode", label: "Bar Code" },
-    { key: "preferredLab", label: "Preferred Lab" },
-    { key: "units", label: "Units" },
-  ]
-
-  const labUnitColumns = [
-    { key: "name", label: "Unit Name" },
-    { key: "description", label: "Description" },
-  ]
-
-  const labPackageColumns = [
-    { key: "name", label: "Package Name" },
-    { key: "tests", label: "Tests", render: (tests) => <Badge variant="outline">{tests.length} tests</Badge> },
-  ]
-
-  const radiologyTestColumns = [
-    { key: "name", label: "Test Name" },
-    { key: "category", label: "Category", render: (value) => <Badge variant="secondary">{value}</Badge> },
-    { key: "cost", label: "Cost", render: (value) => `₹${value}` },
-    { key: "barCode", label: "Bar Code" },
-    { key: "preferredLab", label: "Preferred Lab" },
-  ]
-
-  const radiologyPackageColumns = [
-    { key: "name", label: "Package Name" },
-    { key: "tests", label: "Tests", render: (tests) => <Badge variant="outline">{tests.length} tests</Badge> },
-  ]
-
-  const clinicalNoteColumns = [{ key: "value", label: "Value" }]
-
-  const diagnosisColumns = [
-    { key: "name", label: "Diagnosis Name" },
-    { key: "code", label: "ICD Code" },
-  ]
-
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">Manage system masters and configuration</p>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Manage master data for your hospital management system</p>
         </div>
       </div>
 
-      <Tabs value={selectedMaster} onValueChange={setSelectedMaster} className="space-y-6">
+      <Tabs defaultValue="laboratory" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="laboratory">Laboratory</TabsTrigger>
-          <TabsTrigger value="radiology">Radiology</TabsTrigger>
-          <TabsTrigger value="patients">Patients</TabsTrigger>
-          <TabsTrigger value="diagnosis">Diagnosis</TabsTrigger>
+          <TabsTrigger value="laboratory" className="flex items-center gap-2">
+            <TestTube className="h-4 w-4" />
+            Laboratory
+          </TabsTrigger>
+          <TabsTrigger value="radiology" className="flex items-center gap-2">
+            <Microscope className="h-4 w-4" />
+            Radiology
+          </TabsTrigger>
+          <TabsTrigger value="patients" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Patients
+          </TabsTrigger>
+          <TabsTrigger value="diagnosis" className="flex items-center gap-2">
+            <Stethoscope className="h-4 w-4" />
+            Diagnosis
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="laboratory" className="space-y-6">
+        {/* Laboratory Tab */}
+        <TabsContent value="laboratory">
           <Tabs defaultValue="lab-tests" className="space-y-4">
             <TabsList>
               <TabsTrigger value="lab-tests">Lab Tests</TabsTrigger>
@@ -289,72 +220,259 @@ export default function SettingsPage() {
             </TabsList>
 
             <TabsContent value="lab-tests">
-              <MasterTable
-                title="Lab Tests"
-                data={labTests}
-                columns={labTestColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Lab Tests</CardTitle>
+                      <CardDescription>Manage laboratory test definitions</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Lab Test")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Lab Test
+                    </Button>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4" />
+                    <Input
+                      placeholder="Search lab tests..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Cost</TableHead>
+                        <TableHead>Normal Range</TableHead>
+                        <TableHead>Bar Code</TableHead>
+                        <TableHead>Preferred Lab</TableHead>
+                        <TableHead>Units</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {labTests.map((test) => (
+                        <TableRow key={test.id}>
+                          <TableCell className="font-medium">{test.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{test.category}</Badge>
+                          </TableCell>
+                          <TableCell>₹{test.cost}</TableCell>
+                          <TableCell>{test.normalRange}</TableCell>
+                          <TableCell>{test.barCode}</TableCell>
+                          <TableCell>{test.preferredLab}</TableCell>
+                          <TableCell>{test.units}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={test.id} masterType="Lab Test" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="lab-units">
-              <MasterTable
-                title="Lab Units"
-                data={labUnits}
-                columns={labUnitColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Lab Units</CardTitle>
+                      <CardDescription>Manage measurement units for lab tests</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Lab Unit")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Lab Unit
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {labUnits.map((unit) => (
+                        <TableRow key={unit.id}>
+                          <TableCell className="font-medium">{unit.name}</TableCell>
+                          <TableCell>{unit.description}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={unit.id} masterType="Lab Unit" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="lab-packages">
-              <MasterTable
-                title="Lab Packages"
-                data={labPackages}
-                columns={labPackageColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Lab Packages</CardTitle>
+                      <CardDescription>Manage lab test packages</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Lab Package")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Lab Package
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Tests Included</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {labPackages.map((pkg) => (
+                        <TableRow key={pkg.id}>
+                          <TableCell className="font-medium">{pkg.name}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {pkg.tests.map((test, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {test}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <ActionButtons id={pkg.id} masterType="Lab Package" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </TabsContent>
 
-        <TabsContent value="radiology" className="space-y-6">
-          <Tabs defaultValue="radiology-tests" className="space-y-4">
+        {/* Radiology Tab */}
+        <TabsContent value="radiology">
+          <Tabs defaultValue="imaging-tests" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="radiology-tests">Imaging Tests</TabsTrigger>
+              <TabsTrigger value="imaging-tests">Imaging Tests</TabsTrigger>
               <TabsTrigger value="radiology-packages">Radiology Packages</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="radiology-tests">
-              <MasterTable
-                title="Imaging Tests"
-                data={radiologyTests}
-                columns={radiologyTestColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+            <TabsContent value="imaging-tests">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Imaging Tests</CardTitle>
+                      <CardDescription>Manage radiology and imaging test definitions</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Imaging Test")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Imaging Test
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Cost</TableHead>
+                        <TableHead>Bar Code</TableHead>
+                        <TableHead>Preferred Lab</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {radiologyTests.map((test) => (
+                        <TableRow key={test.id}>
+                          <TableCell className="font-medium">{test.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{test.category}</Badge>
+                          </TableCell>
+                          <TableCell>₹{test.cost}</TableCell>
+                          <TableCell>{test.barCode}</TableCell>
+                          <TableCell>{test.preferredLab}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={test.id} masterType="Imaging Test" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="radiology-packages">
-              <MasterTable
-                title="Radiology Packages"
-                data={radiologyPackages}
-                columns={radiologyPackageColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Radiology Packages</CardTitle>
+                      <CardDescription>Manage radiology test packages</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Radiology Package")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Radiology Package
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Tests Included</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {radiologyPackages.map((pkg) => (
+                        <TableRow key={pkg.id}>
+                          <TableCell className="font-medium">{pkg.name}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {pkg.tests.map((test, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {test}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <ActionButtons id={pkg.id} masterType="Radiology Package" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </TabsContent>
 
-        <TabsContent value="patients" className="space-y-6">
+        {/* Patients Tab */}
+        <TabsContent value="patients">
           <Tabs defaultValue="chief-complaints" className="space-y-4">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="chief-complaints">Chief Complaints</TabsTrigger>
@@ -364,62 +482,268 @@ export default function SettingsPage() {
             </TabsList>
 
             <TabsContent value="chief-complaints">
-              <MasterTable
-                title="Chief Complaints"
-                data={clinicalNotes.chiefComplaints}
-                columns={clinicalNoteColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Chief Complaints</CardTitle>
+                      <CardDescription>Manage common patient complaints for dropdown selection</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Chief Complaint")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Chief Complaint
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clinicalNotes.chiefComplaints.map((complaint) => (
+                        <TableRow key={complaint.id}>
+                          <TableCell className="font-medium">{complaint.name}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={complaint.id} masterType="Chief Complaint" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="medical-history">
-              <MasterTable
-                title="Medical History"
-                data={clinicalNotes.medicalHistory}
-                columns={clinicalNoteColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Medical History</CardTitle>
+                      <CardDescription>Manage common medical history items</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Medical History")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Medical History
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clinicalNotes.medicalHistory.map((history) => (
+                        <TableRow key={history.id}>
+                          <TableCell className="font-medium">{history.name}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={history.id} masterType="Medical History" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="investigation">
-              <MasterTable
-                title="Investigation"
-                data={clinicalNotes.investigation}
-                columns={clinicalNoteColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Investigation</CardTitle>
+                      <CardDescription>Manage investigation procedures and methods</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Investigation")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Investigation
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clinicalNotes.investigation.map((investigation) => (
+                        <TableRow key={investigation.id}>
+                          <TableCell className="font-medium">{investigation.name}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={investigation.id} masterType="Investigation" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="observation">
-              <MasterTable
-                title="Observation"
-                data={clinicalNotes.observation}
-                columns={clinicalNoteColumns}
-                onView={(item) => console.log("View", item)}
-                onEdit={(item) => console.log("Edit", item)}
-                onDelete={(item) => console.log("Delete", item)}
-              />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Observation</CardTitle>
+                      <CardDescription>Manage clinical observation notes</CardDescription>
+                    </div>
+                    <Button onClick={() => handleCreate("Observation")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Observation
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clinicalNotes.observation.map((observation) => (
+                        <TableRow key={observation.id}>
+                          <TableCell className="font-medium">{observation.name}</TableCell>
+                          <TableCell>
+                            <ActionButtons id={observation.id} masterType="Observation" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </TabsContent>
 
+        {/* Diagnosis Tab */}
         <TabsContent value="diagnosis">
-          <MasterTable
-            title="Diagnosis"
-            data={diagnoses}
-            columns={diagnosisColumns}
-            onView={(item) => console.log("View", item)}
-            onEdit={(item) => console.log("Edit", item)}
-            onDelete={(item) => console.log("Delete", item)}
-          />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Diagnosis</CardTitle>
+                  <CardDescription>Manage medical diagnoses with ICD codes</CardDescription>
+                </div>
+                <Button onClick={() => handleCreate("Diagnosis")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Diagnosis
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>ICD Code</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {diagnoses.map((diagnosis) => (
+                    <TableRow key={diagnosis.id}>
+                      <TableCell className="font-medium">{diagnosis.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{diagnosis.icdCode}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <ActionButtons id={diagnosis.id} masterType="Diagnosis" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New {currentMaster}</DialogTitle>
+            <DialogDescription>Create a new {currentMaster.toLowerCase()} entry.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input id="name" className="col-span-3" />
+            </div>
+            {currentMaster.includes("Test") && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <Input id="category" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="cost" className="text-right">
+                    Cost
+                  </Label>
+                  <Input id="cost" type="number" className="col-span-3" />
+                </div>
+              </>
+            )}
+            {currentMaster === "Lab Test" && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="normalRange" className="text-right">
+                    Normal Range
+                  </Label>
+                  <Input id="normalRange" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="units" className="text-right">
+                    Units
+                  </Label>
+                  <Input id="units" className="col-span-3" />
+                </div>
+              </>
+            )}
+            {currentMaster === "Diagnosis" && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="icdCode" className="text-right">
+                  ICD Code
+                </Label>
+                <Input id="icdCode" className="col-span-3" />
+              </div>
+            )}
+            {currentMaster === "Lab Unit" && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Textarea id="description" className="col-span-3" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={() => setIsCreateDialogOpen(false)}>
+              Create {currentMaster}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

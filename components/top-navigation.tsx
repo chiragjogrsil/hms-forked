@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, LayoutDashboard, Users, TestTube } from "lucide-react"
+import { Activity, LayoutDashboard, Users, TestTube, Settings } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -13,6 +13,7 @@ export function TopNavigation() {
     { title: "Dashboard", icon: LayoutDashboard, path: "/" },
     { title: "Patients", icon: Users, path: "/patients" },
     { title: "Services", icon: TestTube, path: "/services" },
+    { title: "Settings", icon: Settings, path: "/settings" },
   ]
 
   return (
