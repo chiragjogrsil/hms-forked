@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronRight, TestTube, Microscope, Users, Stethoscope, Pill, CreditCard } from "lucide-react"
+import { ChevronDown, ChevronRight, TestTube, Microscope, Users, Stethoscope } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -59,26 +59,6 @@ const masterCategories: MasterCategory[] = [
     icon: Stethoscope,
     color: "text-red-600",
     subCategories: [{ id: "diagnoses", name: "Diagnoses", description: "Medical diagnoses with ICD codes" }],
-  },
-  {
-    id: "pharmacy",
-    name: "Pharmacy",
-    icon: Pill,
-    color: "text-orange-600",
-    subCategories: [
-      { id: "medicines", name: "Medicines", description: "Medicine definitions" },
-      { id: "suppliers", name: "Suppliers", description: "Medicine suppliers" },
-    ],
-  },
-  {
-    id: "billing",
-    name: "Billing",
-    icon: CreditCard,
-    color: "text-yellow-600",
-    subCategories: [
-      { id: "payment-methods", name: "Payment Methods", description: "Available payment methods" },
-      { id: "insurance-providers", name: "Insurance Providers", description: "Insurance companies" },
-    ],
   },
 ]
 

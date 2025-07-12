@@ -17,23 +17,11 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Search,
-  TestTube,
-  Microscope,
-  Users,
-  Stethoscope,
-  Pill,
-  CreditCard,
-} from "lucide-react"
+import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SettingsSubNavigation } from "@/components/settings-sub-navigation"
 
-// Master Categories Configuration
+// Master Categories Configuration - Only Laboratory, Radiology, Clinical Notes, and Diagnosis
 const masterCategories = [
   {
     id: "laboratory",
@@ -170,68 +158,6 @@ const masterCategories = [
       },
     ],
   },
-  {
-    id: "pharmacy",
-    name: "Pharmacy",
-    icon: Pill,
-    description: "Medicine and pharmacy masters",
-    color: "text-orange-600",
-    subCategories: [
-      {
-        id: "medicines",
-        name: "Medicines",
-        description: "Medicine definitions",
-        fields: [
-          { key: "name", label: "Medicine Name", type: "text", required: true },
-          { key: "genericName", label: "Generic Name", type: "text" },
-          { key: "category", label: "Category", type: "text" },
-          { key: "manufacturer", label: "Manufacturer", type: "text" },
-          { key: "strength", label: "Strength", type: "text" },
-          { key: "unit", label: "Unit", type: "text" },
-        ],
-      },
-      {
-        id: "suppliers",
-        name: "Suppliers",
-        description: "Medicine suppliers",
-        fields: [
-          { key: "name", label: "Supplier Name", type: "text", required: true },
-          { key: "contact", label: "Contact", type: "text" },
-          { key: "email", label: "Email", type: "email" },
-          { key: "address", label: "Address", type: "textarea" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "billing",
-    name: "Billing",
-    icon: CreditCard,
-    description: "Billing and payment masters",
-    color: "text-yellow-600",
-    subCategories: [
-      {
-        id: "payment-methods",
-        name: "Payment Methods",
-        description: "Available payment methods",
-        fields: [
-          { key: "name", label: "Method Name", type: "text", required: true },
-          { key: "description", label: "Description", type: "textarea" },
-          { key: "isActive", label: "Active", type: "checkbox" },
-        ],
-      },
-      {
-        id: "insurance-providers",
-        name: "Insurance Providers",
-        description: "Insurance companies",
-        fields: [
-          { key: "name", label: "Provider Name", type: "text", required: true },
-          { key: "contact", label: "Contact", type: "text" },
-          { key: "coverage", label: "Coverage %", type: "number" },
-        ],
-      },
-    ],
-  },
 ]
 
 // Sample data for each master
@@ -277,6 +203,16 @@ const sampleData = {
       preferredLab: "Specialty Lab",
       units: "mIU/L",
     },
+    {
+      id: 5,
+      name: "Liver Function Test",
+      category: "Biochemistry",
+      cost: 350,
+      normalRange: "ALT: 7-56 U/L",
+      barCode: "LFT001",
+      preferredLab: "Central Lab",
+      units: "U/L",
+    },
   ],
   "lab-units": [
     { id: 1, name: "mg/dL", description: "Milligrams per deciliter" },
@@ -284,12 +220,14 @@ const sampleData = {
     { id: 3, name: "mIU/L", description: "Milli-international units per liter" },
     { id: 4, name: "g/dL", description: "Grams per deciliter" },
     { id: 5, name: "IU/L", description: "International units per liter" },
+    { id: 6, name: "U/L", description: "Units per liter" },
   ],
   "lab-packages": [
     { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting", "Lipid Profile"] },
     { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c", "Urine Sugar"] },
     { id: 3, name: "Cardiac Profile", tests: ["Lipid Profile", "Troponin", "ECG"] },
     { id: 4, name: "Thyroid Package", tests: ["Thyroid Function Test", "T3", "T4"] },
+    { id: 5, name: "Liver Package", tests: ["Liver Function Test", "Bilirubin", "Protein"] },
   ],
   "imaging-tests": [
     { id: 1, name: "Chest X-Ray", category: "X-Ray", cost: 300, barCode: "CXR001", preferredLab: "Radiology Dept" },
@@ -310,11 +248,20 @@ const sampleData = {
       barCode: "USA001",
       preferredLab: "Radiology Dept",
     },
+    {
+      id: 5,
+      name: "Mammography",
+      category: "X-Ray",
+      cost: 1200,
+      barCode: "MAM001",
+      preferredLab: "Women's Imaging",
+    },
   ],
   "radiology-packages": [
     { id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] },
     { id: 2, name: "Neurological Imaging", tests: ["CT Scan Head", "MRI Brain"] },
     { id: 3, name: "Cardiac Imaging", tests: ["Chest X-Ray", "ECG", "Echo"] },
+    { id: 4, name: "Women's Health Imaging", tests: ["Mammography", "Pelvic Ultrasound"] },
   ],
   "chief-complaints": [
     { id: 1, name: "Fever", category: "General" },
@@ -322,6 +269,9 @@ const sampleData = {
     { id: 3, name: "Chest Pain", category: "Cardiac" },
     { id: 4, name: "Shortness of Breath", category: "Respiratory" },
     { id: 5, name: "Abdominal Pain", category: "Gastrointestinal" },
+    { id: 6, name: "Back Pain", category: "Musculoskeletal" },
+    { id: 7, name: "Dizziness", category: "Neurological" },
+    { id: 8, name: "Nausea", category: "Gastrointestinal" },
   ],
   "medical-history": [
     { id: 1, name: "Hypertension", category: "Cardiovascular" },
@@ -329,6 +279,9 @@ const sampleData = {
     { id: 3, name: "Asthma", category: "Respiratory" },
     { id: 4, name: "Heart Disease", category: "Cardiovascular" },
     { id: 5, name: "Previous Surgery", category: "Surgical" },
+    { id: 6, name: "Allergies", category: "Immunological" },
+    { id: 7, name: "Kidney Disease", category: "Renal" },
+    { id: 8, name: "Liver Disease", category: "Hepatic" },
   ],
   investigation: [
     { id: 1, name: "Blood Investigation", category: "Laboratory" },
@@ -336,6 +289,9 @@ const sampleData = {
     { id: 3, name: "Chest Examination", category: "Physical" },
     { id: 4, name: "Neurological Examination", category: "Physical" },
     { id: 5, name: "Urine Analysis", category: "Laboratory" },
+    { id: 6, name: "X-Ray", category: "Imaging" },
+    { id: 7, name: "Ultrasound", category: "Imaging" },
+    { id: 8, name: "Endoscopy", category: "Procedure" },
   ],
   observation: [
     { id: 1, name: "Patient appears well", category: "General" },
@@ -343,6 +299,9 @@ const sampleData = {
     { id: 3, name: "Patient in distress", category: "General" },
     { id: 4, name: "Respiratory distress", category: "Respiratory" },
     { id: 5, name: "Cardiac murmur present", category: "Cardiac" },
+    { id: 6, name: "Abdomen soft and non-tender", category: "Abdominal" },
+    { id: 7, name: "Neurologically intact", category: "Neurological" },
+    { id: 8, name: "Skin warm and dry", category: "Dermatological" },
   ],
   diagnoses: [
     { id: 1, name: "Essential Hypertension", icdCode: "I10", category: "Cardiovascular" },
@@ -350,62 +309,9 @@ const sampleData = {
     { id: 3, name: "Acute Upper Respiratory Infection", icdCode: "J06.9", category: "Respiratory" },
     { id: 4, name: "Gastroesophageal Reflux Disease", icdCode: "K21.9", category: "Gastrointestinal" },
     { id: 5, name: "Migraine", icdCode: "G43", category: "Neurological" },
-  ],
-  medicines: [
-    {
-      id: 1,
-      name: "Paracetamol",
-      genericName: "Acetaminophen",
-      category: "Analgesic",
-      manufacturer: "ABC Pharma",
-      strength: "500",
-      unit: "mg",
-    },
-    {
-      id: 2,
-      name: "Amoxicillin",
-      genericName: "Amoxicillin",
-      category: "Antibiotic",
-      manufacturer: "XYZ Pharma",
-      strength: "250",
-      unit: "mg",
-    },
-    {
-      id: 3,
-      name: "Metformin",
-      genericName: "Metformin HCl",
-      category: "Antidiabetic",
-      manufacturer: "DEF Pharma",
-      strength: "500",
-      unit: "mg",
-    },
-  ],
-  suppliers: [
-    {
-      id: 1,
-      name: "MedSupply Co.",
-      contact: "+91-9876543210",
-      email: "contact@medsupply.com",
-      address: "123 Medical Street, City",
-    },
-    {
-      id: 2,
-      name: "PharmaCorp Ltd.",
-      contact: "+91-8765432109",
-      email: "info@pharmacorp.com",
-      address: "456 Pharma Avenue, City",
-    },
-  ],
-  "payment-methods": [
-    { id: 1, name: "Cash", description: "Cash payment", isActive: true },
-    { id: 2, name: "Credit Card", description: "Credit card payment", isActive: true },
-    { id: 3, name: "Debit Card", description: "Debit card payment", isActive: true },
-    { id: 4, name: "UPI", description: "UPI payment", isActive: true },
-  ],
-  "insurance-providers": [
-    { id: 1, name: "Health Insurance Co.", contact: "+91-1234567890", coverage: 80 },
-    { id: 2, name: "Medical Care Insurance", contact: "+91-2345678901", coverage: 70 },
-    { id: 3, name: "Life & Health Insurance", contact: "+91-3456789012", coverage: 90 },
+    { id: 6, name: "Osteoarthritis", icdCode: "M19", category: "Musculoskeletal" },
+    { id: 7, name: "Anxiety Disorder", icdCode: "F41", category: "Mental Health" },
+    { id: 8, name: "Chronic Kidney Disease", icdCode: "N18", category: "Renal" },
   ],
 }
 
@@ -469,9 +375,6 @@ export default function SettingsPage() {
     if (field.key === "cost" && typeof value === "number") {
       return `₹${value}`
     }
-    if (field.key === "coverage" && typeof value === "number") {
-      return `${value}%`
-    }
     if (field.key === "category") {
       return <Badge variant="secondary">{value}</Badge>
     }
@@ -489,9 +392,6 @@ export default function SettingsPage() {
         </div>
       )
     }
-    if (typeof value === "boolean") {
-      return <Badge variant={value ? "default" : "secondary"}>{value ? "Yes" : "No"}</Badge>
-    }
     return value
   }
 
@@ -505,13 +405,6 @@ export default function SettingsPage() {
         return <Input id={fieldId} type="number" className="col-span-3" />
       case "email":
         return <Input id={fieldId} type="email" className="col-span-3" />
-      case "checkbox":
-        return (
-          <div className="col-span-3">
-            <input type="checkbox" id={fieldId} className="mr-2" />
-            <Label htmlFor={fieldId}>Enable</Label>
-          </div>
-        )
       case "select":
         return (
           <Select>
