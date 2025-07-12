@@ -17,131 +17,347 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope } from "lucide-react"
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Search,
+  TestTube,
+  Microscope,
+  Users,
+  Stethoscope,
+  Pill,
+  CreditCard,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// Sample data for masters
-const labTests = [
+// Master Categories Configuration - Easily extensible
+const masterCategories = [
   {
-    id: 1,
-    name: "Complete Blood Count",
-    category: "Hematology",
-    cost: 250,
-    normalRange: "4.5-11.0 x10³/μL",
-    barCode: "CBC001",
-    preferredLab: "Central Lab",
-    units: "x10³/μL",
+    id: "laboratory",
+    name: "Laboratory",
+    icon: TestTube,
+    description: "Lab tests, units, and packages",
+    color: "text-blue-600",
+    subCategories: [
+      {
+        id: "lab-tests",
+        name: "Lab Tests",
+        description: "Laboratory test definitions",
+        fields: [
+          { key: "name", label: "Test Name", type: "text", required: true },
+          { key: "category", label: "Category", type: "text", required: true },
+          { key: "cost", label: "Cost", type: "number", required: true },
+          { key: "normalRange", label: "Normal Range", type: "text" },
+          { key: "barCode", label: "Bar Code", type: "text" },
+          { key: "preferredLab", label: "Preferred Lab", type: "text" },
+          { key: "units", label: "Units", type: "text" },
+        ],
+      },
+      {
+        id: "lab-units",
+        name: "Lab Units",
+        description: "Measurement units for lab tests",
+        fields: [
+          { key: "name", label: "Unit Name", type: "text", required: true },
+          { key: "description", label: "Description", type: "textarea" },
+        ],
+      },
+      {
+        id: "lab-packages",
+        name: "Lab Packages",
+        description: "Lab test packages",
+        fields: [
+          { key: "name", label: "Package Name", type: "text", required: true },
+          { key: "tests", label: "Tests", type: "multiselect" },
+        ],
+      },
+    ],
   },
   {
-    id: 2,
-    name: "Blood Sugar Fasting",
-    category: "Biochemistry",
-    cost: 80,
-    normalRange: "70-100 mg/dL",
-    barCode: "BSF001",
-    preferredLab: "Central Lab",
-    units: "mg/dL",
+    id: "radiology",
+    name: "Radiology",
+    icon: Microscope,
+    description: "Imaging tests and packages",
+    color: "text-green-600",
+    subCategories: [
+      {
+        id: "imaging-tests",
+        name: "Imaging Tests",
+        description: "Radiology and imaging test definitions",
+        fields: [
+          { key: "name", label: "Test Name", type: "text", required: true },
+          { key: "category", label: "Category", type: "text", required: true },
+          { key: "cost", label: "Cost", type: "number", required: true },
+          { key: "barCode", label: "Bar Code", type: "text" },
+          { key: "preferredLab", label: "Preferred Lab", type: "text" },
+        ],
+      },
+      {
+        id: "radiology-packages",
+        name: "Radiology Packages",
+        description: "Radiology test packages",
+        fields: [
+          { key: "name", label: "Package Name", type: "text", required: true },
+          { key: "tests", label: "Tests", type: "multiselect" },
+        ],
+      },
+    ],
   },
   {
-    id: 3,
-    name: "Lipid Profile",
-    category: "Biochemistry",
-    cost: 400,
-    normalRange: "Total: <200 mg/dL",
-    barCode: "LP001",
-    preferredLab: "Central Lab",
-    units: "mg/dL",
+    id: "clinical",
+    name: "Clinical Notes",
+    icon: Users,
+    description: "Patient clinical note templates",
+    color: "text-purple-600",
+    subCategories: [
+      {
+        id: "chief-complaints",
+        name: "Chief Complaints",
+        description: "Common patient complaints",
+        fields: [
+          { key: "name", label: "Complaint", type: "text", required: true },
+          { key: "category", label: "Category", type: "text" },
+        ],
+      },
+      {
+        id: "medical-history",
+        name: "Medical History",
+        description: "Medical history items",
+        fields: [
+          { key: "name", label: "History Item", type: "text", required: true },
+          { key: "category", label: "Category", type: "text" },
+        ],
+      },
+      {
+        id: "investigation",
+        name: "Investigation",
+        description: "Investigation procedures",
+        fields: [
+          { key: "name", label: "Investigation", type: "text", required: true },
+          { key: "category", label: "Category", type: "text" },
+        ],
+      },
+      {
+        id: "observation",
+        name: "Observation",
+        description: "Clinical observations",
+        fields: [
+          { key: "name", label: "Observation", type: "text", required: true },
+          { key: "category", label: "Category", type: "text" },
+        ],
+      },
+    ],
   },
   {
-    id: 4,
-    name: "Thyroid Function Test",
-    category: "Endocrinology",
-    cost: 600,
-    normalRange: "TSH: 0.4-4.0 mIU/L",
-    barCode: "TFT001",
-    preferredLab: "Specialty Lab",
-    units: "mIU/L",
+    id: "diagnosis",
+    name: "Diagnosis",
+    icon: Stethoscope,
+    description: "Medical diagnoses and ICD codes",
+    color: "text-red-600",
+    subCategories: [
+      {
+        id: "diagnoses",
+        name: "Diagnoses",
+        description: "Medical diagnoses with ICD codes",
+        fields: [
+          { key: "name", label: "Diagnosis Name", type: "text", required: true },
+          { key: "icdCode", label: "ICD Code", type: "text", required: true },
+          { key: "category", label: "Category", type: "text" },
+        ],
+      },
+    ],
+  },
+  // Future categories can be easily added here
+  {
+    id: "pharmacy",
+    name: "Pharmacy",
+    icon: Pill,
+    description: "Medicine and pharmacy masters",
+    color: "text-orange-600",
+    subCategories: [
+      {
+        id: "medicines",
+        name: "Medicines",
+        description: "Medicine definitions",
+        fields: [
+          { key: "name", label: "Medicine Name", type: "text", required: true },
+          { key: "genericName", label: "Generic Name", type: "text" },
+          { key: "category", label: "Category", type: "text" },
+          { key: "manufacturer", label: "Manufacturer", type: "text" },
+          { key: "strength", label: "Strength", type: "text" },
+          { key: "unit", label: "Unit", type: "text" },
+        ],
+      },
+      {
+        id: "suppliers",
+        name: "Suppliers",
+        description: "Medicine suppliers",
+        fields: [
+          { key: "name", label: "Supplier Name", type: "text", required: true },
+          { key: "contact", label: "Contact", type: "text" },
+          { key: "email", label: "Email", type: "email" },
+          { key: "address", label: "Address", type: "textarea" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "billing",
+    name: "Billing",
+    icon: CreditCard,
+    description: "Billing and payment masters",
+    color: "text-yellow-600",
+    subCategories: [
+      {
+        id: "payment-methods",
+        name: "Payment Methods",
+        description: "Available payment methods",
+        fields: [
+          { key: "name", label: "Method Name", type: "text", required: true },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "isActive", label: "Active", type: "checkbox" },
+        ],
+      },
+      {
+        id: "insurance-providers",
+        name: "Insurance Providers",
+        description: "Insurance companies",
+        fields: [
+          { key: "name", label: "Provider Name", type: "text", required: true },
+          { key: "contact", label: "Contact", type: "text" },
+          { key: "coverage", label: "Coverage %", type: "number" },
+        ],
+      },
+    ],
   },
 ]
 
-const labUnits = [
-  { id: 1, name: "mg/dL", description: "Milligrams per deciliter" },
-  { id: 2, name: "x10³/μL", description: "Thousands per microliter" },
-  { id: 3, name: "mIU/L", description: "Milli-international units per liter" },
-  { id: 4, name: "g/dL", description: "Grams per deciliter" },
-]
-
-const labPackages = [
-  { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting", "Lipid Profile"] },
-  { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c", "Urine Sugar"] },
-  { id: 3, name: "Cardiac Profile", tests: ["Lipid Profile", "Troponin", "ECG"] },
-]
-
-const radiologyTests = [
-  { id: 1, name: "Chest X-Ray", category: "X-Ray", cost: 300, barCode: "CXR001", preferredLab: "Radiology Dept" },
-  { id: 2, name: "CT Scan Head", category: "CT Scan", cost: 2500, barCode: "CTH001", preferredLab: "Advanced Imaging" },
-  { id: 3, name: "MRI Brain", category: "MRI", cost: 8000, barCode: "MRB001", preferredLab: "Advanced Imaging" },
-  {
-    id: 4,
-    name: "Ultrasound Abdomen",
-    category: "Ultrasound",
-    cost: 800,
-    barCode: "USA001",
-    preferredLab: "Radiology Dept",
-  },
-]
-
-const radiologyPackages = [
-  { id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] },
-  { id: 2, name: "Neurological Imaging", tests: ["CT Scan Head", "MRI Brain"] },
-]
-
-const clinicalNotes = {
-  chiefComplaints: [
-    { id: 1, name: "Fever" },
-    { id: 2, name: "Headache" },
-    { id: 3, name: "Chest Pain" },
-    { id: 4, name: "Shortness of Breath" },
-    { id: 5, name: "Abdominal Pain" },
+// Sample data for each master
+const sampleData = {
+  "lab-tests": [
+    {
+      id: 1,
+      name: "Complete Blood Count",
+      category: "Hematology",
+      cost: 250,
+      normalRange: "4.5-11.0 x10³/μL",
+      barCode: "CBC001",
+      preferredLab: "Central Lab",
+      units: "x10³/μL",
+    },
+    {
+      id: 2,
+      name: "Blood Sugar Fasting",
+      category: "Biochemistry",
+      cost: 80,
+      normalRange: "70-100 mg/dL",
+      barCode: "BSF001",
+      preferredLab: "Central Lab",
+      units: "mg/dL",
+    },
+    {
+      id: 3,
+      name: "Lipid Profile",
+      category: "Biochemistry",
+      cost: 400,
+      normalRange: "Total: <200 mg/dL",
+      barCode: "LP001",
+      preferredLab: "Central Lab",
+      units: "mg/dL",
+    },
   ],
-  medicalHistory: [
-    { id: 1, name: "Hypertension" },
-    { id: 2, name: "Diabetes Mellitus" },
-    { id: 3, name: "Heart Disease" },
-    { id: 4, name: "Asthma" },
-    { id: 5, name: "Previous Surgery" },
+  "lab-units": [
+    { id: 1, name: "mg/dL", description: "Milligrams per deciliter" },
+    { id: 2, name: "x10³/μL", description: "Thousands per microliter" },
+    { id: 3, name: "mIU/L", description: "Milli-international units per liter" },
+  ],
+  "lab-packages": [
+    { id: 1, name: "Basic Health Checkup", tests: ["Complete Blood Count", "Blood Sugar Fasting"] },
+    { id: 2, name: "Diabetes Panel", tests: ["Blood Sugar Fasting", "HbA1c"] },
+  ],
+  "imaging-tests": [
+    { id: 1, name: "Chest X-Ray", category: "X-Ray", cost: 300, barCode: "CXR001", preferredLab: "Radiology Dept" },
+    {
+      id: 2,
+      name: "CT Scan Head",
+      category: "CT Scan",
+      cost: 2500,
+      barCode: "CTH001",
+      preferredLab: "Advanced Imaging",
+    },
+  ],
+  "radiology-packages": [{ id: 1, name: "Basic Imaging", tests: ["Chest X-Ray", "Ultrasound Abdomen"] }],
+  "chief-complaints": [
+    { id: 1, name: "Fever", category: "General" },
+    { id: 2, name: "Headache", category: "Neurological" },
+    { id: 3, name: "Chest Pain", category: "Cardiac" },
+  ],
+  "medical-history": [
+    { id: 1, name: "Hypertension", category: "Cardiovascular" },
+    { id: 2, name: "Diabetes Mellitus", category: "Endocrine" },
   ],
   investigation: [
-    { id: 1, name: "Blood Investigation" },
-    { id: 2, name: "Urine Analysis" },
-    { id: 3, name: "ECG" },
-    { id: 4, name: "Chest X-Ray" },
-    { id: 5, name: "CT Scan" },
+    { id: 1, name: "Blood Investigation", category: "Laboratory" },
+    { id: 2, name: "ECG", category: "Cardiac" },
   ],
   observation: [
-    { id: 1, name: "Patient appears well" },
-    { id: 2, name: "Patient in distress" },
-    { id: 3, name: "Vital signs stable" },
-    { id: 4, name: "Respiratory distress" },
-    { id: 5, name: "Cardiac murmur present" },
+    { id: 1, name: "Patient appears well", category: "General" },
+    { id: 2, name: "Vital signs stable", category: "Vitals" },
   ],
+  diagnoses: [
+    { id: 1, name: "Essential Hypertension", icdCode: "I10", category: "Cardiovascular" },
+    { id: 2, name: "Type 2 Diabetes Mellitus", icdCode: "E11", category: "Endocrine" },
+  ],
+  medicines: [
+    {
+      id: 1,
+      name: "Paracetamol",
+      genericName: "Acetaminophen",
+      category: "Analgesic",
+      manufacturer: "ABC Pharma",
+      strength: "500",
+      unit: "mg",
+    },
+    {
+      id: 2,
+      name: "Amoxicillin",
+      genericName: "Amoxicillin",
+      category: "Antibiotic",
+      manufacturer: "XYZ Pharma",
+      strength: "250",
+      unit: "mg",
+    },
+  ],
+  suppliers: [
+    {
+      id: 1,
+      name: "MedSupply Co.",
+      contact: "+91-9876543210",
+      email: "contact@medsupply.com",
+      address: "123 Medical Street, City",
+    },
+  ],
+  "payment-methods": [
+    { id: 1, name: "Cash", description: "Cash payment", isActive: true },
+    { id: 2, name: "Credit Card", description: "Credit card payment", isActive: true },
+  ],
+  "insurance-providers": [{ id: 1, name: "Health Insurance Co.", contact: "+91-1234567890", coverage: 80 }],
 }
-
-const diagnoses = [
-  { id: 1, name: "Essential Hypertension", icdCode: "I10" },
-  { id: 2, name: "Type 2 Diabetes Mellitus", icdCode: "E11" },
-  { id: 3, name: "Acute Upper Respiratory Infection", icdCode: "J06.9" },
-  { id: 4, name: "Gastroesophageal Reflux Disease", icdCode: "K21.9" },
-]
 
 export default function SettingsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [currentMaster, setCurrentMaster] = useState("")
+  const [currentCategory, setCurrentCategory] = useState("")
+  const [currentSubCategory, setCurrentSubCategory] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("laboratory")
   const { toast } = useToast()
 
-  const handleCreate = (masterType: string) => {
-    setCurrentMaster(masterType)
+  const handleCreate = (categoryId: string, subCategoryId: string) => {
+    setCurrentCategory(categoryId)
+    setCurrentSubCategory(subCategoryId)
     setIsCreateDialogOpen(true)
   }
 
@@ -181,6 +397,75 @@ export default function SettingsPage() {
     </div>
   )
 
+  const renderFieldValue = (value: any, field: any) => {
+    if (field.key === "cost" && typeof value === "number") {
+      return `₹${value}`
+    }
+    if (field.key === "category") {
+      return <Badge variant="secondary">{value}</Badge>
+    }
+    if (field.key === "icdCode") {
+      return <Badge variant="outline">{value}</Badge>
+    }
+    if (Array.isArray(value)) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {value.map((item, index) => (
+            <Badge key={index} variant="outline" className="text-xs">
+              {item}
+            </Badge>
+          ))}
+        </div>
+      )
+    }
+    if (typeof value === "boolean") {
+      return <Badge variant={value ? "default" : "secondary"}>{value ? "Yes" : "No"}</Badge>
+    }
+    return value
+  }
+
+  const renderFormField = (field: any) => {
+    const fieldId = `field-${field.key}`
+
+    switch (field.type) {
+      case "textarea":
+        return <Textarea id={fieldId} className="col-span-3" />
+      case "number":
+        return <Input id={fieldId} type="number" className="col-span-3" />
+      case "email":
+        return <Input id={fieldId} type="email" className="col-span-3" />
+      case "checkbox":
+        return (
+          <div className="col-span-3">
+            <input type="checkbox" id={fieldId} className="mr-2" />
+            <Label htmlFor={fieldId}>Enable</Label>
+          </div>
+        )
+      case "select":
+        return (
+          <Select>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={`Select ${field.label}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options?.map((option: string) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )
+      default:
+        return <Input id={fieldId} type="text" className="col-span-3" />
+    }
+  }
+
+  const getCurrentSubCategory = () => {
+    const category = masterCategories.find((cat) => cat.id === currentCategory)
+    return category?.subCategories.find((sub) => sub.id === currentSubCategory)
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -190,52 +475,104 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="laboratory" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="laboratory" className="flex items-center gap-2">
-            <TestTube className="h-4 w-4" />
-            Laboratory
-          </TabsTrigger>
-          <TabsTrigger value="radiology" className="flex items-center gap-2">
-            <Microscope className="h-4 w-4" />
-            Radiology
-          </TabsTrigger>
-          <TabsTrigger value="patients" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Patients
-          </TabsTrigger>
-          <TabsTrigger value="diagnosis" className="flex items-center gap-2">
-            <Stethoscope className="h-4 w-4" />
-            Diagnosis
-          </TabsTrigger>
+      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          {masterCategories.map((category) => {
+            const IconComponent = category.icon
+            return (
+              <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
+                <IconComponent className={`h-4 w-4 ${category.color}`} />
+                <span className="hidden sm:inline">{category.name}</span>
+              </TabsTrigger>
+            )
+          })}
         </TabsList>
 
-        {/* Laboratory Tab */}
-        <TabsContent value="laboratory">
-          <Tabs defaultValue="lab-tests" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="lab-tests">Lab Tests</TabsTrigger>
-              <TabsTrigger value="lab-units">Lab Units</TabsTrigger>
-              <TabsTrigger value="lab-packages">Lab Packages</TabsTrigger>
-            </TabsList>
+        {masterCategories.map((category) => (
+          <TabsContent key={category.id} value={category.id}>
+            {category.subCategories.length > 1 ? (
+              <Tabs defaultValue={category.subCategories[0].id} className="space-y-4">
+                <TabsList
+                  className="grid w-full"
+                  style={{ gridTemplateColumns: `repeat(${category.subCategories.length}, 1fr)` }}
+                >
+                  {category.subCategories.map((subCategory) => (
+                    <TabsTrigger key={subCategory.id} value={subCategory.id}>
+                      {subCategory.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
-            <TabsContent value="lab-tests">
+                {category.subCategories.map((subCategory) => (
+                  <TabsContent key={subCategory.id} value={subCategory.id}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle>{subCategory.name}</CardTitle>
+                            <CardDescription>{subCategory.description}</CardDescription>
+                          </div>
+                          <Button onClick={() => handleCreate(category.id, subCategory.id)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add {subCategory.name.slice(0, -1)}
+                          </Button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Search className="h-4 w-4" />
+                          <Input
+                            placeholder={`Search ${subCategory.name.toLowerCase()}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="max-w-sm"
+                          />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {subCategory.fields.map((field) => (
+                                <TableHead key={field.key}>{field.label}</TableHead>
+                              ))}
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(sampleData[subCategory.id as keyof typeof sampleData] || []).map((item: any) => (
+                              <TableRow key={item.id}>
+                                {subCategory.fields.map((field) => (
+                                  <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
+                                ))}
+                                <TableCell>
+                                  <ActionButtons id={item.id} masterType={subCategory.name} />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            ) : (
+              // Single subcategory - render directly
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Lab Tests</CardTitle>
-                      <CardDescription>Manage laboratory test definitions</CardDescription>
+                      <CardTitle>{category.subCategories[0].name}</CardTitle>
+                      <CardDescription>{category.subCategories[0].description}</CardDescription>
                     </div>
-                    <Button onClick={() => handleCreate("Lab Test")}>
+                    <Button onClick={() => handleCreate(category.id, category.subCategories[0].id)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Lab Test
+                      Add {category.subCategories[0].name.slice(0, -1)}
                     </Button>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Search className="h-4 w-4" />
                     <Input
-                      placeholder="Search lab tests..."
+                      placeholder={`Search ${category.subCategories[0].name.toLowerCase()}...`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="max-w-sm"
@@ -246,30 +583,20 @@ export default function SettingsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Cost</TableHead>
-                        <TableHead>Normal Range</TableHead>
-                        <TableHead>Bar Code</TableHead>
-                        <TableHead>Preferred Lab</TableHead>
-                        <TableHead>Units</TableHead>
+                        {category.subCategories[0].fields.map((field) => (
+                          <TableHead key={field.key}>{field.label}</TableHead>
+                        ))}
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {labTests.map((test) => (
-                        <TableRow key={test.id}>
-                          <TableCell className="font-medium">{test.name}</TableCell>
+                      {(sampleData[category.subCategories[0].id as keyof typeof sampleData] || []).map((item: any) => (
+                        <TableRow key={item.id}>
+                          {category.subCategories[0].fields.map((field) => (
+                            <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
+                          ))}
                           <TableCell>
-                            <Badge variant="secondary">{test.category}</Badge>
-                          </TableCell>
-                          <TableCell>₹{test.cost}</TableCell>
-                          <TableCell>{test.normalRange}</TableCell>
-                          <TableCell>{test.barCode}</TableCell>
-                          <TableCell>{test.preferredLab}</TableCell>
-                          <TableCell>{test.units}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={test.id} masterType="Lab Test" />
+                            <ActionButtons id={item.id} masterType={category.subCategories[0].name} />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -277,469 +604,34 @@ export default function SettingsPage() {
                   </Table>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="lab-units">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Lab Units</CardTitle>
-                      <CardDescription>Manage measurement units for lab tests</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Lab Unit")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Lab Unit
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {labUnits.map((unit) => (
-                        <TableRow key={unit.id}>
-                          <TableCell className="font-medium">{unit.name}</TableCell>
-                          <TableCell>{unit.description}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={unit.id} masterType="Lab Unit" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="lab-packages">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Lab Packages</CardTitle>
-                      <CardDescription>Manage lab test packages</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Lab Package")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Lab Package
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Tests Included</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {labPackages.map((pkg) => (
-                        <TableRow key={pkg.id}>
-                          <TableCell className="font-medium">{pkg.name}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {pkg.tests.map((test, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {test}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <ActionButtons id={pkg.id} masterType="Lab Package" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        {/* Radiology Tab */}
-        <TabsContent value="radiology">
-          <Tabs defaultValue="imaging-tests" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="imaging-tests">Imaging Tests</TabsTrigger>
-              <TabsTrigger value="radiology-packages">Radiology Packages</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="imaging-tests">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Imaging Tests</CardTitle>
-                      <CardDescription>Manage radiology and imaging test definitions</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Imaging Test")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Imaging Test
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Cost</TableHead>
-                        <TableHead>Bar Code</TableHead>
-                        <TableHead>Preferred Lab</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {radiologyTests.map((test) => (
-                        <TableRow key={test.id}>
-                          <TableCell className="font-medium">{test.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">{test.category}</Badge>
-                          </TableCell>
-                          <TableCell>₹{test.cost}</TableCell>
-                          <TableCell>{test.barCode}</TableCell>
-                          <TableCell>{test.preferredLab}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={test.id} masterType="Imaging Test" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="radiology-packages">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Radiology Packages</CardTitle>
-                      <CardDescription>Manage radiology test packages</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Radiology Package")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Radiology Package
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Tests Included</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {radiologyPackages.map((pkg) => (
-                        <TableRow key={pkg.id}>
-                          <TableCell className="font-medium">{pkg.name}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {pkg.tests.map((test, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {test}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <ActionButtons id={pkg.id} masterType="Radiology Package" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        {/* Patients Tab */}
-        <TabsContent value="patients">
-          <Tabs defaultValue="chief-complaints" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="chief-complaints">Chief Complaints</TabsTrigger>
-              <TabsTrigger value="medical-history">Medical History</TabsTrigger>
-              <TabsTrigger value="investigation">Investigation</TabsTrigger>
-              <TabsTrigger value="observation">Observation</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="chief-complaints">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Chief Complaints</CardTitle>
-                      <CardDescription>Manage common patient complaints for dropdown selection</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Chief Complaint")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Chief Complaint
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clinicalNotes.chiefComplaints.map((complaint) => (
-                        <TableRow key={complaint.id}>
-                          <TableCell className="font-medium">{complaint.name}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={complaint.id} masterType="Chief Complaint" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="medical-history">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Medical History</CardTitle>
-                      <CardDescription>Manage common medical history items</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Medical History")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Medical History
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clinicalNotes.medicalHistory.map((history) => (
-                        <TableRow key={history.id}>
-                          <TableCell className="font-medium">{history.name}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={history.id} masterType="Medical History" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="investigation">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Investigation</CardTitle>
-                      <CardDescription>Manage investigation procedures and methods</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Investigation")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Investigation
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clinicalNotes.investigation.map((investigation) => (
-                        <TableRow key={investigation.id}>
-                          <TableCell className="font-medium">{investigation.name}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={investigation.id} masterType="Investigation" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="observation">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Observation</CardTitle>
-                      <CardDescription>Manage clinical observation notes</CardDescription>
-                    </div>
-                    <Button onClick={() => handleCreate("Observation")}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Observation
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clinicalNotes.observation.map((observation) => (
-                        <TableRow key={observation.id}>
-                          <TableCell className="font-medium">{observation.name}</TableCell>
-                          <TableCell>
-                            <ActionButtons id={observation.id} masterType="Observation" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        {/* Diagnosis Tab */}
-        <TabsContent value="diagnosis">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Diagnosis</CardTitle>
-                  <CardDescription>Manage medical diagnoses with ICD codes</CardDescription>
-                </div>
-                <Button onClick={() => handleCreate("Diagnosis")}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Diagnosis
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>ICD Code</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {diagnoses.map((diagnosis) => (
-                    <TableRow key={diagnosis.id}>
-                      <TableCell className="font-medium">{diagnosis.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{diagnosis.icdCode}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <ActionButtons id={diagnosis.id} masterType="Diagnosis" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
+          </TabsContent>
+        ))}
       </Tabs>
 
-      {/* Create Dialog */}
+      {/* Dynamic Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add New {currentMaster}</DialogTitle>
-            <DialogDescription>Create a new {currentMaster.toLowerCase()} entry.</DialogDescription>
+            <DialogTitle>Add New {getCurrentSubCategory()?.name.slice(0, -1)}</DialogTitle>
+            <DialogDescription>
+              Create a new {getCurrentSubCategory()?.name.toLowerCase().slice(0, -1)} entry.
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input id="name" className="col-span-3" />
-            </div>
-            {currentMaster.includes("Test") && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Input id="category" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cost" className="text-right">
-                    Cost
-                  </Label>
-                  <Input id="cost" type="number" className="col-span-3" />
-                </div>
-              </>
-            )}
-            {currentMaster === "Lab Test" && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="normalRange" className="text-right">
-                    Normal Range
-                  </Label>
-                  <Input id="normalRange" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="units" className="text-right">
-                    Units
-                  </Label>
-                  <Input id="units" className="col-span-3" />
-                </div>
-              </>
-            )}
-            {currentMaster === "Diagnosis" && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="icdCode" className="text-right">
-                  ICD Code
+          <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
+            {getCurrentSubCategory()?.fields.map((field) => (
+              <div key={field.key} className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor={`field-${field.key}`} className="text-right">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
                 </Label>
-                <Input id="icdCode" className="col-span-3" />
+                {renderFormField(field)}
               </div>
-            )}
-            {currentMaster === "Lab Unit" && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Textarea id="description" className="col-span-3" />
-              </div>
-            )}
+            ))}
           </div>
           <DialogFooter>
             <Button type="submit" onClick={() => setIsCreateDialogOpen(false)}>
-              Create {currentMaster}
+              Create {getCurrentSubCategory()?.name.slice(0, -1)}
             </Button>
           </DialogFooter>
         </DialogContent>
