@@ -875,7 +875,7 @@ export default function ServicesPage() {
       {/* Services Display */}
       <div className="space-y-4">
         {viewMode === "cards" ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="grid">
             {filteredServices.map((service) => (
               <Card key={service.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
@@ -1138,7 +1138,7 @@ export default function ServicesPage() {
           {detailsDialog.service && (
             <div className="space-y-6">
               {/* Patient & Service Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" role="presentation">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Patient Information</Label>
                   <div className="mt-1">
@@ -1195,7 +1195,7 @@ export default function ServicesPage() {
                     const details = detailsDialog.service.testDetails || detailsDialog.service.serviceDetails
                     return (
                       <>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4" role="presentation">
                           <div>
                             <Label className="text-sm font-medium text-gray-600">Description</Label>
                             <p className="text-sm mt-1">{details.description}</p>
@@ -1208,7 +1208,7 @@ export default function ServicesPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-3 gap-4" role="presentation">
                           {details.sampleVolume && (
                             <div>
                               <Label className="text-sm font-medium text-gray-600">Sample Volume</Label>
