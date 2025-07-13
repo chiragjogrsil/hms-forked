@@ -64,6 +64,8 @@ export default function ServicesLoading() {
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">

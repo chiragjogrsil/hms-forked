@@ -14,6 +14,7 @@ import {
   Upload,
   Play,
   ArrowRight,
+  ClipboardList,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,7 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
-// Mock data for lab test services with 4-stage workflow
+// Mock data for lab test services with 5-stage workflow
 const labTestsData = [
   {
     id: "LAB001",
@@ -42,10 +43,10 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Smith",
     priority: "High",
-    status: "Sample Collected",
+    status: "Sample Requested",
     scheduledTime: "10:30 AM",
-    collectionTime: "10:35 AM",
-    notes: "Fasting required - Patient fasted for 12 hours",
+    requestedTime: "9:45 AM",
+    notes: "Fasting required - Patient to fast for 12 hours",
     technician: "Tech. Sarah",
     sampleType: "Blood",
     testCode: "CBC001",
@@ -58,10 +59,10 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Johnson",
     priority: "Medium",
-    status: "Testing Started",
+    status: "Sample Collected",
     scheduledTime: "9:00 AM",
+    requestedTime: "8:30 AM",
     collectionTime: "9:05 AM",
-    testingStartTime: "9:30 AM",
     notes: "12-hour fasting confirmed",
     technician: "Tech. Mike",
     sampleType: "Blood",
@@ -75,11 +76,11 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Brown",
     priority: "Low",
-    status: "Testing Completed",
+    status: "Testing Started",
     scheduledTime: "8:30 AM",
+    requestedTime: "8:00 AM",
     collectionTime: "8:35 AM",
     testingStartTime: "9:00 AM",
-    testingCompletedTime: "10:15 AM",
     notes: "No special preparation required",
     technician: "Tech. Sarah",
     sampleType: "Blood",
@@ -93,17 +94,16 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Wilson",
     priority: "High",
-    status: "Reports Uploaded",
+    status: "Testing Completed",
     scheduledTime: "11:00 AM",
+    requestedTime: "10:30 AM",
     collectionTime: "11:05 AM",
     testingStartTime: "11:30 AM",
     testingCompletedTime: "12:45 PM",
-    reportUploadTime: "1:15 PM",
-    notes: "Abnormal values detected - flagged for review",
+    notes: "Patient appears healthy, routine checkup",
     technician: "Tech. Mike",
     sampleType: "Blood",
     testCode: "LFT001",
-    reportUrl: "/reports/lft-001.pdf",
   },
   {
     id: "LAB005",
@@ -113,13 +113,18 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Lee",
     priority: "Medium",
-    status: "Sample Collected",
+    status: "Reports Uploaded",
     scheduledTime: "2:00 PM",
+    requestedTime: "1:30 PM",
     collectionTime: "2:10 PM",
-    notes: "Mid-stream sample collected",
+    testingStartTime: "2:30 PM",
+    testingCompletedTime: "3:15 PM",
+    reportUploadTime: "3:45 PM",
+    notes: "Mid-stream sample collected - Results normal",
     technician: "Tech. Sarah",
     sampleType: "Urine",
     testCode: "UA001",
+    reportUrl: "/reports/ua-001.pdf",
   },
   {
     id: "LAB006",
@@ -129,14 +134,30 @@ const labTestsData = [
     department: "Laboratory",
     requestedBy: "Dr. Kumar",
     priority: "High",
-    status: "Testing Started",
+    status: "Sample Requested",
     scheduledTime: "3:30 PM",
-    collectionTime: "3:35 PM",
-    testingStartTime: "3:45 PM",
-    notes: "Patient had lunch 2 hours ago",
+    requestedTime: "3:00 PM",
+    notes: "Patient had lunch 2 hours ago - Random glucose test",
     technician: "Tech. Mike",
     sampleType: "Blood",
     testCode: "BSR001",
+  },
+  {
+    id: "LAB007",
+    patientName: "David Wilson",
+    patientId: "P12351",
+    serviceName: "Hemoglobin A1C",
+    department: "Laboratory",
+    requestedBy: "Dr. Patel",
+    priority: "Medium",
+    status: "Sample Collected",
+    scheduledTime: "4:00 PM",
+    requestedTime: "3:30 PM",
+    collectionTime: "4:05 PM",
+    notes: "Diabetes monitoring - 3-month average",
+    technician: "Tech. Sarah",
+    sampleType: "Blood",
+    testCode: "HBA1C001",
   },
 ]
 
@@ -232,6 +253,8 @@ export default function ServicesPage() {
 
   const getLabStatusIcon = (status: string) => {
     switch (status) {
+      case "Sample Requested":
+        return <ClipboardList className="h-4 w-4 text-gray-500" />
       case "Sample Collected":
         return <TestTube className="h-4 w-4 text-blue-500" />
       case "Testing Started":
@@ -267,6 +290,8 @@ export default function ServicesPage() {
 
   const getLabStatusColor = (status: string) => {
     switch (status) {
+      case "Sample Requested":
+        return "bg-gray-100 text-gray-800 border-gray-200"
       case "Sample Collected":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "Testing Started":
@@ -315,6 +340,13 @@ export default function ServicesPage() {
 
   const getNextAction = (status: string) => {
     switch (status) {
+      case "Sample Requested":
+        return {
+          action: "collect-sample",
+          label: "Collect Sample",
+          icon: <TestTube className="h-4 w-4" />,
+          color: "bg-blue-500 hover:bg-blue-600",
+        }
       case "Sample Collected":
         return {
           action: "start-testing",
@@ -345,6 +377,10 @@ export default function ServicesPage() {
 
   const handleActionClick = (service: any, actionType: string) => {
     const actionConfig = {
+      "collect-sample": {
+        title: "Collect Sample",
+        description: `Collect ${service.sampleType.toLowerCase()} sample for ${service.serviceName}`,
+      },
       "start-testing": {
         title: "Start Testing",
         description: `Begin testing process for ${service.serviceName}`,
@@ -377,6 +413,7 @@ export default function ServicesPage() {
 
     // Update the service status
     const updatedStatus = {
+      "collect-sample": "Sample Collected",
       "start-testing": "Testing Started",
       "complete-testing": "Testing Completed",
       "upload-report": "Reports Uploaded",
@@ -403,6 +440,7 @@ export default function ServicesPage() {
     if (selectedDepartment === "laboratory") {
       return [
         { value: "all", label: "All Status" },
+        { value: "sample-requested", label: "Sample Requested" },
         { value: "sample-collected", label: "Sample Collected" },
         { value: "testing-started", label: "Testing Started" },
         { value: "testing-completed", label: "Testing Completed" },
@@ -462,7 +500,8 @@ export default function ServicesPage() {
               </div>
               <p className="text-sm text-blue-700">
                 {selectedDeptInfo.count} active services
-                {selectedDepartment === "laboratory" && " • 4-stage workflow: Sample → Testing → Completed → Reports"}
+                {selectedDepartment === "laboratory" &&
+                  " • 5-stage workflow: Requested → Collected → Testing → Completed → Reports"}
               </p>
             </div>
           )}
@@ -568,6 +607,12 @@ export default function ServicesPage() {
                           <span className="text-muted-foreground">Scheduled:</span>
                           <div className="font-medium">{service.scheduledTime}</div>
                         </div>
+                        {service.requestedTime && (
+                          <div>
+                            <span className="text-muted-foreground">Requested:</span>
+                            <div className="font-medium">{service.requestedTime}</div>
+                          </div>
+                        )}
                         {service.collectionTime && (
                           <div>
                             <span className="text-muted-foreground">Collected:</span>
@@ -578,6 +623,12 @@ export default function ServicesPage() {
                           <div>
                             <span className="text-muted-foreground">Testing:</span>
                             <div className="font-medium">{service.testingStartTime}</div>
+                          </div>
+                        )}
+                        {service.testingCompletedTime && (
+                          <div>
+                            <span className="text-muted-foreground">Completed:</span>
+                            <div className="font-medium">{service.testingCompletedTime}</div>
                           </div>
                         )}
                         {service.reportUploadTime && (
