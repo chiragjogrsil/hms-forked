@@ -61,23 +61,12 @@ const labTestsData = [
     sampleType: "Blood",
     testCode: "CBC001",
     barcode: "1234567890123",
-    testDetails: {
-      description: "Complete Blood Count with Differential",
-      methodology: "Flow Cytometry",
-      sampleVolume: "3-5 mL",
-      container: "EDTA Tube (Purple Top)",
-      fastingRequired: true,
-      fastingHours: 12,
-      turnaroundTime: "2-4 hours",
-      normalRanges: {
-        WBC: "4.0-11.0 x10³/μL",
-        RBC: "4.2-5.4 x10⁶/μL",
-        Hemoglobin: "12.0-16.0 g/dL",
-        Hematocrit: "36-46%",
-        Platelets: "150-450 x10³/μL",
-      },
-      clinicalSignificance:
-        "Used to evaluate overall health and detect various disorders including anemia, infection, and leukemia.",
+    allowedRanges: {
+      WBC: "4.0-11.0 x10³/μL",
+      RBC: "4.2-5.4 x10⁶/μL",
+      Hemoglobin: "12.0-16.0 g/dL",
+      Hematocrit: "36-46%",
+      Platelets: "150-450 x10³/μL",
     },
   },
   {
@@ -97,21 +86,11 @@ const labTestsData = [
     sampleType: "Blood",
     testCode: "LIP001",
     barcode: "1234567890124",
-    testDetails: {
-      description: "Comprehensive Lipid Panel",
-      methodology: "Enzymatic Colorimetric",
-      sampleVolume: "2-3 mL",
-      container: "SST Tube (Gold Top)",
-      fastingRequired: true,
-      fastingHours: 12,
-      turnaroundTime: "1-2 hours",
-      normalRanges: {
-        "Total Cholesterol": "<200 mg/dL",
-        "LDL Cholesterol": "<100 mg/dL",
-        "HDL Cholesterol": ">40 mg/dL (M), >50 mg/dL (F)",
-        Triglycerides: "<150 mg/dL",
-      },
-      clinicalSignificance: "Assesses cardiovascular disease risk and monitors lipid-lowering therapy effectiveness.",
+    allowedRanges: {
+      "Total Cholesterol": "<200 mg/dL",
+      "LDL Cholesterol": "<100 mg/dL",
+      "HDL Cholesterol": ">40 mg/dL (M), >50 mg/dL (F)",
+      Triglycerides: "<150 mg/dL",
     },
   },
   {
@@ -132,20 +111,10 @@ const labTestsData = [
     sampleType: "Blood",
     testCode: "TFT001",
     barcode: "1234567890125",
-    testDetails: {
-      description: "Thyroid Stimulating Hormone and Free T4",
-      methodology: "Chemiluminescent Immunoassay",
-      sampleVolume: "2-3 mL",
-      container: "SST Tube (Gold Top)",
-      fastingRequired: false,
-      fastingHours: 0,
-      turnaroundTime: "3-4 hours",
-      normalRanges: {
-        TSH: "0.4-4.0 mIU/L",
-        "Free T4": "0.8-1.8 ng/dL",
-        "Free T3": "2.3-4.2 pg/mL",
-      },
-      clinicalSignificance: "Evaluates thyroid gland function and diagnoses hyperthyroidism or hypothyroidism.",
+    allowedRanges: {
+      TSH: "0.4-4.0 mIU/L",
+      "Free T4": "0.8-1.8 ng/dL",
+      "Free T3": "2.3-4.2 pg/mL",
     },
   },
 ]
@@ -166,14 +135,11 @@ const otherServicesData = [
     notes: "Remove jewelry and metal objects",
     technician: "Tech. David",
     serviceCode: "CXR001",
-    serviceDetails: {
-      description: "Posterior-Anterior and Lateral Chest X-Ray",
-      procedure: "Digital Radiography",
-      duration: "15-20 minutes",
-      preparation: "Remove jewelry, metal objects, and clothing from waist up",
-      contrast: false,
-      radiation: "Low dose",
-      clinicalSignificance: "Evaluates lungs, heart, and chest wall for abnormalities, infections, or injuries.",
+    barcode: "9876543210001",
+    allowedRanges: {
+      "Image Quality": "Clear visualization of lung fields",
+      Positioning: "PA and Lateral views",
+      Exposure: "Adequate penetration",
     },
   },
   {
@@ -191,14 +157,11 @@ const otherServicesData = [
     notes: "Patient fasting for 8 hours",
     technician: "Tech. Maria",
     serviceCode: "USG001",
-    serviceDetails: {
-      description: "Complete Abdominal Ultrasound Examination",
-      procedure: "Ultrasound Imaging",
-      duration: "30-45 minutes",
-      preparation: "8-hour fasting required",
-      contrast: false,
-      radiation: "None (Ultrasound)",
-      clinicalSignificance: "Evaluates abdominal organs including liver, gallbladder, kidneys, and pancreas.",
+    barcode: "9876543210002",
+    allowedRanges: {
+      "Liver Size": "Normal echogenicity",
+      Gallbladder: "No stones or wall thickening",
+      Kidneys: "Normal size and echogenicity",
     },
   },
   {
@@ -217,14 +180,11 @@ const otherServicesData = [
     notes: "Patient has mild claustrophobia - managed well",
     technician: "Tech. David",
     serviceCode: "CTH001",
-    serviceDetails: {
-      description: "Non-contrast CT Scan of Head",
-      procedure: "Computed Tomography",
-      duration: "20-30 minutes",
-      preparation: "No special preparation required",
-      contrast: false,
-      radiation: "Moderate dose",
-      clinicalSignificance: "Evaluates brain tissue, blood vessels, and skull for trauma, stroke, or tumors.",
+    barcode: "9876543210003",
+    allowedRanges: {
+      "Brain Tissue": "Normal density",
+      Ventricles: "Normal size",
+      "No Mass Effect": "Normal midline",
     },
   },
   {
@@ -245,14 +205,12 @@ const otherServicesData = [
     technician: "Tech. Lisa",
     serviceCode: "ECG001",
     reportUrl: "/reports/ecg-001.pdf",
-    serviceDetails: {
-      description: "12-Lead Electrocardiogram",
-      procedure: "Electrocardiography",
-      duration: "10-15 minutes",
-      preparation: "Remove upper body clothing, may need to shave chest hair",
-      contrast: false,
-      radiation: "None",
-      clinicalSignificance: "Evaluates heart rhythm, rate, and electrical activity to detect cardiac abnormalities.",
+    barcode: "5555666677778",
+    allowedRanges: {
+      "Heart Rate": "60-100 bpm",
+      "PR Interval": "120-200 ms",
+      "QRS Duration": "<120 ms",
+      "QT Interval": "<440 ms",
     },
   },
   {
@@ -269,14 +227,11 @@ const otherServicesData = [
     notes: "Evaluate heart function post-surgery",
     technician: "Tech. Lisa",
     serviceCode: "ECHO001",
-    serviceDetails: {
-      description: "Transthoracic Echocardiogram",
-      procedure: "Cardiac Ultrasound",
-      duration: "45-60 minutes",
-      preparation: "Remove upper body clothing",
-      contrast: false,
-      radiation: "None (Ultrasound)",
-      clinicalSignificance: "Evaluates heart structure, function, and blood flow through heart chambers and valves.",
+    barcode: "5555666677779",
+    allowedRanges: {
+      "Ejection Fraction": "55-70%",
+      "Left Atrium": "2.7-4.0 cm",
+      "Aortic Root": "2.0-3.7 cm",
     },
   },
   {
@@ -294,14 +249,11 @@ const otherServicesData = [
     notes: "Lower back pain rehabilitation",
     technician: "PT. Jennifer",
     serviceCode: "PT001",
-    serviceDetails: {
-      description: "Lower Back Pain Rehabilitation Session",
-      procedure: "Physical Therapy",
-      duration: "60 minutes",
-      preparation: "Wear comfortable, loose-fitting clothing",
-      contrast: false,
-      radiation: "None",
-      clinicalSignificance: "Improves mobility, reduces pain, and restores function through therapeutic exercises.",
+    barcode: "3333444455556",
+    allowedRanges: {
+      "Range of Motion": "Normal flexibility",
+      "Pain Level": "0-3/10 scale",
+      Strength: "4-5/5 grade",
     },
   },
 ]
@@ -1004,8 +956,7 @@ export default function ServicesPage() {
                       onClick={() => handleViewDetails(service)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      View {service.department === "Laboratory" ? "Test" : "Service"} Details
-                      {service.department === "Laboratory" && " & Barcode"}
+                      View {service.department === "Laboratory" ? "Test" : "Service"} Details & Barcode
                     </Button>
                   </div>
 
@@ -1123,190 +1074,66 @@ export default function ServicesPage() {
         </Card>
       )}
 
-      {/* Service Details Dialog */}
+      {/* Service Details Dialog - Simplified */}
       <Dialog open={detailsDialog.open} onOpenChange={(open) => setDetailsDialog((prev) => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {detailsDialog.service && getDepartmentIcon(detailsDialog.service.department)}
-              {detailsDialog.service?.department === "Laboratory" ? "Test" : "Service"} Details
-              {detailsDialog.service?.department === "Laboratory" && " & Barcode"}
+              {detailsDialog.service?.department === "Laboratory" ? "Test" : "Service"} Details & Barcode
             </DialogTitle>
-            <DialogDescription>Complete information for {detailsDialog.service?.serviceName}</DialogDescription>
+            <DialogDescription>
+              {detailsDialog.service?.serviceName} - {detailsDialog.service?.patientName}
+            </DialogDescription>
           </DialogHeader>
 
           {detailsDialog.service && (
             <div className="space-y-6">
-              {/* Patient & Service Info */}
-              <div className="grid grid-cols-2 gap-4" role="presentation">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Patient Information</Label>
-                  <div className="mt-1">
-                    <div className="font-medium">{detailsDialog.service.patientName}</div>
-                    <div className="text-sm text-gray-600">ID: {detailsDialog.service.patientId}</div>
-                  </div>
+              {/* Service Name */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900">{detailsDialog.service.serviceName}</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Code: {detailsDialog.service.testCode || detailsDialog.service.serviceCode}
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Barcode Section - For All Services */}
+              <div className="text-center">
+                <Label className="text-sm font-medium text-gray-600">Service Barcode</Label>
+                <div className="mt-4 p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg">
+                  {generateBarcode(detailsDialog.service.barcode)}
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">
-                    {detailsDialog.service.department === "Laboratory" ? "Test" : "Service"} Information
-                  </Label>
-                  <div className="mt-1">
-                    <div className="font-medium">{detailsDialog.service.serviceName}</div>
-                    <div className="text-sm text-gray-600">
-                      Code: {detailsDialog.service.testCode || detailsDialog.service.serviceCode}
-                    </div>
-                  </div>
+                <div className="mt-2 flex justify-center space-x-2">
+                  <Button size="sm" variant="outline">
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Barcode
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <QrCode className="h-4 w-4 mr-2" />
+                    Generate QR Code
+                  </Button>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Barcode Section - Only for Lab Tests */}
-              {detailsDialog.service.department === "Laboratory" && detailsDialog.service.barcode && (
-                <>
-                  <div className="text-center">
-                    <Label className="text-sm font-medium text-gray-600">Test Barcode</Label>
-                    <div className="mt-4 p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg">
-                      {generateBarcode(detailsDialog.service.barcode)}
-                    </div>
-                    <div className="mt-2 flex justify-center space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Printer className="h-4 w-4 mr-2" />
-                        Print Barcode
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <QrCode className="h-4 w-4 mr-2" />
-                        Generate QR Code
-                      </Button>
-                    </div>
+              {/* Allowed Ranges */}
+              {detailsDialog.service.allowedRanges && (
+                <div>
+                  <Label className="text-lg font-semibold">Allowed Ranges</Label>
+                  <div className="mt-3 space-y-2">
+                    {Object.entries(detailsDialog.service.allowedRanges).map(([parameter, range]) => (
+                      <div
+                        key={parameter}
+                        className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border"
+                      >
+                        <span className="font-medium text-sm">{parameter}</span>
+                        <span className="text-sm text-gray-600 font-mono">{range}</span>
+                      </div>
+                    ))}
                   </div>
-                  <Separator />
-                </>
-              )}
-
-              {/* Service Details */}
-              {(detailsDialog.service.testDetails || detailsDialog.service.serviceDetails) && (
-                <div className="space-y-4">
-                  <Label className="text-lg font-semibold">
-                    {detailsDialog.service.department === "Laboratory" ? "Test" : "Service"} Specifications
-                  </Label>
-
-                  {(() => {
-                    const details = detailsDialog.service.testDetails || detailsDialog.service.serviceDetails
-                    return (
-                      <>
-                        <div className="grid grid-cols-2 gap-4" role="presentation">
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">Description</Label>
-                            <p className="text-sm mt-1">{details.description}</p>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">
-                              {detailsDialog.service.department === "Laboratory" ? "Methodology" : "Procedure"}
-                            </Label>
-                            <p className="text-sm mt-1">{details.methodology || details.procedure}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4" role="presentation">
-                          {details.sampleVolume && (
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Sample Volume</Label>
-                              <p className="text-sm mt-1">{details.sampleVolume}</p>
-                            </div>
-                          )}
-                          {details.container && (
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Container</Label>
-                              <p className="text-sm mt-1">{details.container}</p>
-                            </div>
-                          )}
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">
-                              {detailsDialog.service.department === "Laboratory" ? "Turnaround Time" : "Duration"}
-                            </Label>
-                            <p className="text-sm mt-1">{details.turnaroundTime || details.duration}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">
-                              {detailsDialog.service.department === "Laboratory" ? "Fasting Required" : "Preparation"}
-                            </Label>
-                            <div className="mt-1">
-                              {detailsDialog.service.department === "Laboratory" ? (
-                                <div className="flex items-center">
-                                  <Badge variant={details.fastingRequired ? "destructive" : "secondary"}>
-                                    {details.fastingRequired ? "Yes" : "No"}
-                                  </Badge>
-                                  {details.fastingRequired && (
-                                    <span className="ml-2 text-sm text-gray-600">({details.fastingHours} hours)</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-sm">{details.preparation}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-gray-600">Priority</Label>
-                            <div className="mt-1">
-                              <Badge className={getPriorityColor(detailsDialog.service.priority)}>
-                                {detailsDialog.service.priority}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        {details.contrast !== undefined && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Contrast Required</Label>
-                              <div className="mt-1">
-                                <Badge variant={details.contrast ? "destructive" : "secondary"}>
-                                  {details.contrast ? "Yes" : "No"}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Radiation</Label>
-                              <p className="text-sm mt-1">{details.radiation}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        <Separator />
-
-                        {/* Normal Ranges - Only for Lab Tests */}
-                        {details.normalRanges && (
-                          <>
-                            <div>
-                              <Label className="text-lg font-semibold">Normal Reference Ranges</Label>
-                              <div className="mt-3 space-y-2">
-                                {Object.entries(details.normalRanges).map(([parameter, range]) => (
-                                  <div
-                                    key={parameter}
-                                    className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                                  >
-                                    <span className="font-medium text-sm">{parameter}</span>
-                                    <span className="text-sm text-gray-600">{range}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <Separator />
-                          </>
-                        )}
-
-                        {/* Clinical Significance */}
-                        <div>
-                          <Label className="text-lg font-semibold">Clinical Significance</Label>
-                          <p className="text-sm mt-2 text-gray-700 leading-relaxed">{details.clinicalSignificance}</p>
-                        </div>
-                      </>
-                    )
-                  })()}
                 </div>
               )}
             </div>
