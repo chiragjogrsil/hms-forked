@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useRef } from "react"
 import {
   Search,
   Calendar,
@@ -15,6 +17,9 @@ import {
   Play,
   ArrowRight,
   ClipboardList,
+  FileText,
+  X,
+  CloudUpload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +37,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 
 // Mock data for lab test services with 5-stage workflow
 const labTestsData = [
@@ -225,6 +231,12 @@ export default function ServicesPage() {
   const [actionNotes, setActionNotes] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
 
+  // File upload states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Combine all services data
   const allServicesData = [...labTestsData, ...otherServicesData]
 
@@ -390,8 +402,8 @@ export default function ServicesPage() {
         description: `Mark testing as completed for ${service.serviceName}`,
       },
       "upload-report": {
-        title: "Upload Report",
-        description: `Upload test report for ${service.serviceName}`,
+        title: "Upload Test Report",
+        description: `Upload the test report file for ${service.serviceName}`,
       },
     }
 
@@ -403,13 +415,95 @@ export default function ServicesPage() {
       description: actionConfig[actionType as keyof typeof actionConfig].description,
     })
     setActionNotes("")
+    setSelectedFile(null)
+    setUploadProgress(0)
+  }
+
+  // File upload handlers
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0]
+      if (validateFile(file)) {
+        setSelectedFile(file)
+      }
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      if (validateFile(file)) {
+        setSelectedFile(file)
+      }
+    }
+  }
+
+  const validateFile = (file: File) => {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"]
+    const maxSize = 10 * 1024 * 1024 // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please select a PDF, JPEG, or PNG file")
+      return false
+    }
+
+    if (file.size > maxSize) {
+      alert("File size must be less than 10MB")
+      return false
+    }
+
+    return true
+  }
+
+  const removeFile = () => {
+    setSelectedFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
 
   const handleActionConfirm = async () => {
     setIsProcessing(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // For upload-report action, simulate file upload
+    if (actionDialog.action === "upload-report") {
+      if (!selectedFile) {
+        alert("Please select a file to upload")
+        setIsProcessing(false)
+        return
+      }
+
+      // Simulate file upload progress
+      for (let i = 0; i <= 100; i += 10) {
+        setUploadProgress(i)
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    } else {
+      // Simulate API call for other actions
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+    }
 
     // Update the service status
     const updatedStatus = {
@@ -426,11 +520,18 @@ export default function ServicesPage() {
         ...labTestsData[serviceIndex],
         status: updatedStatus || labTestsData[serviceIndex].status,
         [`${actionDialog.action.replace("-", "")}Time`]: new Date().toLocaleTimeString(),
+        ...(actionDialog.action === "upload-report" &&
+          selectedFile && {
+            reportUrl: `/reports/${actionDialog.service.testCode.toLowerCase()}-${Date.now()}.pdf`,
+            reportFileName: selectedFile.name,
+          }),
       }
     }
 
     setIsProcessing(false)
     setActionDialog({ open: false, service: null, action: "", title: "", description: "" })
+    setSelectedFile(null)
+    setUploadProgress(0)
   }
 
   const selectedDeptInfo = departments.find((dept) => dept.id === selectedDepartment)
@@ -762,12 +863,88 @@ export default function ServicesPage() {
 
       {/* Action Confirmation Dialog */}
       <Dialog open={actionDialog.open} onOpenChange={(open) => setActionDialog((prev) => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{actionDialog.title}</DialogTitle>
             <DialogDescription>{actionDialog.description}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* File Upload Section - Only for upload-report action */}
+            {actionDialog.action === "upload-report" && (
+              <div className="space-y-4">
+                <Label>Report File *</Label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    dragActive
+                      ? "border-blue-500 bg-blue-50"
+                      : selectedFile
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-300 hover:border-gray-400"
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  {selectedFile ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <FileText className="h-8 w-8 text-green-500" />
+                        <div className="text-left">
+                          <div className="font-medium text-green-700">{selectedFile.name}</div>
+                          <div className="text-sm text-green-600">{formatFileSize(selectedFile.size)}</div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeFile}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <CloudUpload className="h-12 w-12 text-gray-400 mx-auto" />
+                      <div>
+                        <p className="text-gray-600">Drag and drop your report file here, or</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="mt-2"
+                        >
+                          Browse Files
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500">Supports PDF, JPEG, PNG files up to 10MB</p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {/* Upload Progress */}
+                {isProcessing && uploadProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="w-full" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Notes Section */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
@@ -778,6 +955,8 @@ export default function ServicesPage() {
                 className="min-h-[80px]"
               />
             </div>
+
+            {/* Service Info */}
             {actionDialog.service && (
               <div className="p-3 bg-gray-50 rounded-lg text-sm">
                 <div className="font-medium">{actionDialog.service.serviceName}</div>
@@ -785,19 +964,26 @@ export default function ServicesPage() {
                   Patient: {actionDialog.service.patientName} ({actionDialog.service.patientId})
                 </div>
                 <div className="text-muted-foreground">Current Status: {actionDialog.service.status}</div>
+                {actionDialog.service.testCode && (
+                  <div className="text-muted-foreground">Test Code: {actionDialog.service.testCode}</div>
+                )}
               </div>
             )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setActionDialog((prev) => ({ ...prev, open: false }))}
+              onClick={() => {
+                setActionDialog((prev) => ({ ...prev, open: false }))
+                setSelectedFile(null)
+                setUploadProgress(0)
+              }}
               disabled={isProcessing}
             >
               Cancel
             </Button>
             <Button onClick={handleActionConfirm} disabled={isProcessing}>
-              {isProcessing ? "Processing..." : "Confirm"}
+              {isProcessing ? (actionDialog.action === "upload-report" ? "Uploading..." : "Processing...") : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
