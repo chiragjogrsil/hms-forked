@@ -554,7 +554,7 @@ export default function ServicesPage() {
     const actionConfig = {
       "collect-sample": {
         title: "Collect Sample",
-        description: `Collect ${service.sampleType.toLowerCase()} sample for ${service.serviceName}`,
+        description: `Collect ${service.sampleType ? service.sampleType.toLowerCase() : "sample"} for ${service.serviceName}`,
       },
       "start-testing": {
         title: "Start Testing",
