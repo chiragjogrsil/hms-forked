@@ -5,12 +5,9 @@ import type React from "react"
 import { useState, useRef } from "react"
 import {
   Search,
-  Calendar,
-  Clock,
   User,
   AlertCircle,
   CheckCircle,
-  XCircle,
   MoreHorizontal,
   TestTube,
   Upload,
@@ -23,6 +20,9 @@ import {
   Eye,
   Printer,
   QrCode,
+  Heart,
+  Camera,
+  Activity,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -148,188 +148,174 @@ const labTestsData = [
       clinicalSignificance: "Evaluates thyroid gland function and diagnoses hyperthyroidism or hypothyroidism.",
     },
   },
-  {
-    id: "LAB004",
-    patientName: "Sarah Davis",
-    patientId: "P12348",
-    serviceName: "Liver Function Test",
-    department: "Laboratory",
-    requestedBy: "Dr. Wilson",
-    priority: "High",
-    status: "Testing Completed",
-    scheduledTime: "11:00 AM",
-    requestedTime: "10:30 AM",
-    collectionTime: "11:05 AM",
-    testingStartTime: "11:30 AM",
-    testingCompletedTime: "12:45 PM",
-    notes: "Patient appears healthy, routine checkup",
-    technician: "Tech. Mike",
-    sampleType: "Blood",
-    testCode: "LFT001",
-    barcode: "1234567890126",
-    testDetails: {
-      description: "Comprehensive Liver Function Panel",
-      methodology: "Enzymatic/Colorimetric",
-      sampleVolume: "3-4 mL",
-      container: "SST Tube (Gold Top)",
-      fastingRequired: false,
-      fastingHours: 0,
-      turnaroundTime: "2-3 hours",
-      normalRanges: {
-        ALT: "7-56 U/L",
-        AST: "10-40 U/L",
-        "Bilirubin Total": "0.2-1.2 mg/dL",
-        "Alkaline Phosphatase": "44-147 U/L",
-        Albumin: "3.5-5.0 g/dL",
-      },
-      clinicalSignificance: "Assesses liver health, detects liver disease, and monitors treatment effectiveness.",
-    },
-  },
-  {
-    id: "LAB005",
-    patientName: "Robert Johnson",
-    patientId: "P12349",
-    serviceName: "Urine Analysis",
-    department: "Laboratory",
-    requestedBy: "Dr. Lee",
-    priority: "Medium",
-    status: "Reports Uploaded",
-    scheduledTime: "2:00 PM",
-    requestedTime: "1:30 PM",
-    collectionTime: "2:10 PM",
-    testingStartTime: "2:30 PM",
-    testingCompletedTime: "3:15 PM",
-    reportUploadTime: "3:45 PM",
-    notes: "Mid-stream sample collected - Results normal",
-    technician: "Tech. Sarah",
-    sampleType: "Urine",
-    testCode: "UA001",
-    barcode: "1234567890127",
-    reportUrl: "/reports/ua-001.pdf",
-    testDetails: {
-      description: "Complete Urinalysis with Microscopy",
-      methodology: "Dipstick and Microscopic Examination",
-      sampleVolume: "10-15 mL",
-      container: "Sterile Urine Container",
-      fastingRequired: false,
-      fastingHours: 0,
-      turnaroundTime: "1-2 hours",
-      normalRanges: {
-        "Specific Gravity": "1.003-1.030",
-        pH: "4.6-8.0",
-        Protein: "Negative",
-        Glucose: "Negative",
-        Ketones: "Negative",
-        Blood: "Negative",
-      },
-      clinicalSignificance:
-        "Detects urinary tract infections, kidney disease, diabetes, and other metabolic disorders.",
-    },
-  },
-  {
-    id: "LAB006",
-    patientName: "Emily Brown",
-    patientId: "P12350",
-    serviceName: "Blood Sugar (Random)",
-    department: "Laboratory",
-    requestedBy: "Dr. Kumar",
-    priority: "High",
-    status: "Sample Requested",
-    scheduledTime: "3:30 PM",
-    requestedTime: "3:00 PM",
-    notes: "Patient had lunch 2 hours ago - Random glucose test",
-    technician: "Tech. Mike",
-    sampleType: "Blood",
-    testCode: "BSR001",
-    barcode: "1234567890128",
-    testDetails: {
-      description: "Random Blood Glucose",
-      methodology: "Glucose Oxidase Method",
-      sampleVolume: "1-2 mL",
-      container: "Fluoride Tube (Gray Top)",
-      fastingRequired: false,
-      fastingHours: 0,
-      turnaroundTime: "30 minutes",
-      normalRanges: {
-        "Random Glucose": "<200 mg/dL",
-      },
-      clinicalSignificance: "Screens for diabetes mellitus and monitors blood glucose levels.",
-    },
-  },
-  {
-    id: "LAB007",
-    patientName: "David Wilson",
-    patientId: "P12351",
-    serviceName: "Hemoglobin A1C",
-    department: "Laboratory",
-    requestedBy: "Dr. Patel",
-    priority: "Medium",
-    status: "Sample Collected",
-    scheduledTime: "4:00 PM",
-    requestedTime: "3:30 PM",
-    collectionTime: "4:05 PM",
-    notes: "Diabetes monitoring - 3-month average",
-    technician: "Tech. Sarah",
-    sampleType: "Blood",
-    testCode: "HBA1C001",
-    barcode: "1234567890129",
-    testDetails: {
-      description: "Glycated Hemoglobin A1C",
-      methodology: "High Performance Liquid Chromatography",
-      sampleVolume: "2-3 mL",
-      container: "EDTA Tube (Purple Top)",
-      fastingRequired: false,
-      fastingHours: 0,
-      turnaroundTime: "2-3 hours",
-      normalRanges: {
-        HbA1c: "<5.7% (Normal), 5.7-6.4% (Prediabetes), ≥6.5% (Diabetes)",
-      },
-      clinicalSignificance: "Provides average blood glucose control over the past 2-3 months for diabetes management.",
-    },
-  },
 ]
 
-// Other services (non-lab) for comparison
+// Other services with 4-stage workflow: Requested → Testing Started → Testing Completed → Reports Uploaded
 const otherServicesData = [
   {
-    id: "RAD002",
+    id: "RAD001",
     patientName: "Jane Smith",
     patientId: "P12346",
     serviceName: "Chest X-Ray",
     department: "Radiology",
     requestedBy: "Dr. Johnson",
     priority: "Medium",
-    status: "Pending",
+    status: "Requested",
     scheduledTime: "2:00 PM",
-    estimatedCompletion: "2:30 PM",
-    notes: "Remove jewelry",
+    requestedTime: "1:30 PM",
+    notes: "Remove jewelry and metal objects",
+    technician: "Tech. David",
+    serviceCode: "CXR001",
+    serviceDetails: {
+      description: "Posterior-Anterior and Lateral Chest X-Ray",
+      procedure: "Digital Radiography",
+      duration: "15-20 minutes",
+      preparation: "Remove jewelry, metal objects, and clothing from waist up",
+      contrast: false,
+      radiation: "Low dose",
+      clinicalSignificance: "Evaluates lungs, heart, and chest wall for abnormalities, infections, or injuries.",
+    },
   },
   {
-    id: "CARD004",
+    id: "RAD002",
+    patientName: "Robert Johnson",
+    patientId: "P12349",
+    serviceName: "Abdominal Ultrasound",
+    department: "Radiology",
+    requestedBy: "Dr. Lee",
+    priority: "High",
+    status: "Testing Started",
+    scheduledTime: "3:00 PM",
+    requestedTime: "2:30 PM",
+    testingStartTime: "3:05 PM",
+    notes: "Patient fasting for 8 hours",
+    technician: "Tech. Maria",
+    serviceCode: "USG001",
+    serviceDetails: {
+      description: "Complete Abdominal Ultrasound Examination",
+      procedure: "Ultrasound Imaging",
+      duration: "30-45 minutes",
+      preparation: "8-hour fasting required",
+      contrast: false,
+      radiation: "None (Ultrasound)",
+      clinicalSignificance: "Evaluates abdominal organs including liver, gallbladder, kidneys, and pancreas.",
+    },
+  },
+  {
+    id: "RAD003",
+    patientName: "Emily Brown",
+    patientId: "P12350",
+    serviceName: "CT Scan Head",
+    department: "Radiology",
+    requestedBy: "Dr. Kumar",
+    priority: "High",
+    status: "Testing Completed",
+    scheduledTime: "4:00 PM",
+    requestedTime: "3:30 PM",
+    testingStartTime: "4:10 PM",
+    testingCompletedTime: "4:35 PM",
+    notes: "Patient has mild claustrophobia - managed well",
+    technician: "Tech. David",
+    serviceCode: "CTH001",
+    serviceDetails: {
+      description: "Non-contrast CT Scan of Head",
+      procedure: "Computed Tomography",
+      duration: "20-30 minutes",
+      preparation: "No special preparation required",
+      contrast: false,
+      radiation: "Moderate dose",
+      clinicalSignificance: "Evaluates brain tissue, blood vessels, and skull for trauma, stroke, or tumors.",
+    },
+  },
+  {
+    id: "CARD001",
     patientName: "Sarah Davis",
     patientId: "P12348",
     serviceName: "ECG",
     department: "Cardiology",
     requestedBy: "Dr. Wilson",
     priority: "High",
-    status: "In Progress",
+    status: "Reports Uploaded",
     scheduledTime: "11:15 AM",
-    estimatedCompletion: "11:45 AM",
-    notes: "Patient anxious",
+    requestedTime: "10:45 AM",
+    testingStartTime: "11:20 AM",
+    testingCompletedTime: "11:35 AM",
+    reportUploadTime: "11:50 AM",
+    notes: "Patient anxious - results show normal sinus rhythm",
+    technician: "Tech. Lisa",
+    serviceCode: "ECG001",
+    reportUrl: "/reports/ecg-001.pdf",
+    serviceDetails: {
+      description: "12-Lead Electrocardiogram",
+      procedure: "Electrocardiography",
+      duration: "10-15 minutes",
+      preparation: "Remove upper body clothing, may need to shave chest hair",
+      contrast: false,
+      radiation: "None",
+      clinicalSignificance: "Evaluates heart rhythm, rate, and electrical activity to detect cardiac abnormalities.",
+    },
+  },
+  {
+    id: "CARD002",
+    patientName: "David Wilson",
+    patientId: "P12351",
+    serviceName: "Echocardiogram",
+    department: "Cardiology",
+    requestedBy: "Dr. Patel",
+    priority: "Medium",
+    status: "Requested",
+    scheduledTime: "5:00 PM",
+    requestedTime: "4:30 PM",
+    notes: "Evaluate heart function post-surgery",
+    technician: "Tech. Lisa",
+    serviceCode: "ECHO001",
+    serviceDetails: {
+      description: "Transthoracic Echocardiogram",
+      procedure: "Cardiac Ultrasound",
+      duration: "45-60 minutes",
+      preparation: "Remove upper body clothing",
+      contrast: false,
+      radiation: "None (Ultrasound)",
+      clinicalSignificance: "Evaluates heart structure, function, and blood flow through heart chambers and valves.",
+    },
+  },
+  {
+    id: "PHYS001",
+    patientName: "Michael Brown",
+    patientId: "P12352",
+    serviceName: "Physical Therapy Session",
+    department: "Physiotherapy",
+    requestedBy: "Dr. Anderson",
+    priority: "Medium",
+    status: "Testing Started",
+    scheduledTime: "10:00 AM",
+    requestedTime: "9:30 AM",
+    testingStartTime: "10:15 AM",
+    notes: "Lower back pain rehabilitation",
+    technician: "PT. Jennifer",
+    serviceCode: "PT001",
+    serviceDetails: {
+      description: "Lower Back Pain Rehabilitation Session",
+      procedure: "Physical Therapy",
+      duration: "60 minutes",
+      preparation: "Wear comfortable, loose-fitting clothing",
+      contrast: false,
+      radiation: "None",
+      clinicalSignificance: "Improves mobility, reduces pain, and restores function through therapeutic exercises.",
+    },
   },
 ]
 
 const departments = [
   { id: "all", name: "All Departments", count: 25, icon: "🏥" },
-  { id: "laboratory", name: "Laboratory", count: 8, icon: "🔬" },
-  { id: "radiology", name: "Radiology", count: 6, icon: "📷" },
-  { id: "cardiology", name: "Cardiology", count: 4, icon: "❤️" },
-  { id: "physiotherapy", name: "Physiotherapy", count: 3, icon: "🏃" },
-  { id: "pharmacy", name: "Pharmacy", count: 4, icon: "💊" },
+  { id: "laboratory", name: "Laboratory", count: 3, icon: "🔬" },
+  { id: "radiology", name: "Radiology", count: 3, icon: "📷" },
+  { id: "cardiology", name: "Cardiology", count: 2, icon: "❤️" },
+  { id: "physiotherapy", name: "Physiotherapy", count: 1, icon: "🏃" },
 ]
 
 export default function ServicesPage() {
-  const [selectedDepartment, setSelectedDepartment] = useState("laboratory") // Default to laboratory
+  const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
@@ -381,10 +367,10 @@ export default function ServicesPage() {
     let matchesStatus = true
     if (statusFilter !== "all") {
       if (selectedDepartment === "laboratory") {
-        // Lab-specific status filtering
+        // Lab-specific status filtering (5 stages)
         matchesStatus = service.status.toLowerCase().replace(" ", "-") === statusFilter
       } else {
-        // General status filtering for other departments
+        // Other services status filtering (4 stages)
         matchesStatus = service.status.toLowerCase().replace(" ", "-") === statusFilter
       }
     }
@@ -411,23 +397,26 @@ export default function ServicesPage() {
     }
   }
 
+  const getOtherServiceStatusIcon = (status: string) => {
+    switch (status) {
+      case "Requested":
+        return <ClipboardList className="h-4 w-4 text-gray-500" />
+      case "Testing Started":
+        return <Play className="h-4 w-4 text-orange-500" />
+      case "Testing Completed":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "Reports Uploaded":
+        return <Upload className="h-4 w-4 text-purple-500" />
+      default:
+        return <AlertCircle className="h-4 w-4 text-gray-500" />
+    }
+  }
+
   const getStatusIcon = (status: string, department: string) => {
     if (department === "Laboratory") {
       return getLabStatusIcon(status)
-    }
-
-    // General status icons for other departments
-    switch (status) {
-      case "Completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "In Progress":
-        return <Clock className="h-4 w-4 text-blue-500" />
-      case "Pending":
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
-      case "Scheduled":
-        return <Calendar className="h-4 w-4 text-purple-500" />
-      default:
-        return <XCircle className="h-4 w-4 text-red-500" />
+    } else {
+      return getOtherServiceStatusIcon(status)
     }
   }
 
@@ -448,23 +437,26 @@ export default function ServicesPage() {
     }
   }
 
+  const getOtherServiceStatusColor = (status: string) => {
+    switch (status) {
+      case "Requested":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      case "Testing Started":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "Testing Completed":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "Reports Uploaded":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
   const getStatusColor = (status: string, department: string) => {
     if (department === "Laboratory") {
       return getLabStatusColor(status)
-    }
-
-    // General status colors for other departments
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-800"
-      case "In Progress":
-        return "bg-blue-100 text-blue-800"
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800"
-      case "Scheduled":
-        return "bg-purple-100 text-purple-800"
-      default:
-        return "bg-red-100 text-red-800"
+    } else {
+      return getOtherServiceStatusColor(status)
     }
   }
 
@@ -481,7 +473,7 @@ export default function ServicesPage() {
     }
   }
 
-  const getNextAction = (status: string) => {
+  const getLabNextAction = (status: string) => {
     switch (status) {
       case "Sample Requested":
         return {
@@ -512,13 +504,53 @@ export default function ServicesPage() {
           color: "bg-purple-500 hover:bg-purple-600",
         }
       case "Reports Uploaded":
-        return null // No further action needed
+        return null
       default:
         return null
     }
   }
 
+  const getOtherServiceNextAction = (status: string) => {
+    switch (status) {
+      case "Requested":
+        return {
+          action: "start-service",
+          label: "Start Service",
+          icon: <Play className="h-4 w-4" />,
+          color: "bg-orange-500 hover:bg-orange-600",
+        }
+      case "Testing Started":
+        return {
+          action: "complete-service",
+          label: "Complete Service",
+          icon: <CheckCircle className="h-4 w-4" />,
+          color: "bg-green-500 hover:bg-green-600",
+        }
+      case "Testing Completed":
+        return {
+          action: "upload-report",
+          label: "Upload Report",
+          icon: <Upload className="h-4 w-4" />,
+          color: "bg-purple-500 hover:bg-purple-600",
+        }
+      case "Reports Uploaded":
+        return null
+      default:
+        return null
+    }
+  }
+
+  const getNextAction = (status: string, department: string) => {
+    if (department === "Laboratory") {
+      return getLabNextAction(status)
+    } else {
+      return getOtherServiceNextAction(status)
+    }
+  }
+
   const handleActionClick = (service: any, actionType: string) => {
+    const isLab = service.department === "Laboratory"
+
     const actionConfig = {
       "collect-sample": {
         title: "Collect Sample",
@@ -528,13 +560,21 @@ export default function ServicesPage() {
         title: "Start Testing",
         description: `Begin testing process for ${service.serviceName}`,
       },
+      "start-service": {
+        title: "Start Service",
+        description: `Begin ${service.serviceName} procedure`,
+      },
       "complete-testing": {
         title: "Complete Testing",
         description: `Mark testing as completed for ${service.serviceName}`,
       },
+      "complete-service": {
+        title: "Complete Service",
+        description: `Mark ${service.serviceName} as completed`,
+      },
       "upload-report": {
-        title: "Upload Test Report",
-        description: `Upload the test report file for ${service.serviceName}`,
+        title: isLab ? "Upload Test Report" : "Upload Service Report",
+        description: `Upload the ${isLab ? "test" : "service"} report file for ${service.serviceName}`,
       },
     }
 
@@ -644,25 +684,34 @@ export default function ServicesPage() {
     }
 
     // Update the service status
+    const isLab = actionDialog.service.department === "Laboratory"
     const updatedStatus = {
       "collect-sample": "Sample Collected",
       "start-testing": "Testing Started",
+      "start-service": "Testing Started",
       "complete-testing": "Testing Completed",
+      "complete-service": "Testing Completed",
       "upload-report": "Reports Uploaded",
     }[actionDialog.action]
 
     // In a real app, this would update the backend
-    const serviceIndex = labTestsData.findIndex((s) => s.id === actionDialog.service.id)
+    const allData = [...labTestsData, ...otherServicesData]
+    const serviceIndex = allData.findIndex((s) => s.id === actionDialog.service.id)
     if (serviceIndex !== -1) {
-      labTestsData[serviceIndex] = {
-        ...labTestsData[serviceIndex],
-        status: updatedStatus || labTestsData[serviceIndex].status,
-        [`${actionDialog.action.replace("-", "")}Time`]: new Date().toLocaleTimeString(),
-        ...(actionDialog.action === "upload-report" &&
-          selectedFile && {
-            reportUrl: `/reports/${actionDialog.service.testCode.toLowerCase()}-${Date.now()}.pdf`,
-            reportFileName: selectedFile.name,
-          }),
+      const targetArray = isLab ? labTestsData : otherServicesData
+      const targetIndex = targetArray.findIndex((s) => s.id === actionDialog.service.id)
+
+      if (targetIndex !== -1) {
+        targetArray[targetIndex] = {
+          ...targetArray[targetIndex],
+          status: updatedStatus || targetArray[targetIndex].status,
+          [`${actionDialog.action.replace("-", "")}Time`]: new Date().toLocaleTimeString(),
+          ...(actionDialog.action === "upload-report" &&
+            selectedFile && {
+              reportUrl: `/reports/${(actionDialog.service.testCode || actionDialog.service.serviceCode).toLowerCase()}-${Date.now()}.pdf`,
+              reportFileName: selectedFile.name,
+            }),
+        }
       }
     }
 
@@ -691,7 +740,7 @@ export default function ServicesPage() {
 
   const selectedDeptInfo = departments.find((dept) => dept.id === selectedDepartment)
 
-  // Get lab-specific status options for filtering
+  // Get status options based on department
   const getStatusOptions = () => {
     if (selectedDepartment === "laboratory") {
       return [
@@ -705,11 +754,26 @@ export default function ServicesPage() {
     } else {
       return [
         { value: "all", label: "All Status" },
-        { value: "pending", label: "Pending" },
-        { value: "in-progress", label: "In Progress" },
-        { value: "completed", label: "Completed" },
-        { value: "scheduled", label: "Scheduled" },
+        { value: "requested", label: "Requested" },
+        { value: "testing-started", label: "Testing Started" },
+        { value: "testing-completed", label: "Testing Completed" },
+        { value: "reports-uploaded", label: "Reports Uploaded" },
       ]
+    }
+  }
+
+  const getDepartmentIcon = (department: string) => {
+    switch (department) {
+      case "Laboratory":
+        return <TestTube className="h-4 w-4" />
+      case "Radiology":
+        return <Camera className="h-4 w-4" />
+      case "Cardiology":
+        return <Heart className="h-4 w-4" />
+      case "Physiotherapy":
+        return <Activity className="h-4 w-4" />
+      default:
+        return <AlertCircle className="h-4 w-4" />
     }
   }
 
@@ -755,9 +819,10 @@ export default function ServicesPage() {
                 <h3 className="font-semibold text-blue-900">{selectedDeptInfo.name}</h3>
               </div>
               <p className="text-sm text-blue-700">
-                {selectedDeptInfo.count} active services
-                {selectedDepartment === "laboratory" &&
-                  " • 5-stage workflow: Requested → Collected → Testing → Completed → Reports"}
+                {selectedDeptInfo.count} active services •{" "}
+                {selectedDepartment === "laboratory"
+                  ? "5-stage workflow: Requested → Collected → Testing → Completed → Reports"
+                  : "4-stage workflow: Requested → Testing → Completed → Reports"}
               </p>
             </div>
           )}
@@ -816,18 +881,22 @@ export default function ServicesPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg">{service.serviceName}</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {getDepartmentIcon(service.department)}
+                        {service.serviceName}
+                      </CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <User className="h-3 w-3" />
                         {service.patientName} ({service.patientId})
                       </CardDescription>
-                      {service.department === "Laboratory" && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          <div>Test Code: {service.testCode}</div>
-                          <div>Sample: {service.sampleType}</div>
-                          <div>Technician: {service.technician}</div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        <div>
+                          {service.department === "Laboratory" ? "Test" : "Service"} Code:{" "}
+                          {service.testCode || service.serviceCode}
                         </div>
-                      )}
+                        {service.sampleType && <div>Sample: {service.sampleType}</div>}
+                        <div>Technician: {service.technician}</div>
+                      </div>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -836,13 +905,11 @@ export default function ServicesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {service.department === "Laboratory" && (
-                          <DropdownMenuItem onClick={() => handleViewDetails(service)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Test Details
-                          </DropdownMenuItem>
-                        )}
-                        {service.department === "Laboratory" && service.status === "Reports Uploaded" && (
+                        <DropdownMenuItem onClick={() => handleViewDetails(service)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        {service.status === "Reports Uploaded" && (
                           <DropdownMenuItem>
                             <Upload className="h-4 w-4 mr-2" />
                             Download Report
@@ -869,47 +936,47 @@ export default function ServicesPage() {
                     <Badge className={getPriorityColor(service.priority)}>{service.priority}</Badge>
                   </div>
 
-                  {/* Lab-specific timeline */}
-                  {service.department === "Laboratory" && (
-                    <div className="space-y-2 text-xs">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-muted-foreground">Scheduled:</span>
-                          <div className="font-medium">{service.scheduledTime}</div>
-                        </div>
-                        {service.requestedTime && (
-                          <div>
-                            <span className="text-muted-foreground">Requested:</span>
-                            <div className="font-medium">{service.requestedTime}</div>
-                          </div>
-                        )}
-                        {service.collectionTime && (
-                          <div>
-                            <span className="text-muted-foreground">Collected:</span>
-                            <div className="font-medium">{service.collectionTime}</div>
-                          </div>
-                        )}
-                        {service.testingStartTime && (
-                          <div>
-                            <span className="text-muted-foreground">Testing:</span>
-                            <div className="font-medium">{service.testingStartTime}</div>
-                          </div>
-                        )}
-                        {service.testingCompletedTime && (
-                          <div>
-                            <span className="text-muted-foreground">Completed:</span>
-                            <div className="font-medium">{service.testingCompletedTime}</div>
-                          </div>
-                        )}
-                        {service.reportUploadTime && (
-                          <div>
-                            <span className="text-muted-foreground">Report:</span>
-                            <div className="font-medium">{service.reportUploadTime}</div>
-                          </div>
-                        )}
+                  {/* Timeline */}
+                  <div className="space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-muted-foreground">Scheduled:</span>
+                        <div className="font-medium">{service.scheduledTime}</div>
                       </div>
+                      {service.requestedTime && (
+                        <div>
+                          <span className="text-muted-foreground">Requested:</span>
+                          <div className="font-medium">{service.requestedTime}</div>
+                        </div>
+                      )}
+                      {service.collectionTime && (
+                        <div>
+                          <span className="text-muted-foreground">Collected:</span>
+                          <div className="font-medium">{service.collectionTime}</div>
+                        </div>
+                      )}
+                      {service.testingStartTime && (
+                        <div>
+                          <span className="text-muted-foreground">
+                            {service.department === "Laboratory" ? "Testing:" : "Started:"}
+                          </span>
+                          <div className="font-medium">{service.testingStartTime}</div>
+                        </div>
+                      )}
+                      {service.testingCompletedTime && (
+                        <div>
+                          <span className="text-muted-foreground">Completed:</span>
+                          <div className="font-medium">{service.testingCompletedTime}</div>
+                        </div>
+                      )}
+                      {service.reportUploadTime && (
+                        <div>
+                          <span className="text-muted-foreground">Report:</span>
+                          <div className="font-medium">{service.reportUploadTime}</div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -928,38 +995,39 @@ export default function ServicesPage() {
                     )}
                   </div>
 
-                  {/* View Details Button for Lab Tests */}
-                  {service.department === "Laboratory" && (
-                    <div className="pt-2 border-t">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full mb-2 bg-transparent"
-                        onClick={() => handleViewDetails(service)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Test Details & Barcode
-                      </Button>
-                    </div>
-                  )}
+                  {/* View Details Button */}
+                  <div className="pt-2 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full mb-2 bg-transparent"
+                      onClick={() => handleViewDetails(service)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View {service.department === "Laboratory" ? "Test" : "Service"} Details
+                      {service.department === "Laboratory" && " & Barcode"}
+                    </Button>
+                  </div>
 
-                  {/* Action Button for Lab Tests */}
-                  {service.department === "Laboratory" && getNextAction(service.status) && (
+                  {/* Action Button */}
+                  {getNextAction(service.status, service.department) && (
                     <div>
                       <Button
                         size="sm"
-                        className={`w-full ${getNextAction(service.status)?.color} text-white`}
-                        onClick={() => handleActionClick(service, getNextAction(service.status)?.action || "")}
+                        className={`w-full ${getNextAction(service.status, service.department)?.color} text-white`}
+                        onClick={() =>
+                          handleActionClick(service, getNextAction(service.status, service.department)?.action || "")
+                        }
                       >
-                        {getNextAction(service.status)?.icon}
-                        <span className="ml-2">{getNextAction(service.status)?.label}</span>
+                        {getNextAction(service.status, service.department)?.icon}
+                        <span className="ml-2">{getNextAction(service.status, service.department)?.label}</span>
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
                   )}
 
-                  {/* Completed Lab Test - Show Report Available */}
-                  {service.department === "Laboratory" && service.status === "Reports Uploaded" && (
+                  {/* Completed Service - Show Report Available */}
+                  {service.status === "Reports Uploaded" && (
                     <div>
                       <Button size="sm" variant="outline" className="w-full bg-transparent">
                         <Upload className="h-4 w-4 mr-2" />
@@ -985,10 +1053,13 @@ export default function ServicesPage() {
                   >
                     <div className="flex items-center space-x-4">
                       <div>
-                        <div className="font-medium">{service.serviceName}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {getDepartmentIcon(service.department)}
+                          {service.serviceName}
+                        </div>
                         <div className="text-sm text-muted-foreground">
-                          {service.patientName} ({service.patientId}) • {service.department}
-                          {service.department === "Laboratory" && ` • ${service.testCode}`}
+                          {service.patientName} ({service.patientId}) • {service.department} •{" "}
+                          {service.testCode || service.serviceCode}
                         </div>
                       </div>
                     </div>
@@ -999,23 +1070,23 @@ export default function ServicesPage() {
                       <Badge className={getPriorityColor(service.priority)}>{service.priority}</Badge>
                       <span className="text-sm text-muted-foreground">{service.scheduledTime}</span>
 
-                      {/* View Details Button for Lab Tests in List View */}
-                      {service.department === "Laboratory" && (
-                        <Button size="sm" variant="outline" onClick={() => handleViewDetails(service)}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          Details
-                        </Button>
-                      )}
+                      {/* View Details Button in List View */}
+                      <Button size="sm" variant="outline" onClick={() => handleViewDetails(service)}>
+                        <Eye className="h-4 w-4 mr-1" />
+                        Details
+                      </Button>
 
-                      {/* Action Button for Lab Tests in List View */}
-                      {service.department === "Laboratory" && getNextAction(service.status) && (
+                      {/* Action Button in List View */}
+                      {getNextAction(service.status, service.department) && (
                         <Button
                           size="sm"
-                          className={`${getNextAction(service.status)?.color} text-white`}
-                          onClick={() => handleActionClick(service, getNextAction(service.status)?.action || "")}
+                          className={`${getNextAction(service.status, service.department)?.color} text-white`}
+                          onClick={() =>
+                            handleActionClick(service, getNextAction(service.status, service.department)?.action || "")
+                          }
                         >
-                          {getNextAction(service.status)?.icon}
-                          <span className="ml-1">{getNextAction(service.status)?.label}</span>
+                          {getNextAction(service.status, service.department)?.icon}
+                          <span className="ml-1">{getNextAction(service.status, service.department)?.label}</span>
                         </Button>
                       )}
 
@@ -1052,20 +1123,21 @@ export default function ServicesPage() {
         </Card>
       )}
 
-      {/* Test Details Dialog */}
+      {/* Service Details Dialog */}
       <Dialog open={detailsDialog.open} onOpenChange={(open) => setDetailsDialog((prev) => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <TestTube className="h-5 w-5" />
-              Test Details & Barcode
+              {detailsDialog.service && getDepartmentIcon(detailsDialog.service.department)}
+              {detailsDialog.service?.department === "Laboratory" ? "Test" : "Service"} Details
+              {detailsDialog.service?.department === "Laboratory" && " & Barcode"}
             </DialogTitle>
             <DialogDescription>Complete information for {detailsDialog.service?.serviceName}</DialogDescription>
           </DialogHeader>
 
           {detailsDialog.service && (
             <div className="space-y-6">
-              {/* Patient & Test Info */}
+              {/* Patient & Service Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Patient Information</Label>
@@ -1075,117 +1147,166 @@ export default function ServicesPage() {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">Test Information</Label>
+                  <Label className="text-sm font-medium text-gray-600">
+                    {detailsDialog.service.department === "Laboratory" ? "Test" : "Service"} Information
+                  </Label>
                   <div className="mt-1">
                     <div className="font-medium">{detailsDialog.service.serviceName}</div>
-                    <div className="text-sm text-gray-600">Code: {detailsDialog.service.testCode}</div>
+                    <div className="text-sm text-gray-600">
+                      Code: {detailsDialog.service.testCode || detailsDialog.service.serviceCode}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Barcode Section */}
-              <div className="text-center">
-                <Label className="text-sm font-medium text-gray-600">Test Barcode</Label>
-                <div className="mt-4 p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg">
-                  {generateBarcode(detailsDialog.service.barcode)}
-                </div>
-                <div className="mt-2 flex justify-center space-x-2">
-                  <Button size="sm" variant="outline">
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print Barcode
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <QrCode className="h-4 w-4 mr-2" />
-                    Generate QR Code
-                  </Button>
-                </div>
-              </div>
+              {/* Barcode Section - Only for Lab Tests */}
+              {detailsDialog.service.department === "Laboratory" && detailsDialog.service.barcode && (
+                <>
+                  <div className="text-center">
+                    <Label className="text-sm font-medium text-gray-600">Test Barcode</Label>
+                    <div className="mt-4 p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg">
+                      {generateBarcode(detailsDialog.service.barcode)}
+                    </div>
+                    <div className="mt-2 flex justify-center space-x-2">
+                      <Button size="sm" variant="outline">
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print Barcode
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <QrCode className="h-4 w-4 mr-2" />
+                        Generate QR Code
+                      </Button>
+                    </div>
+                  </div>
+                  <Separator />
+                </>
+              )}
 
-              <Separator />
-
-              {/* Test Details */}
-              {detailsDialog.service.testDetails && (
+              {/* Service Details */}
+              {(detailsDialog.service.testDetails || detailsDialog.service.serviceDetails) && (
                 <div className="space-y-4">
-                  <Label className="text-lg font-semibold">Test Specifications</Label>
+                  <Label className="text-lg font-semibold">
+                    {detailsDialog.service.department === "Laboratory" ? "Test" : "Service"} Specifications
+                  </Label>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Description</Label>
-                      <p className="text-sm mt-1">{detailsDialog.service.testDetails.description}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Methodology</Label>
-                      <p className="text-sm mt-1">{detailsDialog.service.testDetails.methodology}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Sample Volume</Label>
-                      <p className="text-sm mt-1">{detailsDialog.service.testDetails.sampleVolume}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Container</Label>
-                      <p className="text-sm mt-1">{detailsDialog.service.testDetails.container}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Turnaround Time</Label>
-                      <p className="text-sm mt-1">{detailsDialog.service.testDetails.turnaroundTime}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Fasting Required</Label>
-                      <div className="flex items-center mt-1">
-                        <Badge
-                          variant={detailsDialog.service.testDetails.fastingRequired ? "destructive" : "secondary"}
-                        >
-                          {detailsDialog.service.testDetails.fastingRequired ? "Yes" : "No"}
-                        </Badge>
-                        {detailsDialog.service.testDetails.fastingRequired && (
-                          <span className="ml-2 text-sm text-gray-600">
-                            ({detailsDialog.service.testDetails.fastingHours} hours)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-600">Priority</Label>
-                      <div className="mt-1">
-                        <Badge className={getPriorityColor(detailsDialog.service.priority)}>
-                          {detailsDialog.service.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Normal Ranges */}
-                  <div>
-                    <Label className="text-lg font-semibold">Normal Reference Ranges</Label>
-                    <div className="mt-3 space-y-2">
-                      {Object.entries(detailsDialog.service.testDetails.normalRanges).map(([parameter, range]) => (
-                        <div key={parameter} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="font-medium text-sm">{parameter}</span>
-                          <span className="text-sm text-gray-600">{range}</span>
+                  {(() => {
+                    const details = detailsDialog.service.testDetails || detailsDialog.service.serviceDetails
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Description</Label>
+                            <p className="text-sm mt-1">{details.description}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">
+                              {detailsDialog.service.department === "Laboratory" ? "Methodology" : "Procedure"}
+                            </Label>
+                            <p className="text-sm mt-1">{details.methodology || details.procedure}</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  <Separator />
+                        <div className="grid grid-cols-3 gap-4">
+                          {details.sampleVolume && (
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Sample Volume</Label>
+                              <p className="text-sm mt-1">{details.sampleVolume}</p>
+                            </div>
+                          )}
+                          {details.container && (
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Container</Label>
+                              <p className="text-sm mt-1">{details.container}</p>
+                            </div>
+                          )}
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">
+                              {detailsDialog.service.department === "Laboratory" ? "Turnaround Time" : "Duration"}
+                            </Label>
+                            <p className="text-sm mt-1">{details.turnaroundTime || details.duration}</p>
+                          </div>
+                        </div>
 
-                  {/* Clinical Significance */}
-                  <div>
-                    <Label className="text-lg font-semibold">Clinical Significance</Label>
-                    <p className="text-sm mt-2 text-gray-700 leading-relaxed">
-                      {detailsDialog.service.testDetails.clinicalSignificance}
-                    </p>
-                  </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">
+                              {detailsDialog.service.department === "Laboratory" ? "Fasting Required" : "Preparation"}
+                            </Label>
+                            <div className="mt-1">
+                              {detailsDialog.service.department === "Laboratory" ? (
+                                <div className="flex items-center">
+                                  <Badge variant={details.fastingRequired ? "destructive" : "secondary"}>
+                                    {details.fastingRequired ? "Yes" : "No"}
+                                  </Badge>
+                                  {details.fastingRequired && (
+                                    <span className="ml-2 text-sm text-gray-600">({details.fastingHours} hours)</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-sm">{details.preparation}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Priority</Label>
+                            <div className="mt-1">
+                              <Badge className={getPriorityColor(detailsDialog.service.priority)}>
+                                {detailsDialog.service.priority}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        {details.contrast !== undefined && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Contrast Required</Label>
+                              <div className="mt-1">
+                                <Badge variant={details.contrast ? "destructive" : "secondary"}>
+                                  {details.contrast ? "Yes" : "No"}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Radiation</Label>
+                              <p className="text-sm mt-1">{details.radiation}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        {/* Normal Ranges - Only for Lab Tests */}
+                        {details.normalRanges && (
+                          <>
+                            <div>
+                              <Label className="text-lg font-semibold">Normal Reference Ranges</Label>
+                              <div className="mt-3 space-y-2">
+                                {Object.entries(details.normalRanges).map(([parameter, range]) => (
+                                  <div
+                                    key={parameter}
+                                    className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                                  >
+                                    <span className="font-medium text-sm">{parameter}</span>
+                                    <span className="text-sm text-gray-600">{range}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <Separator />
+                          </>
+                        )}
+
+                        {/* Clinical Significance */}
+                        <div>
+                          <Label className="text-lg font-semibold">Clinical Significance</Label>
+                          <p className="text-sm mt-2 text-gray-700 leading-relaxed">{details.clinicalSignificance}</p>
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -1306,9 +1427,10 @@ export default function ServicesPage() {
                   Patient: {actionDialog.service.patientName} ({actionDialog.service.patientId})
                 </div>
                 <div className="text-muted-foreground">Current Status: {actionDialog.service.status}</div>
-                {actionDialog.service.testCode && (
-                  <div className="text-muted-foreground">Test Code: {actionDialog.service.testCode}</div>
-                )}
+                <div className="text-muted-foreground">
+                  {actionDialog.service.department === "Laboratory" ? "Test" : "Service"} Code:{" "}
+                  {actionDialog.service.testCode || actionDialog.service.serviceCode}
+                </div>
               </div>
             )}
           </div>

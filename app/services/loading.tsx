@@ -14,6 +14,9 @@ export default function ServicesLoading() {
         </div>
         <div className="p-6 pt-0">
           <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+          <div className="mt-4">
+            <div className="h-20 w-full bg-gray-100 rounded animate-pulse" />
+          </div>
         </div>
       </div>
 
@@ -29,7 +32,7 @@ export default function ServicesLoading() {
 
       {/* Cards Skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 9 }).map((_, i) => (
           <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="flex flex-col space-y-1.5 p-6 pb-3">
               <div className="flex items-start justify-between">
