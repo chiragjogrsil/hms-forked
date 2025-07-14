@@ -1,400 +1,324 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Edit, Trash2, Pill } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
-import { AddAyurvedicPrescriptionModal } from "@/components/modals/add-ayurvedic-prescription-modal"
-import { PrescriptionTemplateManager } from "@/components/prescription-template-manager"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Trash2, Leaf, Save, Upload, CheckCircle, XCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { SaveAyurvedicTemplateModal } from "@/components/modals/save-ayurvedic-template-modal"
+import { LoadAyurvedicTemplateModal } from "@/components/modals/load-ayurvedic-template-modal"
+import type {
+  AyurvedicPrescription as AyurvedicPrescriptionType,
+  AyurvedicTemplate,
+} from "@/contexts/prescription-template-context"
 
 interface AyurvedicPrescriptionProps {
-  data: any[]
-  onChange: (data: any[]) => void
-  readOnly?: boolean
-  department?: string
+  prescriptions: AyurvedicPrescriptionType[]
+  setPrescriptions: (prescriptions: AyurvedicPrescriptionType[]) => void
+  pathya: string[]
+  setPathya: (pathya: string[]) => void
+  apathya: string[]
+  setApathya: (apathya: string[]) => void
+  generalInstructions: string
+  setGeneralInstructions: (instructions: string) => void
 }
 
-export function AyurvedicPrescription({
-  data,
-  onChange,
-  readOnly = false,
-  department = "general",
+export function AyurvedicPrescriptionComponent({
+  prescriptions,
+  setPrescriptions,
+  pathya,
+  setPathya,
+  apathya,
+  setApathya,
+  generalInstructions,
+  setGeneralInstructions,
 }: AyurvedicPrescriptionProps) {
-  // Ensure data is always an array
-  const safeData = Array.isArray(data) ? data : []
+  const [newPathyaItem, setNewPathyaItem] = useState("")
+  const [newApathyaItem, setNewApathyaItem] = useState("")
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+  const [showLoadTemplate, setShowLoadTemplate] = useState(false)
+  const { toast } = useToast()
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingPrescription, setEditingPrescription] = useState(null)
-  const [showInitialOptions, setShowInitialOptions] = useState(safeData.length === 0)
-
-  // Overall prescription-level pathya/apathya
-  const [overallPathya, setOverallPathya] = useState<string[]>([])
-  const [overallApathya, setOverallApathya] = useState<string[]>([])
-  const [newPathya, setNewPathya] = useState("")
-  const [newApathya, setNewApathya] = useState("")
-
-  const commonPathya = [
-    "Light food",
-    "Warm water",
-    "Rest",
-    "Fruits",
-    "Vegetables",
-    "Milk",
-    "Honey",
-    "Rice",
-    "Moong dal",
-    "Ghee",
-    "Buttermilk",
-    "Ginger tea",
-  ]
-
-  const commonApathya = [
-    "Cold food",
-    "Heavy meals",
-    "Stress",
-    "Spicy food",
-    "Fried food",
-    "Alcohol",
-    "Smoking",
-    "Late night meals",
-    "Processed food",
-    "Ice cream",
-    "Cold drinks",
-    "Non-veg",
-  ]
-
-  const handleAddPrescription = (prescriptionData: any) => {
-    if (editingPrescription) {
-      onChange(
-        safeData.map((item) =>
-          item.id === editingPrescription.id ? { ...prescriptionData, id: editingPrescription.id } : item,
-        ),
-      )
-    } else {
-      const newPrescription = { ...prescriptionData, id: Date.now().toString() }
-      onChange([...safeData, newPrescription])
+  const addPrescription = () => {
+    const newPrescription: AyurvedicPrescriptionType = {
+      id: Date.now().toString(),
+      medicine: "",
+      dosage: "",
+      duration: "",
+      instructions: "",
+      timing: "",
     }
-    setEditingPrescription(null)
-    setIsModalOpen(false)
-    setShowInitialOptions(false)
+    setPrescriptions([...prescriptions, newPrescription])
   }
 
-  const handleEditPrescription = (prescription: any) => {
-    setEditingPrescription(prescription)
-    setIsModalOpen(true)
+  const updatePrescription = (id: string, field: keyof AyurvedicPrescriptionType, value: string) => {
+    setPrescriptions(
+      prescriptions.map((prescription) =>
+        prescription.id === id ? { ...prescription, [field]: value } : prescription,
+      ),
+    )
   }
 
-  const handleDeletePrescription = (id: string) => {
-    onChange(safeData.filter((item) => item.id !== id))
+  const removePrescription = (id: string) => {
+    setPrescriptions(prescriptions.filter((prescription) => prescription.id !== id))
   }
 
-  const openAddModal = () => {
-    setEditingPrescription(null)
-    setIsModalOpen(true)
-    setShowInitialOptions(false)
-  }
-
-  const handleLoadTemplate = (templateData: any) => {
-    if (templateData.prescriptions) {
-      onChange(templateData.prescriptions)
-    }
-    if (templateData.pathya) {
-      setOverallPathya(templateData.pathya)
-    }
-    if (templateData.apathya) {
-      setOverallApathya(templateData.apathya)
-    }
-    setShowInitialOptions(false)
-  }
-
-  const addPathya = (pathya: string) => {
-    if (pathya.trim() && !overallPathya.includes(pathya.trim())) {
-      setOverallPathya([...overallPathya, pathya.trim()])
+  const addPathyaItem = () => {
+    if (newPathyaItem.trim()) {
+      setPathya([...pathya, newPathyaItem.trim()])
+      setNewPathyaItem("")
     }
   }
 
-  const removePathya = (pathya: string) => {
-    setOverallPathya(overallPathya.filter((p) => p !== pathya))
+  const removePathyaItem = (index: number) => {
+    setPathya(pathya.filter((_, i) => i !== index))
   }
 
-  const addApathya = (apathya: string) => {
-    if (apathya.trim() && !overallApathya.includes(apathya.trim())) {
-      setOverallApathya([...overallApathya, apathya.trim()])
+  const addApathyaItem = () => {
+    if (newApathyaItem.trim()) {
+      setApathya([...apathya, newApathyaItem.trim()])
+      setNewApathyaItem("")
     }
   }
 
-  const removeApathya = (apathya: string) => {
-    setOverallApathya(overallApathya.filter((a) => a !== apathya))
+  const removeApathyaItem = (index: number) => {
+    setApathya(apathya.filter((_, i) => i !== index))
   }
 
-  const handleAddCustomPathya = () => {
-    if (newPathya.trim()) {
-      addPathya(newPathya)
-      setNewPathya("")
-    }
-  }
+  const handleLoadTemplate = (template: AyurvedicTemplate) => {
+    setPrescriptions(template.prescriptions)
+    setPathya(template.pathya)
+    setApathya(template.apathya)
+    setGeneralInstructions(template.generalInstructions)
 
-  const handleAddCustomApathya = () => {
-    if (newApathya.trim()) {
-      addApathya(newApathya)
-      setNewApathya("")
-    }
+    toast({
+      title: "Template Loaded",
+      description: `Loaded template: ${template.name}`,
+    })
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      {/* Template Actions */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Pill className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold">Ayurvedic Prescriptions</h3>
-          {safeData.length > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {safeData.length} prescription{safeData.length !== 1 ? "s" : ""}
-            </Badge>
-          )}
+          <Leaf className="h-5 w-5 text-green-600" />
+          <h3 className="text-lg font-semibold">Ayurvedic Prescription</h3>
         </div>
-        {!readOnly && (
-          <PrescriptionTemplateManager
-            type="ayurvedic"
-            prescriptions={safeData}
-            department={department}
-            onLoadTemplate={handleLoadTemplate}
-            pathya={overallPathya}
-            apathya={overallApathya}
-            readOnly={readOnly}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowLoadTemplate(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Load Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowSaveTemplate(true)}>
+            <Save className="h-4 w-4 mr-2" />
+            Save as Template
+          </Button>
+        </div>
       </div>
 
-      {/* Overall Pathya/Apathya Section - Only show if there are prescriptions */}
-      {safeData.length > 0 && !readOnly && (
-        <Card className="border-green-200 bg-green-50/50">
-          <CardContent className="p-4">
-            <h4 className="font-medium text-green-800 mb-4">Overall Prescription Guidelines</h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Pathya Section */}
-              <div className="space-y-3">
-                <Label className="text-green-700">Pathya (Things to have)</Label>
-
-                {/* Common Pathya Options */}
-                <div>
-                  <Label className="text-sm text-muted-foreground">Common Options:</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {commonPathya
-                      .filter((item) => !overallPathya.includes(item))
-                      .map((item) => (
-                        <Button
-                          key={item}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs bg-transparent"
-                          onClick={() => addPathya(item)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {item}
-                        </Button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Custom Pathya Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add custom pathya"
-                    value={newPathya}
-                    onChange={(e) => setNewPathya(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomPathya())}
-                    className="text-sm"
-                  />
-                  <Button type="button" onClick={handleAddCustomPathya} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Selected Pathya */}
-                {overallPathya.length > 0 && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Selected:</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {overallPathya.map((item: string, idx: number) => (
-                        <Badge key={idx} variant="default" className="text-xs bg-green-100 text-green-800">
-                          {item}
-                          <button
-                            type="button"
-                            onClick={() => removePathya(item)}
-                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2 w-2" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+      {/* Medicines */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Medicines</CardTitle>
+              <CardDescription>Add Ayurvedic medicines and their dosages</CardDescription>
+            </div>
+            <Button size="sm" onClick={addPrescription}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Medicine
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {prescriptions.map((prescription, index) => (
+            <div key={prescription.id} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline">Medicine {index + 1}</Badge>
+                <Button variant="ghost" size="sm" onClick={() => removePrescription(prescription.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
 
-              {/* Apathya Section */}
-              <div className="space-y-3">
-                <Label className="text-green-700">Apathya (Things to avoid)</Label>
-
-                {/* Common Apathya Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Common Options:</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {commonApathya
-                      .filter((item) => !overallApathya.includes(item))
-                      .map((item) => (
-                        <Button
-                          key={item}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs bg-transparent"
-                          onClick={() => addApathya(item)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {item}
-                        </Button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Custom Apathya Input */}
-                <div className="flex gap-2">
+                  <Label htmlFor={`medicine-${prescription.id}`}>Medicine Name</Label>
                   <Input
-                    placeholder="Add custom apathya"
-                    value={newApathya}
-                    onChange={(e) => setNewApathya(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomApathya())}
-                    className="text-sm"
+                    id={`medicine-${prescription.id}`}
+                    value={prescription.medicine}
+                    onChange={(e) => updatePrescription(prescription.id, "medicine", e.target.value)}
+                    placeholder="e.g., Triphala Churna"
                   />
-                  <Button type="button" onClick={handleAddCustomApathya} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </div>
+                <div>
+                  <Label htmlFor={`dosage-${prescription.id}`}>Dosage</Label>
+                  <Input
+                    id={`dosage-${prescription.id}`}
+                    value={prescription.dosage}
+                    onChange={(e) => updatePrescription(prescription.id, "dosage", e.target.value)}
+                    placeholder="e.g., 1 teaspoon"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`timing-${prescription.id}`}>Timing</Label>
+                  <Input
+                    id={`timing-${prescription.id}`}
+                    value={prescription.timing}
+                    onChange={(e) => updatePrescription(prescription.id, "timing", e.target.value)}
+                    placeholder="e.g., Before meals"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`duration-${prescription.id}`}>Duration</Label>
+                  <Input
+                    id={`duration-${prescription.id}`}
+                    value={prescription.duration}
+                    onChange={(e) => updatePrescription(prescription.id, "duration", e.target.value)}
+                    placeholder="e.g., 15 days"
+                  />
+                </div>
+              </div>
 
-                {/* Selected Apathya */}
-                {overallApathya.length > 0 && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Selected:</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {overallApathya.map((item: string, idx: number) => (
-                        <Badge key={idx} variant="destructive" className="text-xs">
-                          {item}
-                          <button
-                            type="button"
-                            onClick={() => removeApathya(item)}
-                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2 w-2" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div>
+                <Label htmlFor={`instructions-${prescription.id}`}>Special Instructions</Label>
+                <Textarea
+                  id={`instructions-${prescription.id}`}
+                  value={prescription.instructions}
+                  onChange={(e) => updatePrescription(prescription.id, "instructions", e.target.value)}
+                  placeholder="Any special instructions for this medicine"
+                  rows={2}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ))}
 
-      {safeData.length === 0 && showInitialOptions ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Pill className="h-12 w-12 text-muted-foreground mb-4" />
-            <h4 className="text-lg font-medium text-muted-foreground mb-2">No Ayurvedic Prescriptions</h4>
-            <p className="text-sm text-muted-foreground mb-6 text-center">Choose how you'd like to start prescribing</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={openAddModal} className="bg-secondary hover:bg-secondary/90" disabled={readOnly}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Prescription
-              </Button>
+          {prescriptions.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No medicines added yet. Click "Add Medicine" to start.
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {safeData.length > 0 && (
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">#</TableHead>
-                      <TableHead>Medicine</TableHead>
-                      <TableHead>Dosage</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Instructions</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {safeData.map((prescription, index) => (
-                      <TableRow key={prescription.id}>
-                        <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                        <TableCell className="font-medium">{prescription.medicine || "N/A"}</TableCell>
-                        <TableCell>{prescription.dosage || "N/A"}</TableCell>
-                        <TableCell>{prescription.duration || "N/A"}</TableCell>
-                        <TableCell>{prescription.instructions || "N/A"}</TableCell>
-                        <TableCell>
-                          {!readOnly && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditPrescription(prescription)}>
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePrescription(prescription.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           )}
+        </CardContent>
+      </Card>
 
-          {/* Add Prescription Box */}
-          {!readOnly && (
-            <Card
-              className="border-secondary/20 bg-secondary/5 hover:bg-secondary/10 cursor-pointer border-dashed"
-              onClick={openAddModal}
-            >
-              <CardContent className="flex items-center justify-center py-6">
-                <div className="flex items-center gap-3 text-secondary">
-                  <div className="rounded-full bg-secondary/10 p-2">
-                    <Plus className="h-4 w-4" />
-                  </div>
-                  <span className="font-medium">Add Another Ayurvedic Medicine</span>
+      {/* Pathya (Do's) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            Pathya (Do's)
+          </CardTitle>
+          <CardDescription>Foods and activities that are beneficial</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newPathyaItem}
+              onChange={(e) => setNewPathyaItem(e.target.value)}
+              placeholder="Add a pathya item..."
+              onKeyPress={(e) => e.key === "Enter" && addPathyaItem()}
+            />
+            <Button onClick={addPathyaItem} size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {pathya.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">{item}</span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
+                <Button variant="ghost" size="sm" onClick={() => removePathyaItem(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
 
-      <AddAyurvedicPrescriptionModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingPrescription(null)
-        }}
-        onSubmit={handleAddPrescription}
-        editData={editingPrescription}
+          {pathya.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground text-sm">No pathya items added yet</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Apathya (Don'ts) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <XCircle className="h-4 w-4 text-red-600" />
+            Apathya (Don'ts)
+          </CardTitle>
+          <CardDescription>Foods and activities to avoid</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newApathyaItem}
+              onChange={(e) => setNewApathyaItem(e.target.value)}
+              placeholder="Add an apathya item..."
+              onKeyPress={(e) => e.key === "Enter" && addApathyaItem()}
+            />
+            <Button onClick={addApathyaItem} size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {apathya.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm">{item}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => removeApathyaItem(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {apathya.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground text-sm">No apathya items added yet</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* General Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">General Instructions</CardTitle>
+          <CardDescription>Additional instructions for the patient</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={generalInstructions}
+            onChange={(e) => setGeneralInstructions(e.target.value)}
+            placeholder="Enter general instructions for the patient..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Template Modals */}
+      <SaveAyurvedicTemplateModal
+        isOpen={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        prescriptions={prescriptions}
+        pathya={pathya}
+        apathya={apathya}
+        generalInstructions={generalInstructions}
+      />
+
+      <LoadAyurvedicTemplateModal
+        isOpen={showLoadTemplate}
+        onClose={() => setShowLoadTemplate(false)}
+        onLoad={handleLoadTemplate}
       />
     </div>
   )

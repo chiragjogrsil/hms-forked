@@ -1,160 +1,117 @@
 "use client"
 
 import { useState } from "react"
-import {
-  ChevronDown,
-  ChevronRight,
-  TestTube,
-  Microscope,
-  Users,
-  Stethoscope,
-  Shield,
-  UserCog,
-  Settings,
-  Key,
-} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { TestTube, Microscope, Users, Stethoscope, ChevronDown, ChevronRight, Search, Pill, Leaf } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface SubCategory {
-  id: string
-  name: string
-  description: string
-}
-
-interface MasterCategory {
-  id: string
-  name: string
-  icon: any
-  color: string
-  subCategories: SubCategory[]
-}
-
-interface CategorySection {
-  id: string
-  title: string
-  description: string
-  categories: MasterCategory[]
-}
-
-const categorySections: CategorySection[] = [
+// Master Categories Configuration
+const masterCategories = [
   {
-    id: "master-data",
-    title: "Master Data",
-    description: "Clinical and operational data management",
-    categories: [
+    id: "laboratory",
+    name: "Laboratory",
+    icon: TestTube,
+    description: "Lab tests, units, and packages",
+    color: "text-blue-600",
+    subCategories: [
       {
-        id: "laboratory",
-        name: "Laboratory",
-        icon: TestTube,
-        color: "text-blue-600",
-        subCategories: [
-          { id: "lab-tests", name: "Lab Tests", description: "Laboratory test definitions" },
-          { id: "lab-units", name: "Lab Units", description: "Measurement units for lab tests" },
-          { id: "lab-packages", name: "Lab Packages", description: "Lab test packages" },
-        ],
+        id: "lab-tests",
+        name: "Lab Tests",
+        description: "Laboratory test definitions",
       },
       {
-        id: "radiology",
-        name: "Radiology",
-        icon: Microscope,
-        color: "text-green-600",
-        subCategories: [
-          { id: "imaging-tests", name: "Imaging Tests", description: "Radiology and imaging test definitions" },
-          { id: "radiology-packages", name: "Radiology Packages", description: "Radiology test packages" },
-        ],
+        id: "lab-units",
+        name: "Lab Units",
+        description: "Measurement units for lab tests",
       },
       {
-        id: "clinical",
-        name: "Clinical Notes",
-        icon: Users,
-        color: "text-purple-600",
-        subCategories: [
-          { id: "chief-complaints", name: "Chief Complaints", description: "Common patient complaints" },
-          { id: "medical-history", name: "Medical History", description: "Medical history items" },
-          { id: "investigation", name: "Investigation", description: "Investigation procedures" },
-          { id: "observation", name: "Observation", description: "Clinical observations" },
-        ],
-      },
-      {
-        id: "diagnosis",
-        name: "Diagnosis",
-        icon: Stethoscope,
-        color: "text-red-600",
-        subCategories: [{ id: "diagnoses", name: "Diagnoses", description: "Medical diagnoses with ICD codes" }],
+        id: "lab-packages",
+        name: "Lab Packages",
+        description: "Lab test packages",
       },
     ],
   },
   {
-    id: "system-administration",
-    title: "System Administration",
-    description: "User and system management",
-    categories: [
+    id: "radiology",
+    name: "Radiology",
+    icon: Microscope,
+    description: "Imaging tests and packages",
+    color: "text-green-600",
+    subCategories: [
       {
-        id: "user-management",
-        name: "User Management",
-        icon: UserCog,
-        color: "text-indigo-600",
-        subCategories: [
-          { id: "users", name: "Users", description: "Manage system users" },
-          { id: "roles", name: "Roles", description: "Define user roles and permissions" },
-          { id: "departments", name: "Departments", description: "Manage hospital departments" },
-          { id: "staff-profiles", name: "Staff Profiles", description: "Doctor and staff information" },
-        ],
+        id: "imaging-tests",
+        name: "Imaging Tests",
+        description: "Radiology and imaging test definitions",
       },
       {
-        id: "access-control",
-        name: "Access Control",
-        icon: Shield,
-        color: "text-amber-600",
-        subCategories: [
-          { id: "permissions", name: "Permissions", description: "System permissions and access rights" },
-          { id: "role-permissions", name: "Role Permissions", description: "Assign permissions to roles" },
-          { id: "user-sessions", name: "User Sessions", description: "Active user sessions" },
-          { id: "audit-logs", name: "Audit Logs", description: "System access and activity logs" },
-        ],
+        id: "radiology-packages",
+        name: "Radiology Packages",
+        description: "Radiology test packages",
       },
     ],
   },
   {
-    id: "system-configuration",
-    title: "System Configuration",
-    description: "Application and system settings",
-    categories: [
+    id: "clinical",
+    name: "Clinical Notes",
+    icon: Users,
+    description: "Patient clinical note templates",
+    color: "text-purple-600",
+    subCategories: [
       {
-        id: "general-settings",
-        name: "General Settings",
-        icon: Settings,
-        color: "text-gray-600",
-        subCategories: [
-          {
-            id: "hospital-info",
-            name: "Hospital Information",
-            description: "Basic hospital details and configuration",
-          },
-          { id: "system-preferences", name: "System Preferences", description: "Application preferences and defaults" },
-          {
-            id: "notification-settings",
-            name: "Notification Settings",
-            description: "Email and SMS notification configuration",
-          },
-        ],
+        id: "chief-complaints",
+        name: "Chief Complaints",
+        description: "Common patient complaints",
       },
       {
-        id: "security-settings",
-        name: "Security Settings",
-        icon: Key,
-        color: "text-rose-600",
-        subCategories: [
-          { id: "password-policy", name: "Password Policy", description: "Password requirements and policies" },
-          {
-            id: "session-management",
-            name: "Session Management",
-            description: "Session timeout and security settings",
-          },
-          { id: "backup-settings", name: "Backup Settings", description: "Data backup and recovery configuration" },
-        ],
+        id: "medical-history",
+        name: "Medical History",
+        description: "Medical history items",
+      },
+      {
+        id: "investigation",
+        name: "Investigation",
+        description: "Investigation procedures",
+      },
+      {
+        id: "observation",
+        name: "Observation",
+        description: "Clinical observations",
+      },
+    ],
+  },
+  {
+    id: "diagnosis",
+    name: "Diagnosis",
+    icon: Stethoscope,
+    description: "Medical diagnoses and ICD codes",
+    color: "text-red-600",
+    subCategories: [
+      {
+        id: "diagnoses",
+        name: "Diagnoses",
+        description: "Medical diagnoses with ICD codes",
+      },
+    ],
+  },
+  {
+    id: "prescription-templates",
+    name: "Prescription Templates",
+    icon: Pill,
+    description: "Ayurvedic and Allopathic prescription templates",
+    color: "text-indigo-600",
+    subCategories: [
+      {
+        id: "ayurvedic-templates",
+        name: "Ayurvedic Templates",
+        description: "Ayurvedic prescription templates",
+      },
+      {
+        id: "allopathic-templates",
+        name: "Allopathic Templates",
+        description: "Allopathic prescription templates",
       },
     ],
   },
@@ -171,6 +128,7 @@ export function SettingsSubNavigation({
   selectedSubCategory,
   onCategoryChange,
 }: SettingsSubNavigationProps) {
+  const [searchTerm, setSearchTerm] = useState("")
   const [expandedCategories, setExpandedCategories] = useState<string[]>([selectedCategory])
 
   const toggleCategory = (categoryId: string) => {
@@ -179,113 +137,83 @@ export function SettingsSubNavigation({
     )
   }
 
-  const handleSubCategoryClick = (categoryId: string, subCategoryId: string) => {
-    onCategoryChange(categoryId, subCategoryId)
-    if (!expandedCategories.includes(categoryId)) {
-      setExpandedCategories((prev) => [...prev, categoryId])
-    }
-  }
+  const filteredCategories = masterCategories.filter(
+    (category) =>
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.subCategories.some((sub) => sub.name.toLowerCase().includes(searchTerm.toLowerCase())),
+  )
 
   return (
-    <div className="w-80 border-r bg-background/50 p-4 space-y-4 overflow-y-auto">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">Settings</h2>
-        <p className="text-sm text-muted-foreground">System configuration and management</p>
+    <div className="w-80 border-r bg-muted/10 flex flex-col">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold mb-3">Settings</h2>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search settings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
       </div>
 
-      {categorySections.map((section, sectionIndex) => (
-        <div key={section.id} className="space-y-2">
-          {/* Section Header */}
-          <div className="mb-3">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{section.title}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{section.description}</p>
-          </div>
-
-          {/* Categories in Section */}
-          <div className="space-y-1">
-            {section.categories.map((category) => {
-              const IconComponent = category.icon
-              const isExpanded = expandedCategories.includes(category.id)
-              const isSelected = selectedCategory === category.id
-              const isImplemented = section.id === "master-data" // Only master data is implemented
-
-              return (
-                <div key={category.id} className="space-y-1">
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {filteredCategories.map((category) => (
+            <Collapsible
+              key={category.id}
+              open={expandedCategories.includes(category.id)}
+              onOpenChange={() => toggleCategory(category.id)}
+            >
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start p-2 h-auto mb-1">
+                  <div className="flex items-center gap-2 flex-1">
+                    {expandedCategories.includes(category.id) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                    <category.icon className={cn("h-4 w-4", category.color)} />
+                    <div className="text-left">
+                      <div className="font-medium text-sm">{category.name}</div>
+                      <div className="text-xs text-muted-foreground">{category.description}</div>
+                    </div>
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="ml-6">
+                {category.subCategories.map((subCategory) => (
                   <Button
+                    key={subCategory.id}
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start h-auto p-2 font-normal",
-                      isSelected && "bg-accent text-accent-foreground",
-                      !isImplemented && "opacity-60 cursor-not-allowed",
+                      "w-full justify-start p-2 h-auto mb-1 text-left",
+                      selectedCategory === category.id && selectedSubCategory === subCategory.id
+                        ? "bg-accent text-accent-foreground"
+                        : "",
                     )}
-                    onClick={() => isImplemented && toggleCategory(category.id)}
-                    disabled={!isImplemented}
+                    onClick={() => onCategoryChange(category.id, subCategory.id)}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      {category.subCategories.length > 1 ? (
-                        isExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )
-                      ) : (
-                        <div className="w-4" />
+                    <div className="flex items-center gap-2">
+                      {category.id === "prescription-templates" && subCategory.id === "ayurvedic-templates" && (
+                        <Leaf className="h-3 w-3 text-green-600" />
                       )}
-                      <IconComponent className={cn("h-4 w-4", category.color)} />
-                      <div className="text-left flex-1">
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          {category.name}
-                          {!isImplemented && (
-                            <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                              Coming Soon
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {category.subCategories.length} item{category.subCategories.length !== 1 ? "s" : ""}
-                        </div>
+                      {category.id === "prescription-templates" && subCategory.id === "allopathic-templates" && (
+                        <Pill className="h-3 w-3 text-blue-600" />
+                      )}
+                      <div>
+                        <div className="font-medium text-sm">{subCategory.name}</div>
+                        <div className="text-xs text-muted-foreground">{subCategory.description}</div>
                       </div>
                     </div>
                   </Button>
-
-                  {isExpanded && category.subCategories.length > 1 && isImplemented && (
-                    <div className="ml-6 space-y-1">
-                      {category.subCategories.map((subCategory) => (
-                        <Button
-                          key={subCategory.id}
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start h-auto p-2 font-normal text-sm",
-                            selectedSubCategory === subCategory.id && "bg-accent text-accent-foreground",
-                          )}
-                          onClick={() => handleSubCategoryClick(category.id, subCategory.id)}
-                        >
-                          <div className="text-left">
-                            <div className="font-medium">{subCategory.name}</div>
-                            <div className="text-xs text-muted-foreground">{subCategory.description}</div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-
-                  {category.subCategories.length === 1 && isImplemented && (
-                    <div className="hidden">
-                      {/* Auto-select single subcategory */}
-                      {selectedCategory === category.id &&
-                        selectedSubCategory !== category.subCategories[0].id &&
-                        handleSubCategoryClick(category.id, category.subCategories[0].id)}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Add separator between sections except for the last one */}
-          {sectionIndex < categorySections.length - 1 && <Separator className="my-4" />}
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
         </div>
-      ))}
+      </ScrollArea>
     </div>
   )
 }
