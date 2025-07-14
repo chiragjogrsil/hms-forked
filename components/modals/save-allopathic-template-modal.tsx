@@ -1,120 +1,113 @@
 "use client"
 
 import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { usePrescriptionTemplates, type AllopathicPrescription } from "@/contexts/prescription-template-context"
-import { useToast } from "@/hooks/use-toast"
+import { Textarea } from "@/components/ui/textarea"
+import { Save, Pill } from "lucide-react"
+import { toast } from "sonner"
 
 interface SaveAllopathicTemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  prescriptions: AllopathicPrescription[]
+  onSave: (templateData: any) => void
+  prescriptions: any[]
   dietaryConstraints: string[]
-  generalInstructions: string
+  department: string
 }
 
 export function SaveAllopathicTemplateModal({
   isOpen,
   onClose,
+  onSave,
   prescriptions,
   dietaryConstraints,
-  generalInstructions,
+  department,
 }: SaveAllopathicTemplateModalProps) {
   const [templateName, setTemplateName] = useState("")
-  const [department, setDepartment] = useState("")
-  const { saveAllopathicTemplate } = usePrescriptionTemplates()
-  const { toast } = useToast()
+  const [description, setDescription] = useState("")
 
   const handleSave = () => {
     if (!templateName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a template name",
-        variant: "destructive",
-      })
+      toast.error("Please enter a template name")
       return
     }
 
-    saveAllopathicTemplate({
-      name: templateName,
-      department: department || "General",
-      prescriptions,
-      dietaryConstraints,
-      generalInstructions,
-      createdBy: "Dr. Current User", // This should come from auth context
-    })
+    const templateData = {
+      name: templateName.trim(),
+      description: description.trim(),
+    }
 
-    toast({
-      title: "Template Saved",
-      description: `Allopathic template "${templateName}" has been saved successfully`,
-    })
-
+    onSave(templateData)
+    toast.success("Allopathic template saved successfully!")
     setTemplateName("")
-    setDepartment("")
+    setDescription("")
     onClose()
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Save Allopathic Prescription Template</DialogTitle>
-          <DialogDescription>Save this prescription as a template for future use</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Pill className="h-5 w-5 text-blue-600" />
+            Save Allopathic Prescription Template
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="template-name" className="text-right">
-              Name *
-            </Label>
+
+        <div className="space-y-4">
+          {/* Template Summary */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium mb-2 text-blue-800">Template Summary</h4>
+            <div className="text-sm text-blue-700 space-y-1">
+              <p>
+                Department: <span className="font-medium capitalize">{department}</span>
+              </p>
+              <p>
+                Allopathic Medicines: <span className="font-medium">{prescriptions.length}</span>
+              </p>
+              <p>
+                Dietary Constraints: <span className="font-medium">{dietaryConstraints.length}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Template Name */}
+          <div className="space-y-2">
+            <Label htmlFor="templateName">Template Name *</Label>
             <Input
-              id="template-name"
+              id="templateName"
+              placeholder="e.g., Hypertension Management, Diabetes Protocol"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., Hypertension Management"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="department" className="text-right">
-              Department
-            </Label>
-            <Input
-              id="department"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="col-span-3"
-              placeholder="e.g., Cardiology"
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea
+              id="description"
+              placeholder="Brief description of when to use this template..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
             />
           </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+              <Save className="h-4 w-4 mr-2" />
+              Save Template
+            </Button>
+          </div>
         </div>
-        <div className="text-sm text-muted-foreground">
-          <p>This template will include:</p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            <li>
-              {prescriptions.length} prescription{prescriptions.length !== 1 ? "s" : ""}
-            </li>
-            <li>
-              {dietaryConstraints.length} dietary guideline{dietaryConstraints.length !== 1 ? "s" : ""}
-            </li>
-            {generalInstructions && <li>General instructions</li>}
-          </ul>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>Save Template</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
