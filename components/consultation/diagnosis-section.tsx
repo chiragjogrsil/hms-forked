@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,18 +16,9 @@ interface DiagnosisSectionProps {
 
 export function DiagnosisSection({ department, data, onChange }: DiagnosisSectionProps) {
   const [customDiagnosis, setCustomDiagnosis] = useState("")
-  const [isDataPrefilled, setIsDataPrefilled] = useState(false)
 
   // Ensure data is always an array
   const safeData = Array.isArray(data) ? data : []
-
-  // Log when data is received for debugging - only when data actually changes
-  useEffect(() => {
-    if (data && Array.isArray(data) && data.length > 0) {
-      setIsDataPrefilled(true)
-      console.log("🔄 DiagnosisSection: Data prefilled:", data)
-    }
-  }, [data])
 
   const getCommonDiagnoses = () => {
     const diagnoses = {
@@ -71,26 +62,6 @@ export function DiagnosisSection({ department, data, onChange }: DiagnosisSectio
         "Dry Eye Syndrome",
         "Conjunctivitis",
       ],
-      cardiology: [
-        "Essential Hypertension",
-        "Atypical Chest Pain",
-        "Coronary Artery Disease",
-        "Heart Failure",
-        "Arrhythmia",
-        "Myocardial Infarction",
-        "Angina Pectoris",
-        "Valvular Heart Disease",
-      ],
-      orthopedics: [
-        "Mechanical Lower Back Pain",
-        "Lumbar Muscle Strain",
-        "Osteoarthritis",
-        "Rheumatoid Arthritis",
-        "Fracture",
-        "Sprain",
-        "Tendinitis",
-        "Bursitis",
-      ],
     }
     return diagnoses[department as keyof typeof diagnoses] || diagnoses.general
   }
@@ -114,14 +85,6 @@ export function DiagnosisSection({ department, data, onChange }: DiagnosisSectio
 
   return (
     <div className="space-y-4">
-      {isDataPrefilled && safeData.length > 0 && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700 font-medium">
-            ✅ {safeData.length} diagnosis(es) loaded from previous consultation
-          </p>
-        </div>
-      )}
-
       <div>
         <Label>Common Diagnoses</Label>
         <Select onValueChange={addDiagnosis}>

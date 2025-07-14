@@ -215,7 +215,7 @@ const appointmentsData = [
     token: "Token #16",
     paymentStatus: "unpaid",
   },
-  // Add related sessions for the multi-day procedure (ortho-physio-rehab) - FUTURE APPOINTMENTS WITHOUT TOKENS
+  // Add related sessions for the multi-day procedure (ortho-physio-rehab)
   {
     id: "app-sp-1-session-3",
     date: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2), // Day 3
@@ -234,7 +234,7 @@ const appointmentsData = [
     duration: 45,
     fee: 0, // No additional fee for subsequent sessions
     contactNumber: "+91 9876543220",
-    // No token for future appointments
+    token: "Token #18",
   },
   {
     id: "app-sp-1-session-5",
@@ -254,7 +254,7 @@ const appointmentsData = [
     duration: 45,
     fee: 0,
     contactNumber: "+91 9876543220",
-    // No token for future appointments
+    token: "Token #19",
   },
   {
     id: "app-sp-1-session-8",
@@ -274,7 +274,7 @@ const appointmentsData = [
     duration: 30,
     fee: 0,
     contactNumber: "+91 9876543220",
-    // No token for future appointments
+    token: "Token #20",
   },
   {
     id: "app-6",
@@ -290,7 +290,7 @@ const appointmentsData = [
     duration: 30,
     fee: 500,
     contactNumber: "+91 9876543215",
-    // No token for future appointments
+    token: "Token #4",
   },
   {
     id: "app-7",
@@ -306,7 +306,7 @@ const appointmentsData = [
     duration: 45,
     fee: 800,
     contactNumber: "+91 9876543216",
-    // No token for future appointments
+    token: "Token #7",
   },
   {
     id: "app-8",
@@ -322,7 +322,7 @@ const appointmentsData = [
     duration: 60,
     fee: 1200,
     contactNumber: "+91 9876543217",
-    // No token for future appointments
+    token: "Token #11",
   },
   {
     id: "app-9",
@@ -338,7 +338,7 @@ const appointmentsData = [
     duration: 30,
     fee: 600,
     contactNumber: "+91 9876543218",
-    // No token for future appointments
+    token: "Token #15",
   },
   {
     id: "app-10",
@@ -465,7 +465,7 @@ const appointmentsData = [
     duration: 30,
     fee: 500,
     contactNumber: "+91 9876543225",
-    // No token for future appointments
+    token: "Token #25",
   },
   {
     id: "app-17",
@@ -481,7 +481,7 @@ const appointmentsData = [
     duration: 45,
     fee: 800,
     contactNumber: "+91 9876543226",
-    // No token for future appointments
+    token: "Token #26",
   },
   {
     id: "app-18",
@@ -497,7 +497,7 @@ const appointmentsData = [
     duration: 60,
     fee: 1200,
     contactNumber: "+91 9876543227",
-    // No token for future appointments
+    token: "Token #27",
   },
 ]
 
@@ -673,8 +673,6 @@ export default function AppointmentsList() {
       date: new Date(newAppointment.date),
       status: "scheduled",
       paymentStatus: newAppointment.paymentStatus || "pending",
-      // Only add token if it's for today or past dates
-      ...(new Date(newAppointment.date) <= today && { token: `Token #${Math.floor(Math.random() * 100) + 1}` }),
     }
 
     setAppointments([...appointments, appointmentWithId])
@@ -951,7 +949,7 @@ export default function AppointmentsList() {
     if (
       searchQuery &&
       !appointment.patient.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !(appointment.token && appointment.token.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      !appointment.token.toLowerCase().includes(searchQuery.toLowerCase()) &&
       !appointment.doctor.toLowerCase().includes(searchQuery.toLowerCase())
     ) {
       return false
@@ -1434,13 +1432,9 @@ export default function AppointmentsList() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {appointment.token ? (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {appointment.token}
-                            </Badge>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )}
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {appointment.token}
+                          </Badge>
                         </TableCell>
                         <TableCell>{appointment.doctor}</TableCell>
                         <TableCell>
@@ -1593,14 +1587,9 @@ export default function AppointmentsList() {
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2 mt-1">
-                                  {appointment.token && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
-                                    >
-                                      {appointment.token}
-                                    </Badge>
-                                  )}
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                    {appointment.token}
+                                  </Badge>
                                   {getStatusBadge(appointment.status)}
                                   {getPaymentBadge(appointment.status)}
                                 </div>
@@ -1685,7 +1674,7 @@ export default function AppointmentsList() {
                                 >
                                   <div className="font-medium truncate">{appointment.patient}</div>
                                   <div className="truncate">{appointment.doctor}</div>
-                                  <div className="truncate">{appointment.token ? appointment.token : "No Token"}</div>
+                                  <div className="truncate">{appointment.token}</div>
                                   {appointment.appointmentType === "specialized" && (
                                     <div className="truncate text-[9px] text-blue-600">
                                       {appointment.procedureName?.substring(0, 15)}

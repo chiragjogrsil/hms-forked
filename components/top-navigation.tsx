@@ -1,65 +1,47 @@
 "use client"
 
-import Link from "next/link"
+import { Activity, LayoutDashboard, Users, TestTube, Settings } from "lucide-react"
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { Home, Users, Stethoscope } from "lucide-react"
+import { DoctorSwitcher } from "@/components/doctor-switcher"
 
 export function TopNavigation() {
   const pathname = usePathname()
 
-  const navigation = [
-    {
-      name: "Dashboard",
-      href: "/",
-      icon: Home,
-      current: pathname === "/",
-    },
-    {
-      name: "Patients",
-      href: "/patients",
-      icon: Users,
-      current: pathname.startsWith("/patients"),
-    },
-    {
-      name: "Services & Procedures",
-      href: "/departments",
-      icon: Stethoscope,
-      current: pathname.startsWith("/departments"),
-    },
+  const menuItems = [
+    { title: "Dashboard", icon: LayoutDashboard, path: "/" },
+    { title: "Patients", icon: Users, path: "/patients" },
+    { title: "Services", icon: TestTube, path: "/services" },
+    { title: "Settings", icon: Settings, path: "/settings" },
   ]
 
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Hospital Management</h1>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navigation.map((item) => {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      item.current
-                        ? "border-blue-500 text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700",
-                      "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
-                    )}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {item.name}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </div>
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b bg-background px-4">
+      <div className="flex items-center gap-2 mr-6">
+        <Activity className="h-6 w-6 text-primary" />
+        <span className="text-xl font-bold">HMS</span>
       </div>
-    </nav>
+
+      <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">
+        {menuItems.map((item) => (
+          <Link
+            key={item.path}
+            href={item.path}
+            className={cn(
+              "flex items-center text-sm font-medium transition-colors hover:text-primary",
+              pathname === item.path || pathname.startsWith(item.path + "/") ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            <item.icon className="h-4 w-4 mr-2" />
+            {item.title}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="ml-auto flex items-center space-x-4">
+        <DoctorSwitcher />
+      </div>
+    </header>
   )
 }

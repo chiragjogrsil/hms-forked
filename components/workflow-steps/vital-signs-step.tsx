@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useVisitWorkflow } from "@/contexts/visit-workflow-context"
 import { toast } from "sonner"
-import { AlertTriangle, Info } from 'lucide-react'
+import { AlertTriangle, Info } from "lucide-react"
 
 // Normal ranges for vital signs
 const VITAL_RANGES = {

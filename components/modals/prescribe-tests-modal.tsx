@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { labTestPackages } from "@/data/lab-test-packages"
 
@@ -37,57 +36,19 @@ const labTests = [
   { value: "thyroid", label: "Thyroid Function Tests", price: 800, category: "Endocrinology" },
   { value: "hba1c", label: "Hemoglobin A1C", price: 600, category: "Diabetes" },
   { value: "urinalysis", label: "Urinalysis", price: 300, category: "Urology" },
-  { value: "liver", label: "Liver Function Tests", price: 700, category: "Gastroenterology" },
-  { value: "kidney", label: "Kidney Function Tests", price: 600, category: "Nephrology" },
+  { value: "liver", label: "Liver Function Tests", price: 700, category: "Chemistry" },
+  { value: "kidney", label: "Kidney Function Tests", price: 600, category: "Chemistry" },
   { value: "electrolytes", label: "Electrolytes Panel", price: 500, category: "Chemistry" },
   { value: "coagulation", label: "Coagulation Panel", price: 900, category: "Hematology" },
   { value: "cardiac", label: "Cardiac Enzymes", price: 1200, category: "Cardiology" },
-  { value: "crp", label: "C-Reactive Protein (CRP)", price: 600, category: "Immunology" },
-  { value: "esr", label: "Erythrocyte Sedimentation Rate (ESR)", price: 400, category: "Hematology" },
+  { value: "crp", label: "C-Reactive Protein (CRP)", price: 600, category: "Inflammation" },
+  { value: "esr", label: "Erythrocyte Sedimentation Rate (ESR)", price: 400, category: "Inflammation" },
   { value: "blood-culture", label: "Blood Culture", price: 800, category: "Microbiology" },
   { value: "covid", label: "COVID-19 Test", price: 1500, category: "Infectious Disease" },
   { value: "glucose", label: "Glucose Test", price: 300, category: "Diabetes" },
   { value: "iron", label: "Iron Studies", price: 800, category: "Hematology" },
-  { value: "vitamin-d", label: "Vitamin D", price: 900, category: "Nutrition" },
-  { value: "vitamin-b12", label: "Vitamin B12", price: 800, category: "Nutrition" },
-  { value: "psa", label: "Prostate Specific Antigen (PSA)", price: 700, category: "Oncology" },
-  { value: "cea", label: "Carcinoembryonic Antigen (CEA)", price: 800, category: "Oncology" },
-  { value: "afp", label: "Alpha-Fetoprotein (AFP)", price: 750, category: "Oncology" },
-  { value: "ca125", label: "Cancer Antigen 125 (CA-125)", price: 900, category: "Oncology" },
-  { value: "ca199", label: "Cancer Antigen 19-9 (CA 19-9)", price: 850, category: "Oncology" },
-  { value: "testosterone", label: "Testosterone", price: 700, category: "Endocrinology" },
-  { value: "cortisol", label: "Cortisol", price: 650, category: "Endocrinology" },
-  { value: "insulin", label: "Insulin", price: 600, category: "Endocrinology" },
-  { value: "prolactin", label: "Prolactin", price: 550, category: "Endocrinology" },
-  { value: "lh", label: "Luteinizing Hormone (LH)", price: 600, category: "Reproductive Health" },
-  { value: "fsh", label: "Follicle Stimulating Hormone (FSH)", price: 600, category: "Reproductive Health" },
-  { value: "estradiol", label: "Estradiol", price: 650, category: "Reproductive Health" },
-  { value: "progesterone", label: "Progesterone", price: 600, category: "Reproductive Health" },
-  { value: "beta-hcg", label: "Beta-hCG", price: 500, category: "Reproductive Health" },
-  { value: "hepatitis-b", label: "Hepatitis B Surface Antigen", price: 400, category: "Infectious Disease" },
-  { value: "hepatitis-c", label: "Hepatitis C Antibody", price: 500, category: "Infectious Disease" },
-  { value: "hiv", label: "HIV Test", price: 600, category: "Infectious Disease" },
-  { value: "syphilis", label: "Syphilis Test (VDRL)", price: 300, category: "Infectious Disease" },
-  { value: "malaria", label: "Malaria Test", price: 400, category: "Infectious Disease" },
-  { value: "dengue", label: "Dengue Test", price: 800, category: "Infectious Disease" },
-  { value: "typhoid", label: "Typhoid Test", price: 500, category: "Infectious Disease" },
-  { value: "stool-culture", label: "Stool Culture", price: 600, category: "Microbiology" },
-  { value: "urine-culture", label: "Urine Culture", price: 500, category: "Microbiology" },
-  { value: "throat-culture", label: "Throat Culture", price: 450, category: "Microbiology" },
-  { value: "sputum-culture", label: "Sputum Culture", price: 550, category: "Microbiology" },
-  { value: "ana", label: "Antinuclear Antibody (ANA)", price: 800, category: "Immunology" },
-  { value: "rheumatoid-factor", label: "Rheumatoid Factor", price: 500, category: "Immunology" },
-  { value: "anti-ccp", label: "Anti-CCP Antibody", price: 900, category: "Immunology" },
-  { value: "complement-c3", label: "Complement C3", price: 700, category: "Immunology" },
-  { value: "complement-c4", label: "Complement C4", price: 700, category: "Immunology" },
-  { value: "folate", label: "Folate", price: 600, category: "Nutrition" },
-  { value: "vitamin-c", label: "Vitamin C", price: 800, category: "Nutrition" },
-  { value: "vitamin-e", label: "Vitamin E", price: 750, category: "Nutrition" },
-  { value: "zinc", label: "Zinc", price: 500, category: "Nutrition" },
-  { value: "magnesium", label: "Magnesium", price: 450, category: "Chemistry" },
-  { value: "phosphorus", label: "Phosphorus", price: 400, category: "Chemistry" },
-  { value: "albumin", label: "Albumin", price: 350, category: "Chemistry" },
-  { value: "total-protein", label: "Total Protein", price: 300, category: "Chemistry" },
+  { value: "vitamin-d", label: "Vitamin D", price: 900, category: "Vitamins" },
+  { value: "vitamin-b12", label: "Vitamin B12", price: 800, category: "Vitamins" },
 ]
 
 // Form schema
@@ -153,7 +114,7 @@ export function PrescribeTestsModal({ isOpen, onClose, onSuccess, patientId, pat
   })
 
   // Get unique categories
-  const categories = Array.from(new Set(labTests.map((test) => test.category))).sort()
+  const categories = ["all", ...Array.from(new Set(labTests.map((test) => test.category)))]
 
   // Filter tests based on search term and category, excluding tests already in packages
   const filteredTests = labTests.filter((test) => {
@@ -279,23 +240,18 @@ export function PrescribeTestsModal({ isOpen, onClose, onSuccess, patientId, pat
                     />
                   </div>
                   {viewMode === "individual" && (
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="category-select" className="text-sm font-medium whitespace-nowrap">
-                        Category:
-                      </Label>
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger id="category-select" className="w-[200px]">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Categories</SelectItem>
-                          {categories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category) => (
+                        <Button
+                          key={category}
+                          type="button"
+                          variant={selectedCategory === category ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          {category === "all" ? "All Categories" : category}
+                        </Button>
+                      ))}
                     </div>
                   )}
                 </div>

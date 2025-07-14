@@ -1,10 +1,12 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import {
   Calendar,
+  UserPlus,
   CreditCard,
   ArrowRight,
   Filter,
@@ -14,7 +16,7 @@ import {
   Check,
   Stethoscope,
   Users,
-  AlertTriangle,
+  TrendingUp,
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -24,8 +26,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog"
 import { AppointmentDetailsModal } from "@/components/modals/appointment-details-modal"
-import { PatientRegistrationDialogWrapper } from "@/components/patient-registration-dialog-wrapper"
-import { QuickEmergencyRegistration } from "@/components/quick-emergency-registration"
+import { QuickRegistrationDialog } from "@/components/quick-registration-dialog"
+import { PatientCreationDialog } from "@/components/patient-creation-dialog"
 
 // Define the relationship between departments and doctors
 const departmentDoctorMap = {
@@ -95,11 +97,11 @@ export default function Dashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
 
-  // State for patient registration modal
-  const [isPatientRegistrationModalOpen, setIsPatientRegistrationModalOpen] = useState(false)
+  // State for quick registration modal
+  const [isQuickRegistrationOpen, setIsQuickRegistrationOpen] = useState(false)
 
-  // State for quick emergency registration modal
-  const [isQuickEmergencyRegistrationOpen, setIsQuickEmergencyRegistrationOpen] = useState(false)
+  // State for patient creation modal
+  const [isPatientCreationOpen, setIsPatientCreationOpen] = useState(false)
 
   // Sample appointment data for today
   const [todayAppointments, setTodayAppointments] = useState([
@@ -197,6 +199,7 @@ export default function Dashboard() {
       duration: 30,
       fee: 500,
       contactNumber: "+91 9876543215",
+      token: "Token #4",
     },
     {
       id: "app-7",
@@ -211,6 +214,7 @@ export default function Dashboard() {
       duration: 45,
       fee: 800,
       contactNumber: "+91 9876543216",
+      token: "Token #7",
     },
   ])
 
@@ -506,35 +510,17 @@ export default function Dashboard() {
     }
   }
 
-  // Handle new patient registration
-  const handlePatientRegistered = (patientData: any) => {
-    console.log("New patient registered:", patientData)
-    // In a real application, you would update your patient list or refresh data
+  // Handle quick patient registration
+  const handleQuickPatientRegistered = (patientData: any) => {
+    console.log("Quick patient registered:", patientData)
+    // You can add logic here to update any patient lists or show notifications
   }
 
-  // Handle emergency patient registration
-  const handleEmergencyPatientRegistered = (patientData: any) => {
-    console.log("Emergency patient registered:", patientData)
-
-    // If there's an appointment included, add it to today's appointments
-    if (patientData.appointment) {
-      const emergencyAppointment = {
-        ...patientData.appointment,
-        // Ensure proper formatting for the dashboard
-        patient: patientData.name,
-        patientName: patientData.name,
-        // Map department names to match existing data structure
-        department:
-          patientData.appointment.department === "Emergency Medicine"
-            ? "Emergency"
-            : patientData.appointment.department,
-      }
-
-      setTodayAppointments((prev) => {
-        // Add emergency appointment at the beginning (highest priority)
-        return [emergencyAppointment, ...prev]
-      })
-    }
+  // Handle patient creation
+  const handlePatientCreated = (patientData: any) => {
+    console.log("New patient created:", patientData)
+    // Navigate to patient details page with consultation tab pre-selected
+    window.location.href = `/patients/${patientData.id}?tab=consultation`
   }
 
   return (
@@ -547,19 +533,11 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            variant="outline"
-            onClick={() => setIsQuickEmergencyRegistrationOpen(true)}
-            className="border-red-200 text-red-600 hover:bg-red-50 font-medium"
+            variant="default"
+            onClick={() => setIsPatientCreationOpen(true)}
+            className="bg-teal-500 hover:bg-teal-600 text-white font-medium shadow-hospital"
           >
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            Quick Registration
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsPatientRegistrationModalOpen(true)}
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 font-medium"
-          >
-            <Users className="mr-2 h-4 w-4" />
+            <UserPlus className="mr-2 h-4 w-4" />
             New Patient
           </Button>
           <Button
@@ -570,16 +548,24 @@ export default function Dashboard() {
             <Calendar className="mr-2 h-4 w-4" />
             Book Appointment
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsQuickRegistrationOpen(true)}
+            className="border-slate-200 text-slate-600 hover:bg-slate-50 font-medium"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Quick Registration
+          </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
         <Card className="border-0 shadow-hospital bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 hover:shadow-lg transition-shadow duration-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-teal-700 text-sm font-medium">{"Today's Appointments"}</p>
+                <p className="text-teal-700 text-sm font-medium">Today's Appointments</p>
                 <p className="text-2xl font-bold text-teal-800">{todayAppointments.length}</p>
               </div>
               <Calendar className="h-8 w-8 text-teal-600" />
@@ -609,6 +595,19 @@ export default function Dashboard() {
                 </p>
               </div>
               <Check className="h-8 w-8 text-teal-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-hospital bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 hover:shadow-lg transition-shadow duration-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-700 text-sm font-medium">Revenue Today</p>
+                <p className="text-2xl font-bold text-slate-800">
+                  ₹{todayAppointments.reduce((sum, a) => sum + a.fee, 0).toLocaleString()}
+                </p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-slate-600" />
             </div>
           </CardContent>
         </Card>
@@ -746,14 +745,12 @@ export default function Dashboard() {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="font-semibold text-lg text-hospital-gray-800">{appointment.time}</span>
-                        {appointment.token && (
-                          <Badge
-                            variant="outline"
-                            className="bg-hospital-accent-50 text-hospital-accent-700 border-hospital-accent-200 font-medium"
-                          >
-                            {appointment.token}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className="bg-hospital-accent-50 text-hospital-accent-700 border-hospital-accent-200 font-medium"
+                        >
+                          {appointment.token}
+                        </Badge>
                         {getStatusBadge(appointment.status)}
                         {appointment.status === "completed" && (
                           <Badge
@@ -868,18 +865,18 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Patient Registration Modal */}
-      <PatientRegistrationDialogWrapper
-        open={isPatientRegistrationModalOpen}
-        onOpenChange={setIsPatientRegistrationModalOpen}
-        onPatientRegistered={handlePatientRegistered}
+      {/* Quick Registration Modal */}
+      <QuickRegistrationDialog
+        open={isQuickRegistrationOpen}
+        onOpenChange={setIsQuickRegistrationOpen}
+        onPatientRegistered={handleQuickPatientRegistered}
       />
 
-      {/* Quick Emergency Registration Modal */}
-      <QuickEmergencyRegistration
-        open={isQuickEmergencyRegistrationOpen}
-        onOpenChange={setIsQuickEmergencyRegistrationOpen}
-        onPatientRegistered={handleEmergencyPatientRegistered}
+      {/* Patient Creation Dialog */}
+      <PatientCreationDialog
+        open={isPatientCreationOpen}
+        onOpenChange={setIsPatientCreationOpen}
+        onPatientCreated={handlePatientCreated}
       />
     </div>
   )

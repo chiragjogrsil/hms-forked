@@ -2,9 +2,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Calendar, User, Save, X, Upload } from 'lucide-react'
-import { format } from "date-fns"
-import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -14,6 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { Calendar } from "lucide-react"
+import { useEffect } from "react"
+import { Upload } from "lucide-react"
 
 // Update the form schema to match the new requirements
 const patientEditSchema = z.object({
@@ -122,11 +123,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>First Name *</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="John"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="John" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,11 +137,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Last Name *</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Doe"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="Doe" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -160,12 +153,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Patient ID</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Patient ID"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                    disabled
-                  />
+                  <Input placeholder="Patient ID" {...field} value={field.value || ""} disabled />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -179,11 +167,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>C/O (Care Of)</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Guardian or caretaker name"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="Guardian or caretaker name" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -291,11 +275,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
             <FormItem>
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Enter patient's address"
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                />
+                <Textarea placeholder="Enter patient's address" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -310,11 +290,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Mobile Number *</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="+91 9876543210"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="+91 9876543210" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -328,11 +304,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Email ID</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="john.doe@example.com"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="john.doe@example.com" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormDescription>Optional, for sending reports and receipts</FormDescription>
                 <FormMessage />
@@ -364,11 +336,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Aadhaar ID</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="1234 5678 9012"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="1234 5678 9012" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -468,11 +436,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Referred By</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Doctor or referrer name"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="Doctor or referrer name" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -486,11 +450,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Referrer's Phone Number</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="+91 9876543210"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="+91 9876543210" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -506,11 +466,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>File Number</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="File reference number"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="File reference number" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -524,11 +480,7 @@ export function PatientEditForm({ patient, onSubmit, onCancel }: PatientEditForm
               <FormItem>
                 <FormLabel>Occupation</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Patient's occupation"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
+                  <Input placeholder="Patient's occupation" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

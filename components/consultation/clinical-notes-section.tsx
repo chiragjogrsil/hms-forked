@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { MultiSelect, type Option } from "@/components/ui/multi-select"
@@ -109,30 +109,9 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
   const [investigations, setInvestigations] = useState<string[]>([])
   const [observations, setObservations] = useState<string[]>([])
   const [additionalNotes, setAdditionalNotes] = useState("")
-  const [isDataPrefilled, setIsDataPrefilled] = useState(false)
-
-  // Initialize state from incoming data - only run when data changes
-  useEffect(() => {
-    if (data && data.trim() !== "" && data !== additionalNotes) {
-      setAdditionalNotes(data)
-      setIsDataPrefilled(true)
-      console.log("🔄 ClinicalNotesSection: Data prefilled:", data)
-    }
-  }, [data]) // Remove additionalNotes from dependencies to prevent loop
-
-  const handleNotesChange = (value: string) => {
-    setAdditionalNotes(value)
-    onChange(value)
-  }
 
   return (
     <div className="space-y-4">
-      {isDataPrefilled && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-700 font-medium">✅ Clinical notes loaded from previous consultation</p>
-        </div>
-      )}
-
       <div>
         <Label htmlFor="chief-complaints" className="mb-1 block">
           Chief Complaints
@@ -183,14 +162,14 @@ export function ClinicalNotesSection({ data, onChange }: ClinicalNotesSectionPro
 
       <div>
         <Label htmlFor="additional-notes" className="mb-1 block">
-          Clinical Notes {isDataPrefilled && "(Prefilled from Previous Visit)"}
+          Additional Notes
         </Label>
         <Textarea
           id="additional-notes"
-          placeholder="Enter clinical notes here..."
+          placeholder="Enter any additional notes here..."
           value={additionalNotes}
-          onChange={(e) => handleNotesChange(e.target.value)}
-          className="min-h-[150px]"
+          onChange={(e) => setAdditionalNotes(e.target.value)}
+          className="min-h-[100px]"
         />
       </div>
     </div>
