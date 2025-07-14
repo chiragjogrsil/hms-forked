@@ -52,20 +52,18 @@ export function PrescriptionTemplateManager({
     if (type === "ayurvedic") {
       saveAyurvedicTemplate({
         ...templateData,
-        prescriptions,
+        medicines: prescriptions,
         pathya,
         apathya,
         department,
-        type: "ayurvedic",
         createdBy: "Current Doctor", // This would come from auth context
       })
     } else {
       saveAllopathicTemplate({
         ...templateData,
-        prescriptions,
+        medicines: prescriptions,
         dietaryConstraints,
         department,
-        type: "allopathic",
         createdBy: "Current Doctor", // This would come from auth context
       })
     }
