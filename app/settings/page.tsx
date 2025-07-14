@@ -17,11 +17,26 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Eye, Edit, Trash2, Search, TestTube, Microscope, Users, Stethoscope, Construction } from "lucide-react"
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Search,
+  TestTube,
+  Microscope,
+  Users,
+  Stethoscope,
+  Construction,
+  Leaf,
+  Pill,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SettingsSubNavigation } from "@/components/settings-sub-navigation"
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { AyurvedicTemplatePreviewModal } from "@/components/modals/ayurvedic-template-preview-modal"
 
-// Master Categories Configuration - Only Laboratory, Radiology, Clinical Notes, and Diagnosis
+// Master Categories Configuration - Including Prescription Templates
 const masterCategories = [
   {
     id: "laboratory",
@@ -155,6 +170,27 @@ const masterCategories = [
           { key: "icdCode", label: "ICD Code", type: "text", required: true },
           { key: "category", label: "Category", type: "text" },
         ],
+      },
+    ],
+  },
+  {
+    id: "prescription-templates",
+    name: "Prescription Templates",
+    icon: Pill,
+    description: "Ayurvedic and Allopathic prescription templates",
+    color: "text-indigo-600",
+    subCategories: [
+      {
+        id: "ayurvedic-templates",
+        name: "Ayurvedic Templates",
+        description: "Ayurvedic prescription templates",
+        fields: [],
+      },
+      {
+        id: "allopathic-templates",
+        name: "Allopathic Templates",
+        description: "Allopathic prescription templates",
+        fields: [],
       },
     ],
   },
@@ -336,7 +372,16 @@ export default function SettingsPage() {
   const [selectedSubCategory, setSelectedSubCategory] = useState("lab-tests")
   const [currentCategory, setCurrentCategory] = useState("")
   const [currentSubCategory, setCurrentSubCategory] = useState("")
+  const [previewTemplate, setPreviewTemplate] = useState(null)
+  const [previewTemplateType, setPreviewTemplateType] = useState<"ayurvedic" | "allopathic">("ayurvedic")
   const { toast } = useToast()
+
+  const {
+    getAllAyurvedicTemplates,
+    getAllAllopathicTemplates,
+    deleteAyurvedicTemplate,
+    deleteAllopathicTemplate,
+  } = usePrescriptionTemplates()
 
   const handleCategoryChange = (categoryId: string, subCategoryId: string) => {
     setSelectedCategory(categoryId)
@@ -371,6 +416,24 @@ export default function SettingsPage() {
     })
   }
 
+  const handlePreviewTemplate = (template: any, type: "ayurvedic" | "allopathic") => {
+    setPreviewTemplate(template)
+    setPreviewTemplateType(type)
+  }
+
+  const handleDeleteTemplate = (id: string, type: "ayurvedic" | "allopathic") => {
+    if (type === "ayurvedic") {
+      deleteAyurvedicTemplate(id)
+    } else {
+      deleteAllopathicTemplate(id)
+    }
+    toast({
+      title: "Template Deleted",
+      description: `${type === "ayurvedic" ? "Ayurvedic" : "Allopathic"} template deleted successfully`,
+      variant: "destructive",
+    })
+  }
+
   const ActionButtons = ({ id, masterType }: { id: number; masterType: string }) => (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={() => handleView(id, masterType)}>
@@ -380,6 +443,17 @@ export default function SettingsPage() {
         <Edit className="h-4 w-4" />
       </Button>
       <Button variant="ghost" size="sm" onClick={() => handleDelete(id, masterType)}>
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+
+  const TemplateActionButtons = ({ template, type }: { template: any; type: "ayurvedic" | "allopathic" }) => (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={() => handlePreviewTemplate(template, type)}>
+        <Eye className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => handleDeleteTemplate(template.id, type)}>
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
@@ -448,8 +522,154 @@ export default function SettingsPage() {
   const currentSubCategoryData = currentCategoryData?.subCategories.find((sub) => sub.id === selectedSubCategory)
   const currentData = sampleData[selectedSubCategory as keyof typeof sampleData] || []
 
-  // Check if current selection is implemented (only master data categories are implemented)
-  const isImplementedCategory = ["laboratory", "radiology", "clinical", "diagnosis"].includes(selectedCategory)
+  // Check if current selection is implemented
+  const isImplementedCategory = ["laboratory", "radiology", "clinical", "diagnosis", "prescription-templates"].includes(selectedCategory)
+
+  // Get template data for prescription templates
+  const ayurvedicTemplates = getAllAyurvedicTemplates()
+  const allopathicTemplates = getAllAllopathicTemplates()
+
+  const renderPrescriptionTemplates = () => {
+    if (selectedSubCategory === "ayurvedic-templates") {
+      return (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Leaf className="h-5 w-5 text-green-600" />
+                  Ayurvedic Prescription Templates
+                </CardTitle>
+                <CardDescription>
+                  {ayurvedicTemplates.length} template{ayurvedicTemplates.length !== 1 ? "s" : ""} available
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <Input
+                placeholder="Search ayurvedic templates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Template Name</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Medicines</TableHead>
+                  <TableHead>Pathya</TableHead>
+                  <TableHead>Apathya</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ayurvedicTemplates
+                  .filter((template) =>
+                    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    template.department.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell className="font-medium">{template.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {template.department}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{template.prescriptions?.length || 0}</TableCell>
+                      <TableCell>{template.pathya?.length || 0}</TableCell>
+                      <TableCell>{template.apathya?.length || 0}</TableCell>
+                      <TableCell>{template.createdBy}</TableCell>
+                      <TableCell>{new Date(template.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <TemplateActionButtons template={template} type="ayurvedic" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    if (selectedSubCategory === "allopathic-templates") {
+      return (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5 text-blue-600" />
+                  Allopathic Prescription Templates
+                </CardTitle>
+                <CardDescription>
+                  {allopathicTemplates.length} template{allopathicTemplates.length !== 1 ? "s" : ""} available
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4" />
+              <Input
+                placeholder="Search allopathic templates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Template Name</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Medicines</TableHead>
+                  <TableHead>Dietary Guidelines</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allopathicTemplates
+                  .filter((template) =>
+                    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    template.department.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell className="font-medium">{template.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {template.department}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{template.prescriptions?.length || 0}</TableCell>
+                      <TableCell>{template.dietaryConstraints?.length || 0}</TableCell>
+                      <TableCell>{template.createdBy}</TableCell>
+                      <TableCell>{new Date(template.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <TemplateActionButtons template={template} type="allopathic" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return null
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -472,63 +692,68 @@ export default function SettingsPage() {
               <p className="text-muted-foreground">{currentSubCategoryData?.description}</p>
             </div>
 
-            {/* Master Data Table */}
-            {currentSubCategoryData && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">Manage {currentSubCategoryData.name}</CardTitle>
-                      <CardDescription>
-                        {currentData.length} item{currentData.length !== 1 ? "s" : ""} in this category
-                      </CardDescription>
+            {/* Prescription Templates */}
+            {selectedCategory === "prescription-templates" ? (
+              renderPrescriptionTemplates()
+            ) : (
+              /* Master Data Table */
+              currentSubCategoryData && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">Manage {currentSubCategoryData.name}</CardTitle>
+                        <CardDescription>
+                          {currentData.length} item{currentData.length !== 1 ? "s" : ""} in this category
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => handleCreate(selectedCategory, selectedSubCategory)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add {currentSubCategoryData.name.slice(0, -1)}
+                      </Button>
                     </div>
-                    <Button onClick={() => handleCreate(selectedCategory, selectedSubCategory)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add {currentSubCategoryData.name.slice(0, -1)}
-                    </Button>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Search className="h-4 w-4" />
-                    <Input
-                      placeholder={`Search ${currentSubCategoryData.name.toLowerCase()}...`}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-sm"
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {currentSubCategoryData.fields.map((field) => (
-                          <TableHead key={field.key}>{field.label}</TableHead>
-                        ))}
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentData
-                        .filter((item: any) =>
-                          Object.values(item).some((value) =>
-                            value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-                          ),
-                        )
-                        .map((item: any) => (
-                          <TableRow key={item.id}>
-                            {currentSubCategoryData.fields.map((field) => (
-                              <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
-                            ))}
-                            <TableCell>
-                              <ActionButtons id={item.id} masterType={currentSubCategoryData.name} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center space-x-2">
+                      <Search className="h-4 w-4" />
+                      <Input
+                        placeholder={`Search ${currentSubCategoryData.name.toLowerCase()}...`}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-sm"
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {currentSubCategoryData.fields.map((field) => (
+                            <TableHead key={field.key}>{field.label}</TableHead>
+                          ))}
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentData
+                          .filter((item: any) =>
+                            Object.values(item).some((value) =>
+                              value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+                            ),
+                          )
+                          .map((item: any) => (
+                            <TableRow key={item.id}>
+                              {currentSubCategoryData.fields.map((field) => (
+                                <TableCell key={field.key}>{renderFieldValue(item[field.key], field)}</TableCell>
+                              ))}
+                              <TableCell>
+                                <ActionButtons id={item.id} masterType={currentSubCategoryData.name} />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )
             )}
 
             {/* Dynamic Create Dialog */}
@@ -574,6 +799,13 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-    </div>
-  )
-}
+
+      {/* Template Preview Modals */}
+      <AyurvedicTemplatePreviewModal
+        template={previewTemplateType === "ayurvedic" ? previewTemplate : null}
+        isOpen={!!previewTemplate && previewTemplateType === "ayurvedic"}
+        onClose={() => setPreviewTemplate(null)}
+        onLoad={() => {}}
+      />
+
+      \
