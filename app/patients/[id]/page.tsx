@@ -25,6 +25,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Download,
+  Printer,
 } from "lucide-react"
 import { IntegratedConsultation } from "@/components/integrated-consultation"
 import { useConsultation } from "@/contexts/consultation-context"
@@ -110,6 +112,181 @@ const mockInvoices = [
     ],
   },
 ]
+
+// Mock reports data
+const mockReports = [
+  {
+    id: "RPT-2024-001",
+    title: "Complete Blood Count (CBC)",
+    type: "Laboratory",
+    date: "2024-06-15",
+    doctor: "Dr. Sarah Johnson",
+    department: "Pathology",
+    status: "Completed",
+    priority: "Normal",
+    summary: "All blood parameters within normal limits. Hemoglobin: 14.2 g/dL, WBC: 7,200/μL, Platelets: 285,000/μL",
+  },
+  {
+    id: "RPT-2024-002",
+    title: "Chest X-Ray",
+    type: "Radiology",
+    date: "2024-06-14",
+    doctor: "Dr. Michael Chen",
+    department: "Radiology",
+    status: "Completed",
+    priority: "Normal",
+    summary: "Clear lung fields bilaterally. No acute cardiopulmonary abnormalities detected. Heart size normal.",
+  },
+  {
+    id: "RPT-2024-003",
+    title: "Cardiology Consultation Report",
+    type: "Consultation",
+    date: "2024-06-12",
+    doctor: "Dr. Emily Rodriguez",
+    department: "Cardiology",
+    status: "Completed",
+    priority: "High",
+    summary:
+      "Patient evaluated for chest pain. ECG shows normal sinus rhythm. Stress test recommended for further evaluation.",
+  },
+  {
+    id: "RPT-2024-004",
+    title: "Lipid Profile",
+    type: "Laboratory",
+    date: "2024-06-10",
+    doctor: "Dr. Sarah Johnson",
+    department: "Pathology",
+    status: "Completed",
+    priority: "High",
+    summary:
+      "Elevated cholesterol levels detected. Total cholesterol: 245 mg/dL, LDL: 165 mg/dL. Dietary modifications recommended.",
+  },
+  {
+    id: "RPT-2024-005",
+    title: "Abdominal Ultrasound",
+    type: "Radiology",
+    date: "2024-06-08",
+    doctor: "Dr. Michael Chen",
+    department: "Radiology",
+    status: "Completed",
+    priority: "Normal",
+    summary: "Normal liver, gallbladder, pancreas, and kidneys. No abnormal masses or fluid collections identified.",
+  },
+  {
+    id: "RPT-2024-006",
+    title: "Discharge Summary - General Medicine",
+    type: "Discharge",
+    date: "2024-06-05",
+    doctor: "Dr. James Wilson",
+    department: "General Medicine",
+    status: "Completed",
+    priority: "Normal",
+    summary:
+      "Patient admitted for hypertensive crisis, successfully managed with medication adjustment. Discharged in stable condition.",
+  },
+  {
+    id: "RPT-2024-007",
+    title: "Thyroid Function Test",
+    type: "Laboratory",
+    date: "2024-06-03",
+    doctor: "Dr. Sarah Johnson",
+    department: "Pathology",
+    status: "Completed",
+    priority: "Normal",
+    summary: "Thyroid function within normal limits. TSH: 2.1 mIU/L, T3: 1.2 ng/mL, T4: 8.5 μg/dL",
+  },
+  {
+    id: "RPT-2024-008",
+    title: "Orthopedic Consultation Report",
+    type: "Consultation",
+    date: "2024-05-28",
+    doctor: "Dr. Robert Martinez",
+    department: "Orthopedics",
+    status: "Completed",
+    priority: "Normal",
+    summary:
+      "Patient evaluated for knee pain. Physical examination reveals mild osteoarthritis. Conservative treatment recommended.",
+  },
+  {
+    id: "RPT-2024-009",
+    title: "CT Scan - Head",
+    type: "Radiology",
+    date: "2024-05-25",
+    doctor: "Dr. Michael Chen",
+    department: "Radiology",
+    status: "Completed",
+    priority: "Urgent",
+    summary: "No acute intracranial abnormalities. No evidence of hemorrhage, mass effect, or midline shift.",
+  },
+  {
+    id: "RPT-2024-010",
+    title: "Diabetes Management Report",
+    type: "Consultation",
+    date: "2024-05-20",
+    doctor: "Dr. Lisa Thompson",
+    department: "Endocrinology",
+    status: "Completed",
+    priority: "High",
+    summary: "HbA1c improved to 7.2%. Medication adherence good. Continue current regimen with dietary counseling.",
+  },
+]
+
+// Helper functions for report styling
+const getReportTypeColor = (type: string) => {
+  switch (type) {
+    case "Laboratory":
+      return "bg-gradient-to-br from-blue-500 to-blue-600"
+    case "Radiology":
+      return "bg-gradient-to-br from-purple-500 to-purple-600"
+    case "Consultation":
+      return "bg-gradient-to-br from-teal-500 to-teal-600"
+    case "Discharge":
+      return "bg-gradient-to-br from-green-500 to-green-600"
+    default:
+      return "bg-gradient-to-br from-slate-500 to-slate-600"
+  }
+}
+
+const getReportTypeIcon = (type: string) => {
+  switch (type) {
+    case "Laboratory":
+      return <TestTube className="h-6 w-6 text-white" />
+    case "Radiology":
+      return <Zap className="h-6 w-6 text-white" />
+    case "Consultation":
+      return <Stethoscope className="h-6 w-6 text-white" />
+    case "Discharge":
+      return <CheckCircle2 className="h-6 w-6 text-white" />
+    default:
+      return <FileTextIcon className="h-6 w-6 text-white" />
+  }
+}
+
+const getReportStatusBadge = (status: string) => {
+  switch (status) {
+    case "Completed":
+      return "bg-green-100 text-green-800 border-green-200"
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200"
+    case "In Progress":
+      return "bg-blue-100 text-blue-800 border-blue-200"
+    default:
+      return "bg-slate-100 text-slate-800 border-slate-200"
+  }
+}
+
+const getPriorityBadge = (priority: string) => {
+  switch (priority) {
+    case "Urgent":
+      return "bg-red-100 text-red-800 border-red-200"
+    case "High":
+      return "bg-orange-100 text-orange-800 border-orange-200"
+    case "Normal":
+      return "bg-slate-100 text-slate-800 border-slate-200"
+    default:
+      return "bg-slate-100 text-slate-800 border-slate-200"
+  }
+}
 
 // Department mapping for display
 const departmentLabels = {
@@ -1026,10 +1203,392 @@ export default function PatientDetailsPage() {
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
-          <div className="text-center py-12">
-            <FileTextIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Reports</h3>
-            <p className="text-muted-foreground">Medical reports and documents coming soon</p>
+          <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
+                  <FileTextIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-800">Medical Reports</h3>
+                  <p className="text-sm text-slate-600">All completed service reports for {mockPatient.name}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export All
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+              </div>
+            </div>
+
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-5 bg-slate-100/50 p-1 rounded-lg">
+                <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  All Reports
+                </TabsTrigger>
+                <TabsTrigger value="laboratory" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  Laboratory
+                </TabsTrigger>
+                <TabsTrigger value="radiology" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  Radiology
+                </TabsTrigger>
+                <TabsTrigger
+                  value="consultation"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  Consultation
+                </TabsTrigger>
+                <TabsTrigger value="discharge" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  Discharge
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="mt-6">
+                <div className="space-y-4">
+                  {mockReports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-sm ${getReportTypeColor(report.type)}`}
+                          >
+                            {getReportTypeIcon(report.type)}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-slate-800">{report.title}</h4>
+                            <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>{new Date(report.date).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-4 w-4" />
+                                <span>{report.doctor}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Activity className="h-4 w-4" />
+                                <span>{report.department}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline" className={getReportStatusBadge(report.status)}>
+                                {report.status}
+                              </Badge>
+                              <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-200">
+                                {report.type}
+                              </Badge>
+                              {report.priority && (
+                                <Badge variant="outline" className={getPriorityBadge(report.priority)}>
+                                  {report.priority}
+                                </Badge>
+                              )}
+                            </div>
+                            {report.summary && (
+                              <p className="text-sm text-slate-600 mt-2 line-clamp-2">{report.summary}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                          >
+                            <FileTextIcon className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="laboratory" className="mt-6">
+                <div className="space-y-4">
+                  {mockReports
+                    .filter((report) => report.type === "Laboratory")
+                    .map((report) => (
+                      <div
+                        key={report.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <TestTube className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">{report.title}</h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(report.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-4 w-4" />
+                                  <span>{report.doctor}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className={getReportStatusBadge(report.status)}>
+                                  {report.status}
+                                </Badge>
+                                {report.priority && (
+                                  <Badge variant="outline" className={getPriorityBadge(report.priority)}>
+                                    {report.priority}
+                                  </Badge>
+                                )}
+                              </div>
+                              {report.summary && <p className="text-sm text-slate-600 mt-2">{report.summary}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Results
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="radiology" className="mt-6">
+                <div className="space-y-4">
+                  {mockReports
+                    .filter((report) => report.type === "Radiology")
+                    .map((report) => (
+                      <div
+                        key={report.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Zap className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">{report.title}</h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(report.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-4 w-4" />
+                                  <span>{report.doctor}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className={getReportStatusBadge(report.status)}>
+                                  {report.status}
+                                </Badge>
+                                {report.priority && (
+                                  <Badge variant="outline" className={getPriorityBadge(report.priority)}>
+                                    {report.priority}
+                                  </Badge>
+                                )}
+                              </div>
+                              {report.summary && <p className="text-sm text-slate-600 mt-2">{report.summary}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Images
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="consultation" className="mt-6">
+                <div className="space-y-4">
+                  {mockReports
+                    .filter((report) => report.type === "Consultation")
+                    .map((report) => (
+                      <div
+                        key={report.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <Stethoscope className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">{report.title}</h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(report.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-4 w-4" />
+                                  <span>{report.doctor}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className={getReportStatusBadge(report.status)}>
+                                  {report.status}
+                                </Badge>
+                                {report.priority && (
+                                  <Badge variant="outline" className={getPriorityBadge(report.priority)}>
+                                    {report.priority}
+                                  </Badge>
+                                )}
+                              </div>
+                              {report.summary && <p className="text-sm text-slate-600 mt-2">{report.summary}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Report
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="discharge" className="mt-6">
+                <div className="space-y-4">
+                  {mockReports
+                    .filter((report) => report.type === "Discharge")
+                    .map((report) => (
+                      <div
+                        key={report.id}
+                        className="bg-white/60 rounded-lg p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <CheckCircle2 className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800">{report.title}</h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(report.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-4 w-4" />
+                                  <span>{report.doctor}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className={getReportStatusBadge(report.status)}>
+                                  {report.status}
+                                </Badge>
+                                {report.priority && (
+                                  <Badge variant="outline" className={getPriorityBadge(report.priority)}>
+                                    {report.priority}
+                                  </Badge>
+                                )}
+                              </div>
+                              {report.summary && <p className="text-sm text-slate-600 mt-2">{report.summary}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <FileTextIcon className="h-4 w-4 mr-2" />
+                              View Summary
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {mockReports.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileTextIcon className="h-8 w-8 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">No Reports Available</h3>
+                <p className="text-slate-600">Medical reports will appear here once services are completed</p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
