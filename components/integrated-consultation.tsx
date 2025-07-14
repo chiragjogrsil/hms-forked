@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Stethoscope, CheckCircle2 } from "lucide-react"
+import { Stethoscope, CheckCircle2, Printer } from "lucide-react"
 import { useConsultation } from "@/contexts/consultation-context"
 import { ClinicalNotesSection } from "@/components/consultation/clinical-notes-section"
 import { VitalSignsSection } from "@/components/consultation/vital-signs-section"
@@ -12,6 +12,7 @@ import { AllopathicPrescription } from "@/components/consultation/allopathic-pre
 import { AyurvedicPrescription } from "@/components/consultation/ayurvedic-prescription"
 import { AdvancedAnalysisSection } from "@/components/consultation/advanced-analysis-section"
 import { CompleteVisitModal } from "@/components/modals/complete-visit-modal"
+import { ConsultationPrintModal } from "@/components/modals/consultation-print-modal"
 
 interface IntegratedConsultationProps {
   patientId: string
@@ -23,6 +24,8 @@ interface IntegratedConsultationProps {
     bloodGroup: string
     allergies: string[]
     medicalHistory: string[]
+    phone?: string
+    email?: string
   }
   department: string
   doctorName: string
@@ -40,6 +43,7 @@ export function IntegratedConsultation({
     useConsultation()
   const [isAutoSaving, setIsAutoSaving] = useState(false)
   const [isCompleteVisitModalOpen, setIsCompleteVisitModalOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
 
   // Auto-save functionality
   useEffect(() => {
@@ -72,6 +76,10 @@ export function IntegratedConsultation({
     if (onCompleteVisit) {
       onCompleteVisit()
     }
+  }
+
+  const handlePrintConsultation = () => {
+    setIsPrintModalOpen(true)
   }
 
   const hasConsultationData = () => {
@@ -191,20 +199,30 @@ export function IntegratedConsultation({
         </Card>
       </div>
 
-      {/* Complete Visit Button */}
+      {/* Action Buttons */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Complete Visit</h3>
-              <p className="text-sm text-muted-foreground">
-                Finalize the consultation and plan next steps for the patient
-              </p>
+              <h3 className="text-lg font-semibold mb-2">Consultation Actions</h3>
+              <p className="text-sm text-muted-foreground">Print consultation details or complete the visit</p>
             </div>
-            <Button onClick={handleCompleteVisit} className="bg-green-600 hover:bg-green-700" size="lg">
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Complete Visit
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={handlePrintConsultation}
+                variant="outline"
+                size="lg"
+                className="flex items-center gap-2 bg-transparent"
+                disabled={!hasConsultationData()}
+              >
+                <Printer className="h-4 w-4" />
+                Print Consultation
+              </Button>
+              <Button onClick={handleCompleteVisit} className="bg-green-600 hover:bg-green-700" size="lg">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Complete Visit
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -217,6 +235,15 @@ export function IntegratedConsultation({
         patientId={patientData.id}
         department={department}
         onComplete={handleCompleteVisitWithNextSteps}
+      />
+
+      {/* Print Modal */}
+      <ConsultationPrintModal
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+        patientData={patientData}
+        consultationData={activeConsultation}
+        department={department}
       />
     </div>
   )
