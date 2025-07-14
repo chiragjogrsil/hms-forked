@@ -1,31 +1,32 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Plus, Search, Edit, Trash2, Eye, Filter } from "lucide-react"
-import { usePrescriptionTemplate } from "@/contexts/prescription-template-context"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Plus, Search, Edit, Trash2, Eye, Filter, Save, FolderOpen } from "lucide-react"
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
 import { SaveAyurvedicTemplateModal } from "@/components/modals/save-ayurvedic-template-modal"
 import { LoadAyurvedicTemplateModal } from "@/components/modals/load-ayurvedic-template-modal"
 import { SaveAllopathicTemplateModal } from "@/components/modals/save-allopathic-template-modal"
 import { LoadAllopathicTemplateModal } from "@/components/modals/load-allopathic-template-modal"
 import { AyurvedicTemplatePreviewModal } from "@/components/modals/ayurvedic-template-preview-modal"
 import { AllopathicTemplatePreviewModal } from "@/components/modals/allopathic-template-preview-modal"
+
+interface PrescriptionTemplateManagerProps {
+  type: "allopathic" | "ayurvedic"
+  prescriptions: any[]
+  department: string
+  onLoadTemplate: (templateData: any) => void
+  pathya?: string[]
+  apathya?: string[]
+  dietaryConstraints?: string[]
+  readOnly?: boolean
+}
 
 const departments = [
   { value: "all", label: "All Departments" },
@@ -44,7 +45,16 @@ const departments = [
   { value: "emergency", label: "Emergency" },
 ]
 
-export function PrescriptionTemplateManager() {
+export function PrescriptionTemplateManager({
+  type,
+  prescriptions,
+  department,
+  onLoadTemplate,
+  pathya = [],
+  apathya = [],
+  dietaryConstraints = [],
+  readOnly = false,
+}: PrescriptionTemplateManagerProps) {
   const {
     ayurvedicTemplates,
     allopathicTemplates,
@@ -57,31 +67,48 @@ export function PrescriptionTemplateManager() {
     getAllAyurvedicTemplates,
     getAllAllopathicTemplates,
     isLoading,
-  } = usePrescriptionTemplate()
+  } = usePrescriptionTemplates()
 
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [activeTab, setActiveTab] = useState("ayurvedic")
-
-  // Modal states
-  const [isSaveAyurvedicModalOpen, setIsSaveAyurvedicModalOpen] = useState(false)
-  const [isLoadAyurvedicModalOpen, setIsLoadAyurvedicModalOpen] = useState(false)
-  const [isSaveAllopathicModalOpen, setIsSaveAllopathicModalOpen] = useState(false)
-  const [isLoadAllopathicModalOpen, setIsLoadAllopathicModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState(type)
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
+  const [editingTemplate, setEditingTemplate] = useState<any>(null)
   const [isAyurvedicPreviewModalOpen, setIsAyurvedicPreviewModalOpen] = useState(false)
   const [isAllopathicPreviewModalOpen, setIsAllopathicPreviewModalOpen] = useState(false)
 
-  const [selectedAyurvedicTemplate, setSelectedAyurvedicTemplate] = useState<any>(null)
-  const [selectedAllopathicTemplate, setSelectedAllopathicTemplate] = useState<any>(null)
-  const [editingAyurvedicTemplate, setEditingAyurvedicTemplate] = useState<any>(null)
-  const [editingAllopathicTemplate, setEditingAllopathicTemplate] = useState<any>(null)
+  const handleDeleteTemplate = async (id: string) => {
+    if (type === "ayurvedic") {
+      await deleteAyurvedicTemplate(id)
+    } else {
+      await deleteAllopathicTemplate(id)
+    }
+  }
 
-  // Filter functions
-  const getFilteredAyurvedicTemplates = () => {
-    let templates = getAllAyurvedicTemplates()
+  const handlePreviewTemplate = (template: any) => {
+    setSelectedTemplate(template)
+    if (type === "ayurvedic") {
+      setIsAyurvedicPreviewModalOpen(true)
+    } else {
+      setIsAllopathicPreviewModalOpen(true)
+    }
+  }
+
+  const handleEditTemplate = (template: any) => {
+    setEditingTemplate(template)
+    setIsSaveModalOpen(true)
+  }
+
+  const getFilteredTemplates = () => {
+    let templates = type === "ayurvedic" ? getAllAyurvedicTemplates() : getAllAllopathicTemplates()
 
     if (selectedDepartment !== "all") {
-      templates = getAyurvedicTemplatesByDepartment(selectedDepartment)
+      templates =
+        type === "ayurvedic"
+          ? getAyurvedicTemplatesByDepartment(selectedDepartment)
+          : getAllopathicTemplatesByDepartment(selectedDepartment)
     }
 
     if (searchQuery) {
@@ -96,51 +123,10 @@ export function PrescriptionTemplateManager() {
     return templates
   }
 
-  const getFilteredAllopathicTemplates = () => {
-    let templates = getAllAllopathicTemplates()
-
-    if (selectedDepartment !== "all") {
-      templates = getAllopathicTemplatesByDepartment(selectedDepartment)
-    }
-
-    if (searchQuery) {
-      templates = templates.filter(
-        (template) =>
-          template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          template.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          template.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    }
-
-    return templates
-  }
-
-  const handleDeleteAyurvedicTemplate = async (id: string) => {
-    await deleteAyurvedicTemplate(id)
-  }
-
-  const handleDeleteAllopathicTemplate = async (id: string) => {
-    await deleteAllopathicTemplate(id)
-  }
-
-  const handlePreviewAyurvedicTemplate = (template: any) => {
-    setSelectedAyurvedicTemplate(template)
-    setIsAyurvedicPreviewModalOpen(true)
-  }
-
-  const handlePreviewAllopathicTemplate = (template: any) => {
-    setSelectedAllopathicTemplate(template)
-    setIsAllopathicPreviewModalOpen(true)
-  }
-
-  const handleEditAyurvedicTemplate = (template: any) => {
-    setEditingAyurvedicTemplate(template)
-    setIsSaveAyurvedicModalOpen(true)
-  }
-
-  const handleEditAllopathicTemplate = (template: any) => {
-    setEditingAllopathicTemplate(template)
-    setIsSaveAllopathicModalOpen(true)
+  const templateData = {
+    prescriptions,
+    department,
+    ...(type === "ayurvedic" ? { pathya, apathya } : { dietaryConstraints }),
   }
 
   if (isLoading) {
@@ -202,61 +188,38 @@ export function PrescriptionTemplateManager() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="ayurvedic">Ayurvedic Templates ({getFilteredAyurvedicTemplates().length})</TabsTrigger>
-            <TabsTrigger value="allopathic">
-              Allopathic Templates ({getFilteredAllopathicTemplates().length})
-            </TabsTrigger>
+            <TabsTrigger value="ayurvedic">Ayurvedic Templates ({ayurvedicTemplates.length})</TabsTrigger>
+            <TabsTrigger value="allopathic">Allopathic Templates ({allopathicTemplates.length})</TabsTrigger>
           </TabsList>
           <div className="flex gap-2">
-            {activeTab === "ayurvedic" ? (
-              <>
-                <Button
-                  onClick={() => setIsLoadAyurvedicModalOpen(true)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="h-4 w-4" />
-                  Load Template
-                </Button>
-                <Button
-                  onClick={() => {
-                    setEditingAyurvedicTemplate(null)
-                    setIsSaveAyurvedicModalOpen(true)
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  New Ayurvedic Template
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  onClick={() => setIsLoadAllopathicModalOpen(true)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="h-4 w-4" />
-                  Load Template
-                </Button>
-                <Button
-                  onClick={() => {
-                    setEditingAllopathicTemplate(null)
-                    setIsSaveAllopathicModalOpen(true)
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  New Allopathic Template
-                </Button>
-              </>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSaveModalOpen(true)}
+                disabled={prescriptions.length === 0}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Save Template
+              </Button>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsLoadModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Load Template
+            </Button>
           </div>
         </div>
 
         {/* Ayurvedic Templates */}
         <TabsContent value="ayurvedic" className="space-y-4">
-          {getFilteredAyurvedicTemplates().length === 0 ? (
+          {ayurvedicTemplates.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <div className="text-gray-400 mb-4">
@@ -268,20 +231,17 @@ export function PrescriptionTemplateManager() {
                     ? "Try adjusting your search or filter criteria"
                     : "Create your first Ayurvedic prescription template"}
                 </p>
-                <Button
-                  onClick={() => {
-                    setEditingAyurvedicTemplate(null)
-                    setIsSaveAyurvedicModalOpen(true)
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => setIsSaveModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Template
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getFilteredAyurvedicTemplates().map((template) => (
+              {ayurvedicTemplates.map((template) => (
                 <Card key={template.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -310,7 +270,7 @@ export function PrescriptionTemplateManager() {
 
                     <div className="flex gap-2 pt-2">
                       <Button
-                        onClick={() => handlePreviewAyurvedicTemplate(template)}
+                        onClick={() => handlePreviewTemplate(template)}
                         variant="outline"
                         size="sm"
                         className="flex-1"
@@ -318,37 +278,40 @@ export function PrescriptionTemplateManager() {
                         <Eye className="h-4 w-4 mr-1" />
                         Preview
                       </Button>
-                      <Button onClick={() => handleEditAyurvedicTemplate(template)} variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 bg-transparent"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{template.name}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteAyurvedicTemplate(template.id)}
-                              className="bg-red-600 hover:bg-red-700"
+                      {!readOnly && (
+                        <Button onClick={() => handleEditTemplate(template)} variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {!readOnly && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 bg-transparent"
                             >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Delete Template</DialogTitle>
+                              <CardDescription>
+                                Are you sure you want to delete "{template.name}"? This action cannot be undone.
+                              </CardDescription>
+                            </DialogHeader>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => setIsSaveModalOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button variant="destructive" onClick={() => handleDeleteTemplate(template.id)}>
+                                Delete
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -359,7 +322,7 @@ export function PrescriptionTemplateManager() {
 
         {/* Allopathic Templates */}
         <TabsContent value="allopathic" className="space-y-4">
-          {getFilteredAllopathicTemplates().length === 0 ? (
+          {allopathicTemplates.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <div className="text-gray-400 mb-4">
@@ -371,20 +334,17 @@ export function PrescriptionTemplateManager() {
                     ? "Try adjusting your search or filter criteria"
                     : "Create your first Allopathic prescription template"}
                 </p>
-                <Button
-                  onClick={() => {
-                    setEditingAllopathicTemplate(null)
-                    setIsSaveAllopathicModalOpen(true)
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => setIsSaveModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Template
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getFilteredAllopathicTemplates().map((template) => (
+              {allopathicTemplates.map((template) => (
                 <Card key={template.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -410,10 +370,9 @@ export function PrescriptionTemplateManager() {
                       <p>Created: {new Date(template.createdAt).toLocaleDateString()}</p>
                       <p>By: {template.createdBy}</p>
                     </div>
-
                     <div className="flex gap-2 pt-2">
                       <Button
-                        onClick={() => handlePreviewAllopathicTemplate(template)}
+                        onClick={() => handlePreviewTemplate(template)}
                         variant="outline"
                         size="sm"
                         className="flex-1"
@@ -421,37 +380,40 @@ export function PrescriptionTemplateManager() {
                         <Eye className="h-4 w-4 mr-1" />
                         Preview
                       </Button>
-                      <Button onClick={() => handleEditAllopathicTemplate(template)} variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 bg-transparent"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{template.name}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteAllopathicTemplate(template.id)}
-                              className="bg-red-600 hover:bg-red-700"
+                      {!readOnly && (
+                        <Button onClick={() => handleEditTemplate(template)} variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {!readOnly && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 bg-transparent"
                             >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Delete Template</DialogTitle>
+                              <CardDescription>
+                                Are you sure you want to delete "{template.name}"? This action cannot be undone.
+                              </CardDescription>
+                            </DialogHeader>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => setIsSaveModalOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button variant="destructive" onClick={() => handleDeleteTemplate(template.id)}>
+                                Delete
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -462,37 +424,49 @@ export function PrescriptionTemplateManager() {
       </Tabs>
 
       {/* Modals */}
-      <SaveAyurvedicTemplateModal
-        open={isSaveAyurvedicModalOpen}
-        onOpenChange={setIsSaveAyurvedicModalOpen}
-        editingTemplate={editingAyurvedicTemplate}
-        onTemplateChange={() => setEditingAyurvedicTemplate(null)}
-      />
-
-      <LoadAyurvedicTemplateModal open={isLoadAyurvedicModalOpen} onOpenChange={setIsLoadAyurvedicModalOpen} />
-
-      <SaveAllopathicTemplateModal
-        open={isSaveAllopathicModalOpen}
-        onOpenChange={setIsSaveAllopathicModalOpen}
-        editingTemplate={editingAllopathicTemplate}
-        onTemplateChange={() => setEditingAllopathicTemplate(null)}
-      />
-
-      <LoadAllopathicTemplateModal open={isLoadAllopathicModalOpen} onOpenChange={setIsLoadAllopathicModalOpen} />
-
-      {selectedAyurvedicTemplate && (
-        <AyurvedicTemplatePreviewModal
-          open={isAyurvedicPreviewModalOpen}
-          onOpenChange={setIsAyurvedicPreviewModalOpen}
-          template={selectedAyurvedicTemplate}
+      {type === "allopathic" ? (
+        <SaveAllopathicTemplateModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          templateData={templateData}
+        />
+      ) : (
+        <SaveAyurvedicTemplateModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          templateData={templateData}
         />
       )}
 
-      {selectedAllopathicTemplate && (
+      {type === "allopathic" ? (
+        <LoadAllopathicTemplateModal
+          isOpen={isLoadModalOpen}
+          onClose={() => setIsLoadModalOpen(false)}
+          department={department}
+          onLoadTemplate={onLoadTemplate}
+        />
+      ) : (
+        <LoadAyurvedicTemplateModal
+          isOpen={isLoadModalOpen}
+          onClose={() => setIsLoadModalOpen(false)}
+          department={department}
+          onLoadTemplate={onLoadTemplate}
+        />
+      )}
+
+      {selectedTemplate && type === "ayurvedic" && isAyurvedicPreviewModalOpen && (
+        <AyurvedicTemplatePreviewModal
+          open={true}
+          onOpenChange={() => setIsAyurvedicPreviewModalOpen(false)}
+          template={selectedTemplate}
+        />
+      )}
+
+      {selectedTemplate && type === "allopathic" && isAllopathicPreviewModalOpen && (
         <AllopathicTemplatePreviewModal
-          open={isAllopathicPreviewModalOpen}
-          onOpenChange={setIsAllopathicPreviewModalOpen}
-          template={selectedAllopathicTemplate}
+          open={true}
+          onOpenChange={() => setIsAllopathicPreviewModalOpen(false)}
+          template={selectedTemplate}
         />
       )}
     </div>

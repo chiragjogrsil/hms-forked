@@ -1,119 +1,160 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Eye } from "lucide-react"
-import { usePrescriptionTemplate } from "@/contexts/prescription-template-context"
-import { AyurvedicTemplatePreviewModal } from "./ayurvedic-template-preview-modal"
+import { Search, Eye, Trash2 } from "lucide-react"
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { AyurvedicTemplatePreviewModal } from "@/components/modals/ayurvedic-template-preview-modal"
 
 interface LoadAyurvedicTemplateModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onTemplateSelect?: (template: any) => void
+  isOpen: boolean
+  onClose: () => void
+  department: string
+  onLoadTemplate: (templateData: any) => void
 }
 
-export function LoadAyurvedicTemplateModal({ open, onOpenChange, onTemplateSelect }: LoadAyurvedicTemplateModalProps) {
-  const { getAllAyurvedicTemplates } = usePrescriptionTemplate()
+export function LoadAyurvedicTemplateModal({
+  isOpen,
+  onClose,
+  department,
+  onLoadTemplate,
+}: LoadAyurvedicTemplateModalProps) {
+  const { ayurvedicTemplates, getAyurvedicTemplatesByDepartment, searchAyurvedicTemplates, deleteAyurvedicTemplate } =
+    usePrescriptionTemplates()
+
   const [searchQuery, setSearchQuery] = useState("")
+  const [filteredTemplates, setFilteredTemplates] = useState<any[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
-  const templates = getAllAyurvedicTemplates()
-  const filteredTemplates = templates.filter(
-    (template) =>
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setFilteredTemplates(searchAyurvedicTemplates(searchQuery))
+    } else {
+      setFilteredTemplates(getAyurvedicTemplatesByDepartment(department))
+    }
+  }, [searchQuery, department, ayurvedicTemplates])
 
-  const handlePreview = (template: any) => {
-    setSelectedTemplate(template)
-    setIsPreviewModalOpen(true)
+  const handleLoadTemplate = (template: any) => {
+    onLoadTemplate({
+      prescriptions: template.prescriptions,
+      pathya: template.pathya || [],
+      apathya: template.apathya || [],
+    })
+    onClose()
   }
 
-  const handleLoad = (template: any) => {
-    onTemplateSelect?.(template)
-    onOpenChange(false)
+  const handlePreviewTemplate = (template: any) => {
+    setSelectedTemplate(template)
+    setIsPreviewOpen(true)
+  }
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (confirm("Are you sure you want to delete this template?")) {
+      await deleteAyurvedicTemplate(templateId)
+    }
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Load Ayurvedic Template</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search templates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div>
+              <Label htmlFor="search">Search Templates</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, description, or department"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            {/* Templates List */}
-            <div className="max-h-96 overflow-y-auto space-y-3">
-              {filteredTemplates.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">No templates found</p>
-                </div>
-              ) : (
-                filteredTemplates.map((template) => (
-                  <Card key={template.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">{template.name}</CardTitle>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              {template.department}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {template.medicines.length} medicines
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button onClick={() => handlePreview(template)} variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Preview
-                          </Button>
-                          <Button onClick={() => handleLoad(template)} size="sm">
-                            Load
-                          </Button>
-                        </div>
+            {/* Templates Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredTemplates.map((template) => (
+                <Card key={template.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <CardDescription className="mt-1">{template.description || "No description"}</CardDescription>
                       </div>
-                    </CardHeader>
-                    {template.description && (
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-gray-600">{template.description}</p>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))
-              )}
+                      <Badge variant="outline" className="capitalize">
+                        {template.department}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        <p>{template.prescriptions.length} prescription(s)</p>
+                        {template.pathya && template.pathya.length > 0 && (
+                          <p>{template.pathya.length} pathya item(s)</p>
+                        )}
+                        {template.apathya && template.apathya.length > 0 && (
+                          <p>{template.apathya.length} apathya item(s)</p>
+                        )}
+                        <p>Created: {new Date(template.createdAt).toLocaleDateString()}</p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleLoadTemplate(template)} className="flex-1">
+                          Load Template
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handlePreviewTemplate(template)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteTemplate(template.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+
+            {filteredTemplates.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "No templates found matching your search."
+                    : "No templates available for this department."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Preview Modal */}
-      {selectedTemplate && (
-        <AyurvedicTemplatePreviewModal
-          open={isPreviewModalOpen}
-          onOpenChange={setIsPreviewModalOpen}
-          template={selectedTemplate}
-        />
-      )}
+      <AyurvedicTemplatePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        template={selectedTemplate}
+        onLoadTemplate={handleLoadTemplate}
+      />
     </>
   )
 }

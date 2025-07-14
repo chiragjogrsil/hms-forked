@@ -3,307 +3,193 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
 
-// Types
-interface AyurvedicTemplate {
-  id: string
-  name: string
-  department: string
-  description?: string
-  medicines: Array<{
-    id: string
-    formOfMedicine: string
-    dosage: string
-    frequency: string
-    duration: string
-    instructions: string
-    beforeAfterFood: string
-  }>
-  createdAt: string
-  updatedAt: string
-  createdBy: string
-}
-
 interface AllopathicTemplate {
   id: string
   name: string
+  description: string
   department: string
-  description?: string
-  medicines: Array<{
+  prescriptions: Array<{
     id: string
     medicine: string
     dosage: string
-    frequency: string
+    timing: string
     duration: string
+    quantity: number
     instructions: string
-    beforeAfterFood: string
   }>
+  dietaryConstraints?: string[]
   createdAt: string
   updatedAt: string
-  createdBy: string
+}
+
+interface AyurvedicTemplate {
+  id: string
+  name: string
+  description: string
+  department: string
+  prescriptions: Array<{
+    id: string
+    formOfMedicine: string
+    constituents: string[]
+    preparationInstructions: string
+    toBeHadWith: string
+    dosage: string
+    beforeAfterFood: string
+    duration: string
+  }>
+  pathya?: string[]
+  apathya?: string[]
+  createdAt: string
+  updatedAt: string
 }
 
 interface PrescriptionTemplateContextType {
-  // Ayurvedic templates
-  ayurvedicTemplates: AyurvedicTemplate[]
-  saveAyurvedicTemplate: (template: Omit<AyurvedicTemplate, "id" | "createdAt" | "updatedAt">) => Promise<boolean>
-  updateAyurvedicTemplate: (id: string, template: Partial<AyurvedicTemplate>) => Promise<boolean>
-  deleteAyurvedicTemplate: (id: string) => Promise<boolean>
-  getAyurvedicTemplate: (id: string) => AyurvedicTemplate | null
-  getAyurvedicTemplatesByDepartment: (department: string) => AyurvedicTemplate[]
-  getAllAyurvedicTemplates: () => AyurvedicTemplate[]
-  searchAyurvedicTemplates: (query: string) => AyurvedicTemplate[]
-
-  // Allopathic templates
+  // Allopathic Templates
   allopathicTemplates: AllopathicTemplate[]
   saveAllopathicTemplate: (template: Omit<AllopathicTemplate, "id" | "createdAt" | "updatedAt">) => Promise<boolean>
   updateAllopathicTemplate: (id: string, template: Partial<AllopathicTemplate>) => Promise<boolean>
   deleteAllopathicTemplate: (id: string) => Promise<boolean>
-  getAllopathicTemplate: (id: string) => AllopathicTemplate | null
   getAllopathicTemplatesByDepartment: (department: string) => AllopathicTemplate[]
-  getAllAllopathicTemplates: () => AllopathicTemplate[]
   searchAllopathicTemplates: (query: string) => AllopathicTemplate[]
 
-  // Utility
-  isLoading: boolean
+  // Ayurvedic Templates
+  ayurvedicTemplates: AyurvedicTemplate[]
+  saveAyurvedicTemplate: (template: Omit<AyurvedicTemplate, "id" | "createdAt" | "updatedAt">) => Promise<boolean>
+  updateAyurvedicTemplate: (id: string, template: Partial<AyurvedicTemplate>) => Promise<boolean>
+  deleteAyurvedicTemplate: (id: string) => Promise<boolean>
+  getAyurvedicTemplatesByDepartment: (department: string) => AyurvedicTemplate[]
+  searchAyurvedicTemplates: (query: string) => AyurvedicTemplate[]
 }
 
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
 
-// Sample data
-const sampleAyurvedicTemplates: AyurvedicTemplate[] = [
+// Sample templates for initial data
+const sampleAllopathicTemplates: AllopathicTemplate[] = [
   {
-    id: "ayur-template-1",
+    id: "allopathic-1",
     name: "Common Cold Treatment",
+    description: "Standard treatment for common cold symptoms",
     department: "general",
-    description: "Standard Ayurvedic treatment for common cold and flu symptoms",
-    medicines: [
+    prescriptions: [
       {
         id: "1",
-        formOfMedicine: "Sitopaladi Churna",
-        dosage: "1 tsp",
-        frequency: "Twice daily",
-        duration: "7 days",
-        instructions: "Mix with honey",
-        beforeAfterFood: "after",
+        medicine: "Paracetamol 500mg",
+        dosage: "1-0-1",
+        timing: "after-food",
+        duration: "5",
+        quantity: 10,
+        instructions: "Take 1 tablet morning and evening after food",
       },
       {
         id: "2",
-        formOfMedicine: "Tulsi Kwath",
-        dosage: "10ml",
-        frequency: "Three times daily",
-        duration: "5 days",
-        instructions: "Take with warm water",
-        beforeAfterFood: "before",
+        medicine: "Cetirizine 10mg",
+        dosage: "0-0-1",
+        timing: "after-food",
+        duration: "3",
+        quantity: 3,
+        instructions: "Take 1 tablet in the evening after food",
       },
     ],
-    createdAt: "2024-01-15T10:00:00.000Z",
-    updatedAt: "2024-01-15T10:00:00.000Z",
-    createdBy: "Dr. Priya Sharma",
+    dietaryConstraints: ["Avoid cold drinks", "Drink warm water"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
   },
   {
-    id: "ayur-template-2",
-    name: "Digestive Issues",
-    department: "ayurveda",
-    description: "Treatment for indigestion and digestive disorders",
-    medicines: [
+    id: "allopathic-2",
+    name: "Dental Pain Relief",
+    description: "Pain management for dental procedures",
+    department: "dental",
+    prescriptions: [
       {
         id: "1",
-        formOfMedicine: "Triphala Churna",
-        dosage: "1 tsp",
-        frequency: "Once daily",
-        duration: "15 days",
-        instructions: "Take with warm water at bedtime",
-        beforeAfterFood: "after",
+        medicine: "Ibuprofen 400mg",
+        dosage: "1-0-1",
+        timing: "after-food",
+        duration: "3",
+        quantity: 6,
+        instructions: "Take 1 tablet morning and evening after food",
       },
       {
         id: "2",
-        formOfMedicine: "Hingwashtak Churna",
-        dosage: "1/2 tsp",
-        frequency: "Twice daily",
-        duration: "10 days",
-        instructions: "Take with buttermilk",
-        beforeAfterFood: "after",
+        medicine: "Amoxicillin 500mg",
+        dosage: "1-1-1",
+        timing: "after-food",
+        duration: "5",
+        quantity: 15,
+        instructions: "Take 1 tablet three times daily after food",
       },
     ],
-    createdAt: "2024-01-20T14:30:00.000Z",
-    updatedAt: "2024-01-20T14:30:00.000Z",
-    createdBy: "Dr. Rajesh Kumar",
+    dietaryConstraints: ["Avoid hard foods", "Rinse with warm salt water"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
   },
 ]
 
-const sampleAllopathicTemplates: AllopathicTemplate[] = [
+const sampleAyurvedicTemplates: AyurvedicTemplate[] = [
   {
-    id: "allo-template-1",
-    name: "Hypertension Management",
-    department: "cardiology",
-    description: "Standard treatment protocol for hypertension",
-    medicines: [
+    id: "ayurvedic-1",
+    name: "Digestive Health",
+    description: "Ayurvedic treatment for digestive issues",
+    department: "ayurveda",
+    prescriptions: [
       {
         id: "1",
-        medicine: "Amlodipine",
-        dosage: "5mg",
-        frequency: "Once daily",
-        duration: "30 days",
-        instructions: "Take at the same time each day",
+        formOfMedicine: "Churna",
+        constituents: ["Triphala", "Ajwain"],
+        preparationInstructions: "Mix with warm water",
+        toBeHadWith: "Warm Water",
+        dosage: "1-0-1",
         beforeAfterFood: "before",
-      },
-      {
-        id: "2",
-        medicine: "Metoprolol",
-        dosage: "25mg",
-        frequency: "Twice daily",
-        duration: "30 days",
-        instructions: "Monitor blood pressure regularly",
-        beforeAfterFood: "after",
+        duration: "15 days",
       },
     ],
-    createdAt: "2024-01-10T09:00:00.000Z",
-    updatedAt: "2024-01-10T09:00:00.000Z",
-    createdBy: "Dr. Sarah Wilson",
-  },
-  {
-    id: "allo-template-2",
-    name: "Diabetes Type 2",
-    department: "general",
-    description: "Standard treatment for Type 2 Diabetes",
-    medicines: [
-      {
-        id: "1",
-        medicine: "Metformin",
-        dosage: "500mg",
-        frequency: "Twice daily",
-        duration: "30 days",
-        instructions: "Take with meals to reduce stomach upset",
-        beforeAfterFood: "after",
-      },
-      {
-        id: "2",
-        medicine: "Glimepiride",
-        dosage: "1mg",
-        frequency: "Once daily",
-        duration: "30 days",
-        instructions: "Take before breakfast",
-        beforeAfterFood: "before",
-      },
-    ],
-    createdAt: "2024-01-12T11:15:00.000Z",
-    updatedAt: "2024-01-12T11:15:00.000Z",
-    createdBy: "Dr. Michael Chen",
+    pathya: ["Light food", "Warm water", "Fruits"],
+    apathya: ["Cold food", "Heavy meals", "Spicy food"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
   },
 ]
 
 export function PrescriptionTemplateProvider({ children }: { children: ReactNode }) {
-  const [ayurvedicTemplates, setAyurvedicTemplates] = useState<AyurvedicTemplate[]>([])
   const [allopathicTemplates, setAllopathicTemplates] = useState<AllopathicTemplate[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [ayurvedicTemplates, setAyurvedicTemplates] = useState<AyurvedicTemplate[]>([])
 
   // Load templates from localStorage on mount
   useEffect(() => {
-    try {
-      const savedAyurvedic = localStorage.getItem("ayurvedic-templates")
-      const savedAllopathic = localStorage.getItem("allopathic-templates")
+    const savedAllopathic = localStorage.getItem("allopathic-templates")
+    const savedAyurvedic = localStorage.getItem("ayurvedic-templates")
 
-      if (savedAyurvedic) {
-        setAyurvedicTemplates(JSON.parse(savedAyurvedic))
-      } else {
-        setAyurvedicTemplates(sampleAyurvedicTemplates)
-      }
-
-      if (savedAllopathic) {
+    if (savedAllopathic) {
+      try {
         setAllopathicTemplates(JSON.parse(savedAllopathic))
-      } else {
+      } catch (error) {
+        console.error("Error loading allopathic templates:", error)
         setAllopathicTemplates(sampleAllopathicTemplates)
       }
-    } catch (error) {
-      console.error("Error loading templates:", error)
-      setAyurvedicTemplates(sampleAyurvedicTemplates)
+    } else {
       setAllopathicTemplates(sampleAllopathicTemplates)
-    } finally {
-      setIsLoading(false)
+    }
+
+    if (savedAyurvedic) {
+      try {
+        setAyurvedicTemplates(JSON.parse(savedAyurvedic))
+      } catch (error) {
+        console.error("Error loading ayurvedic templates:", error)
+        setAyurvedicTemplates(sampleAyurvedicTemplates)
+      }
+    } else {
+      setAyurvedicTemplates(sampleAyurvedicTemplates)
     }
   }, [])
 
   // Save to localStorage whenever templates change
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("ayurvedic-templates", JSON.stringify(ayurvedicTemplates))
-    }
-  }, [ayurvedicTemplates, isLoading])
+    localStorage.setItem("allopathic-templates", JSON.stringify(allopathicTemplates))
+  }, [allopathicTemplates])
 
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("allopathic-templates", JSON.stringify(allopathicTemplates))
-    }
-  }, [allopathicTemplates, isLoading])
-
-  // Ayurvedic template functions
-  const saveAyurvedicTemplate = async (
-    template: Omit<AyurvedicTemplate, "id" | "createdAt" | "updatedAt">,
-  ): Promise<boolean> => {
-    try {
-      const newTemplate: AyurvedicTemplate = {
-        ...template,
-        id: `ayur-template-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-
-      setAyurvedicTemplates((prev) => [newTemplate, ...prev])
-      toast.success("Ayurvedic template saved successfully")
-      return true
-    } catch (error) {
-      toast.error("Failed to save Ayurvedic template")
-      return false
-    }
-  }
-
-  const updateAyurvedicTemplate = async (id: string, updates: Partial<AyurvedicTemplate>): Promise<boolean> => {
-    try {
-      setAyurvedicTemplates((prev) =>
-        prev.map((template) =>
-          template.id === id ? { ...template, ...updates, updatedAt: new Date().toISOString() } : template,
-        ),
-      )
-      toast.success("Ayurvedic template updated successfully")
-      return true
-    } catch (error) {
-      toast.error("Failed to update Ayurvedic template")
-      return false
-    }
-  }
-
-  const deleteAyurvedicTemplate = async (id: string): Promise<boolean> => {
-    try {
-      setAyurvedicTemplates((prev) => prev.filter((template) => template.id !== id))
-      toast.success("Ayurvedic template deleted successfully")
-      return true
-    } catch (error) {
-      toast.error("Failed to delete Ayurvedic template")
-      return false
-    }
-  }
-
-  const getAyurvedicTemplate = (id: string): AyurvedicTemplate | null => {
-    return ayurvedicTemplates.find((template) => template.id === id) || null
-  }
-
-  const getAyurvedicTemplatesByDepartment = (department: string): AyurvedicTemplate[] => {
-    return ayurvedicTemplates.filter((template) => template.department === department)
-  }
-
-  const getAllAyurvedicTemplates = (): AyurvedicTemplate[] => {
-    return ayurvedicTemplates
-  }
-
-  const searchAyurvedicTemplates = (query: string): AyurvedicTemplate[] => {
-    const lowercaseQuery = query.toLowerCase()
-    return ayurvedicTemplates.filter(
-      (template) =>
-        template.name.toLowerCase().includes(lowercaseQuery) ||
-        template.department.toLowerCase().includes(lowercaseQuery) ||
-        template.description?.toLowerCase().includes(lowercaseQuery),
-    )
-  }
+    localStorage.setItem("ayurvedic-templates", JSON.stringify(ayurvedicTemplates))
+  }, [ayurvedicTemplates])
 
   // Allopathic template functions
   const saveAllopathicTemplate = async (
@@ -312,16 +198,16 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
     try {
       const newTemplate: AllopathicTemplate = {
         ...template,
-        id: `allo-template-${Date.now()}`,
+        id: `allopathic-${Date.now()}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
 
       setAllopathicTemplates((prev) => [newTemplate, ...prev])
-      toast.success("Allopathic template saved successfully")
+      toast.success("Template saved successfully")
       return true
     } catch (error) {
-      toast.error("Failed to save Allopathic template")
+      toast.error("Failed to save template")
       return false
     }
   }
@@ -333,10 +219,10 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
           template.id === id ? { ...template, ...updates, updatedAt: new Date().toISOString() } : template,
         ),
       )
-      toast.success("Allopathic template updated successfully")
+      toast.success("Template updated successfully")
       return true
     } catch (error) {
-      toast.error("Failed to update Allopathic template")
+      toast.error("Failed to update template")
       return false
     }
   }
@@ -344,24 +230,16 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
   const deleteAllopathicTemplate = async (id: string): Promise<boolean> => {
     try {
       setAllopathicTemplates((prev) => prev.filter((template) => template.id !== id))
-      toast.success("Allopathic template deleted successfully")
+      toast.success("Template deleted successfully")
       return true
     } catch (error) {
-      toast.error("Failed to delete Allopathic template")
+      toast.error("Failed to delete template")
       return false
     }
   }
 
-  const getAllopathicTemplate = (id: string): AllopathicTemplate | null => {
-    return allopathicTemplates.find((template) => template.id === id) || null
-  }
-
   const getAllopathicTemplatesByDepartment = (department: string): AllopathicTemplate[] => {
     return allopathicTemplates.filter((template) => template.department === department)
-  }
-
-  const getAllAllopathicTemplates = (): AllopathicTemplate[] => {
-    return allopathicTemplates
   }
 
   const searchAllopathicTemplates = (query: string): AllopathicTemplate[] => {
@@ -369,36 +247,87 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
     return allopathicTemplates.filter(
       (template) =>
         template.name.toLowerCase().includes(lowercaseQuery) ||
-        template.department.toLowerCase().includes(lowercaseQuery) ||
-        template.description?.toLowerCase().includes(lowercaseQuery),
+        template.description.toLowerCase().includes(lowercaseQuery) ||
+        template.department.toLowerCase().includes(lowercaseQuery),
+    )
+  }
+
+  // Ayurvedic template functions
+  const saveAyurvedicTemplate = async (
+    template: Omit<AyurvedicTemplate, "id" | "createdAt" | "updatedAt">,
+  ): Promise<boolean> => {
+    try {
+      const newTemplate: AyurvedicTemplate = {
+        ...template,
+        id: `ayurvedic-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      setAyurvedicTemplates((prev) => [newTemplate, ...prev])
+      toast.success("Template saved successfully")
+      return true
+    } catch (error) {
+      toast.error("Failed to save template")
+      return false
+    }
+  }
+
+  const updateAyurvedicTemplate = async (id: string, updates: Partial<AyurvedicTemplate>): Promise<boolean> => {
+    try {
+      setAyurvedicTemplates((prev) =>
+        prev.map((template) =>
+          template.id === id ? { ...template, ...updates, updatedAt: new Date().toISOString() } : template,
+        ),
+      )
+      toast.success("Template updated successfully")
+      return true
+    } catch (error) {
+      toast.error("Failed to update template")
+      return false
+    }
+  }
+
+  const deleteAyurvedicTemplate = async (id: string): Promise<boolean> => {
+    try {
+      setAyurvedicTemplates((prev) => prev.filter((template) => template.id !== id))
+      toast.success("Template deleted successfully")
+      return true
+    } catch (error) {
+      toast.error("Failed to delete template")
+      return false
+    }
+  }
+
+  const getAyurvedicTemplatesByDepartment = (department: string): AyurvedicTemplate[] => {
+    return ayurvedicTemplates.filter((template) => template.department === department)
+  }
+
+  const searchAyurvedicTemplates = (query: string): AyurvedicTemplate[] => {
+    const lowercaseQuery = query.toLowerCase()
+    return ayurvedicTemplates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(lowercaseQuery) ||
+        template.description.toLowerCase().includes(lowercaseQuery) ||
+        template.department.toLowerCase().includes(lowercaseQuery),
     )
   }
 
   return (
     <PrescriptionTemplateContext.Provider
       value={{
-        // Ayurvedic templates
-        ayurvedicTemplates,
-        saveAyurvedicTemplate,
-        updateAyurvedicTemplate,
-        deleteAyurvedicTemplate,
-        getAyurvedicTemplate,
-        getAyurvedicTemplatesByDepartment,
-        getAllAyurvedicTemplates,
-        searchAyurvedicTemplates,
-
-        // Allopathic templates
         allopathicTemplates,
         saveAllopathicTemplate,
         updateAllopathicTemplate,
         deleteAllopathicTemplate,
-        getAllopathicTemplate,
         getAllopathicTemplatesByDepartment,
-        getAllAllopathicTemplates,
         searchAllopathicTemplates,
-
-        // Utility
-        isLoading,
+        ayurvedicTemplates,
+        saveAyurvedicTemplate,
+        updateAyurvedicTemplate,
+        deleteAyurvedicTemplate,
+        getAyurvedicTemplatesByDepartment,
+        searchAyurvedicTemplates,
       }}
     >
       {children}
@@ -406,10 +335,10 @@ export function PrescriptionTemplateProvider({ children }: { children: ReactNode
   )
 }
 
-export function usePrescriptionTemplate() {
+export function usePrescriptionTemplates() {
   const context = useContext(PrescriptionTemplateContext)
   if (context === undefined) {
-    throw new Error("usePrescriptionTemplate must be used within a PrescriptionTemplateProvider")
+    throw new Error("usePrescriptionTemplates must be used within a PrescriptionTemplateProvider")
   }
   return context
 }
