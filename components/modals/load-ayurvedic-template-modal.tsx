@@ -1,120 +1,119 @@
 "use client"
 
 import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Search, Leaf, Calendar, User } from "lucide-react"
-import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Search, Eye } from "lucide-react"
+import { usePrescriptionTemplate } from "@/contexts/prescription-template-context"
+import { AyurvedicTemplatePreviewModal } from "./ayurvedic-template-preview-modal"
 
 interface LoadAyurvedicTemplateModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onLoad: (template: any) => void
-  department: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onTemplateSelect?: (template: any) => void
 }
 
-export function LoadAyurvedicTemplateModal({ isOpen, onClose, onLoad, department }: LoadAyurvedicTemplateModalProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const { getAyurvedicTemplatesByDepartment } = usePrescriptionTemplates()
+export function LoadAyurvedicTemplateModal({ open, onOpenChange, onTemplateSelect }: LoadAyurvedicTemplateModalProps) {
+  const { getAllAyurvedicTemplates } = usePrescriptionTemplate()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
 
-  const templates = getAyurvedicTemplatesByDepartment(department)
-  const filteredTemplates = templates.filter((template) =>
-    template.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const templates = getAllAyurvedicTemplates()
+  const filteredTemplates = templates.filter(
+    (template) =>
+      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.description?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleLoadTemplate = (template: any) => {
-    onLoad(template)
-    onClose()
+  const handlePreview = (template: any) => {
+    setSelectedTemplate(template)
+    setIsPreviewModalOpen(true)
+  }
+
+  const handleLoad = (template: any) => {
+    onTemplateSelect?.(template)
+    onOpenChange(false)
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-green-600" />
-            Load Ayurvedic Template
-          </DialogTitle>
-          <DialogDescription>
-            Choose from {templates.length} available Ayurvedic templates for the {department} department.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Load Ayurvedic Template</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search templates..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
-          <div className="max-h-96 overflow-y-auto space-y-3">
-            {filteredTemplates.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Leaf className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No Ayurvedic templates found</p>
-                {searchTerm && <p className="text-sm">Try adjusting your search terms</p>}
-              </div>
-            ) : (
-              filteredTemplates.map((template) => (
-                <Card key={template.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{template.name}</h3>
-                          <Badge variant="outline" className="capitalize">
-                            {template.department}
-                          </Badge>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Medicines</p>
-                            <p className="font-medium">{template.medicines?.length || 0}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Pathya</p>
-                            <p className="font-medium">{template.pathya?.length || 0}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Apathya</p>
-                            <p className="font-medium">{template.apathya?.length || 0}</p>
+            {/* Templates List */}
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {filteredTemplates.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No templates found</p>
+                </div>
+              ) : (
+                filteredTemplates.map((template) => (
+                  <Card key={template.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{template.name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {template.department}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {template.medicines.length} medicines
+                            </Badge>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {template.createdBy}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(template.createdAt).toLocaleDateString()}
-                          </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handlePreview(template)} variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Preview
+                          </Button>
+                          <Button onClick={() => handleLoad(template)} size="sm">
+                            Load
+                          </Button>
                         </div>
-
-                        {template.generalInstructions && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">{template.generalInstructions}</p>
-                        )}
                       </div>
-
-                      <Button size="sm" onClick={() => handleLoadTemplate(template)} className="ml-4">
-                        Load Template
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+                    </CardHeader>
+                    {template.description && (
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600">{template.description}</p>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Modal */}
+      {selectedTemplate && (
+        <AyurvedicTemplatePreviewModal
+          open={isPreviewModalOpen}
+          onOpenChange={setIsPreviewModalOpen}
+          template={selectedTemplate}
+        />
+      )}
+    </>
   )
 }
