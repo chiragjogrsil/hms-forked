@@ -5,8 +5,22 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { TestTube, Microscope, Users, Stethoscope, ChevronDown, ChevronRight, Search, Pill, Leaf } from "lucide-react"
+import {
+  TestTube,
+  Microscope,
+  Users,
+  Stethoscope,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Pill,
+  Leaf,
+  FileText,
+  Settings,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 // Master Categories Configuration
 const masterCategories = [
@@ -117,19 +131,10 @@ const masterCategories = [
   },
 ]
 
-interface SettingsSubNavigationProps {
-  selectedCategory: string
-  selectedSubCategory: string
-  onCategoryChange: (categoryId: string, subCategoryId: string) => void
-}
-
-export function SettingsSubNavigation({
-  selectedCategory,
-  selectedSubCategory,
-  onCategoryChange,
-}: SettingsSubNavigationProps) {
+export function SettingsSubNavigation() {
+  const pathname = usePathname()
   const [searchTerm, setSearchTerm] = useState("")
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([selectedCategory])
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) =>
@@ -142,6 +147,27 @@ export function SettingsSubNavigation({
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.subCategories.some((sub) => sub.name.toLowerCase().includes(searchTerm.toLowerCase())),
   )
+
+  const navItems = [
+    {
+      title: "Prescription Templates",
+      href: "/settings",
+      icon: FileText,
+      description: "Manage prescription templates",
+    },
+    {
+      title: "General Settings",
+      href: "/settings/general",
+      icon: Settings,
+      description: "System configuration",
+    },
+    {
+      title: "User Management",
+      href: "/settings/users",
+      icon: Users,
+      description: "Manage users and permissions",
+    },
+  ]
 
   return (
     <div className="w-80 border-r bg-muted/10 flex flex-col">
@@ -160,6 +186,14 @@ export function SettingsSubNavigation({
 
       <ScrollArea className="flex-1">
         <div className="p-2">
+          {navItems.map((item) => (
+            <Button key={item.href} variant={pathname === item.href ? "default" : "outline"} size="sm" asChild>
+              <Link href={item.href} className="flex items-center gap-2">
+                <item.icon className="h-4 w-4" />
+                {item.title}
+              </Link>
+            </Button>
+          ))}
           {filteredCategories.map((category) => (
             <Collapsible
               key={category.id}
@@ -189,11 +223,11 @@ export function SettingsSubNavigation({
                     variant="ghost"
                     className={cn(
                       "w-full justify-start p-2 h-auto mb-1 text-left",
-                      selectedCategory === category.id && selectedSubCategory === subCategory.id
+                      pathname === `/settings/${category.id}/${subCategory.id}`
                         ? "bg-accent text-accent-foreground"
                         : "",
                     )}
-                    onClick={() => onCategoryChange(category.id, subCategory.id)}
+                    onClick={() => (window.location.href = `/settings/${category.id}/${subCategory.id}`)}
                   >
                     <div className="flex items-center gap-2">
                       {category.id === "prescription-templates" && subCategory.id === "ayurvedic-templates" && (

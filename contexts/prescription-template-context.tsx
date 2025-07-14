@@ -3,19 +3,18 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
-export interface AyurvedicPrescription {
+export interface AyurvedicMedicine {
   id: string
-  medicine: string
+  name: string
   dosage: string
+  frequency: string
   duration: string
   instructions: string
-  timing: string
 }
 
-export interface AllopathicPrescription {
+export interface AllopathicMedicine {
   id: string
-  medicine: string
-  strength: string
+  name: string
   dosage: string
   frequency: string
   duration: string
@@ -26,7 +25,7 @@ export interface AyurvedicTemplate {
   id: string
   name: string
   department: string
-  prescriptions: AyurvedicPrescription[]
+  medicines: AyurvedicMedicine[]
   pathya: string[]
   apathya: string[]
   generalInstructions: string
@@ -38,7 +37,7 @@ export interface AllopathicTemplate {
   id: string
   name: string
   department: string
-  prescriptions: AllopathicPrescription[]
+  medicines: AllopathicMedicine[]
   dietaryConstraints: string[]
   generalInstructions: string
   createdBy: string
@@ -46,19 +45,14 @@ export interface AllopathicTemplate {
 }
 
 interface PrescriptionTemplateContextType {
-  // Ayurvedic Templates
   ayurvedicTemplates: AyurvedicTemplate[]
-  saveAyurvedicTemplate: (template: Omit<AyurvedicTemplate, "id" | "createdAt">) => void
-  loadAyurvedicTemplate: (id: string) => AyurvedicTemplate | null
-  deleteAyurvedicTemplate: (id: string) => void
-  getAllAyurvedicTemplates: () => AyurvedicTemplate[]
-
-  // Allopathic Templates
   allopathicTemplates: AllopathicTemplate[]
+  saveAyurvedicTemplate: (template: Omit<AyurvedicTemplate, "id" | "createdAt">) => void
   saveAllopathicTemplate: (template: Omit<AllopathicTemplate, "id" | "createdAt">) => void
-  loadAllopathicTemplate: (id: string) => AllopathicTemplate | null
+  deleteAyurvedicTemplate: (id: string) => void
   deleteAllopathicTemplate: (id: string) => void
-  getAllAllopathicTemplates: () => AllopathicTemplate[]
+  getAyurvedicTemplate: (id: string) => AyurvedicTemplate | undefined
+  getAllopathicTemplate: (id: string) => AllopathicTemplate | undefined
 }
 
 const PrescriptionTemplateContext = createContext<PrescriptionTemplateContextType | undefined>(undefined)
@@ -69,28 +63,36 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
 
   // Load templates from localStorage on mount
   useEffect(() => {
-    const savedAyurvedicTemplates = localStorage.getItem("ayurvedic-templates")
-    const savedAllopathicTemplates = localStorage.getItem("allopathic-templates")
+    const savedAyurvedic = localStorage.getItem("ayurvedic-templates")
+    const savedAllopathic = localStorage.getItem("allopathic-templates")
 
-    if (savedAyurvedicTemplates) {
-      setAyurvedicTemplates(JSON.parse(savedAyurvedicTemplates))
+    if (savedAyurvedic) {
+      try {
+        setAyurvedicTemplates(JSON.parse(savedAyurvedic))
+      } catch (error) {
+        console.error("Error loading ayurvedic templates:", error)
+      }
     }
 
-    if (savedAllopathicTemplates) {
-      setAllopathicTemplates(JSON.parse(savedAllopathicTemplates))
+    if (savedAllopathic) {
+      try {
+        setAllopathicTemplates(JSON.parse(savedAllopathic))
+      } catch (error) {
+        console.error("Error loading allopathic templates:", error)
+      }
     }
   }, [])
 
-  // Save to localStorage whenever templates change
+  // Save ayurvedic templates to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("ayurvedic-templates", JSON.stringify(ayurvedicTemplates))
   }, [ayurvedicTemplates])
 
+  // Save allopathic templates to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("allopathic-templates", JSON.stringify(allopathicTemplates))
   }, [allopathicTemplates])
 
-  // Ayurvedic Template Functions
   const saveAyurvedicTemplate = (template: Omit<AyurvedicTemplate, "id" | "createdAt">) => {
     const newTemplate: AyurvedicTemplate = {
       ...template,
@@ -100,19 +102,6 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
     setAyurvedicTemplates((prev) => [...prev, newTemplate])
   }
 
-  const loadAyurvedicTemplate = (id: string): AyurvedicTemplate | null => {
-    return ayurvedicTemplates.find((template) => template.id === id) || null
-  }
-
-  const deleteAyurvedicTemplate = (id: string) => {
-    setAyurvedicTemplates((prev) => prev.filter((template) => template.id !== id))
-  }
-
-  const getAllAyurvedicTemplates = (): AyurvedicTemplate[] => {
-    return ayurvedicTemplates
-  }
-
-  // Allopathic Template Functions
   const saveAllopathicTemplate = (template: Omit<AllopathicTemplate, "id" | "createdAt">) => {
     const newTemplate: AllopathicTemplate = {
       ...template,
@@ -122,31 +111,33 @@ export function PrescriptionTemplateProvider({ children }: { children: React.Rea
     setAllopathicTemplates((prev) => [...prev, newTemplate])
   }
 
-  const loadAllopathicTemplate = (id: string): AllopathicTemplate | null => {
-    return allopathicTemplates.find((template) => template.id === id) || null
+  const deleteAyurvedicTemplate = (id: string) => {
+    setAyurvedicTemplates((prev) => prev.filter((template) => template.id !== id))
   }
 
   const deleteAllopathicTemplate = (id: string) => {
     setAllopathicTemplates((prev) => prev.filter((template) => template.id !== id))
   }
 
-  const getAllAllopathicTemplates = (): AllopathicTemplate[] => {
-    return allopathicTemplates
+  const getAyurvedicTemplate = (id: string) => {
+    return ayurvedicTemplates.find((template) => template.id === id)
+  }
+
+  const getAllopathicTemplate = (id: string) => {
+    return allopathicTemplates.find((template) => template.id === id)
   }
 
   return (
     <PrescriptionTemplateContext.Provider
       value={{
         ayurvedicTemplates,
-        saveAyurvedicTemplate,
-        loadAyurvedicTemplate,
-        deleteAyurvedicTemplate,
-        getAllAyurvedicTemplates,
         allopathicTemplates,
+        saveAyurvedicTemplate,
         saveAllopathicTemplate,
-        loadAllopathicTemplate,
+        deleteAyurvedicTemplate,
         deleteAllopathicTemplate,
-        getAllAllopathicTemplates,
+        getAyurvedicTemplate,
+        getAllopathicTemplate,
       }}
     >
       {children}
