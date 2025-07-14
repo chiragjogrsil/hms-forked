@@ -19,7 +19,6 @@ import {
   History,
   TestTube,
   Zap,
-  Heart,
   Video,
   FileTextIcon,
   Receipt,
@@ -32,7 +31,6 @@ import { useConsultation } from "@/contexts/consultation-context"
 import { toast } from "sonner"
 import { LaboratorySection } from "@/components/laboratory-section"
 import { RadiologySection } from "@/components/radiology-section"
-import { ProceduresSection } from "@/components/procedures-section"
 import {
   Dialog,
   DialogContent,
@@ -452,7 +450,7 @@ export default function PatientDetailsPage() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="consultation">
             Consultation & History
@@ -464,7 +462,6 @@ export default function PatientDetailsPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="procedures">Procedures</TabsTrigger>
           <TabsTrigger value="telemedicine">Telemedicine</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -839,7 +836,11 @@ export default function PatientDetailsPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
                               <FileTextIcon className="h-4 w-4 mr-2" />
                               View Details
                             </Button>
@@ -937,7 +938,11 @@ export default function PatientDetailsPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
-                            <Button size="sm" variant="outline" className="border-slate-300 hover:bg-slate-50">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+                            >
                               <FileTextIcon className="h-4 w-4 mr-2" />
                               View Details
                             </Button>
@@ -960,7 +965,6 @@ export default function PatientDetailsPage() {
           )}
         </TabsContent>
 
-        {/* Services, Telemedicine, Invoices, and Reports tabs remain the same as before */}
         <TabsContent value="services" className="space-y-6">
           <div className="bg-gradient-to-br from-teal-50 via-white to-blue-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-center gap-3 mb-6">
@@ -1005,22 +1009,6 @@ export default function PatientDetailsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="procedures" className="space-y-6">
-          <div className="bg-gradient-to-br from-green-50 via-white to-orange-50/30 rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-800">Medical Procedures & Treatments</h3>
-                <p className="text-sm text-slate-600">Specialized therapeutic procedures</p>
-              </div>
-            </div>
-            <ProceduresSection patientId={patientId} patientName={mockPatient.name} />
-          </div>
-        </TabsContent>
-
-        {/* Remaining tabs content (telemedicine, invoices, reports) and modals remain the same */}
         <TabsContent value="telemedicine" className="space-y-6">
           <div className="text-center py-12">
             <Video className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -1046,7 +1034,7 @@ export default function PatientDetailsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* All modals remain the same as before */}
+      {/* New Consultation Modal */}
       <Dialog open={isNewConsultationModalOpen} onOpenChange={setIsNewConsultationModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -1134,7 +1122,196 @@ export default function PatientDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Other modals would go here but keeping response concise */}
+      {/* Incomplete Visits Modal */}
+      <Dialog open={isIncompleteVisitsModalOpen} onOpenChange={setIsIncompleteVisitsModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              Incomplete Visits Found
+            </DialogTitle>
+            <DialogDescription>
+              This patient has incomplete visits that need to be completed before starting a new consultation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4 max-h-60 overflow-y-auto">
+            {incompleteVisits.map((visit) => (
+              <div key={visit.id} className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-orange-800">{visit.chiefComplaint || "General Consultation"}</p>
+                    <p className="text-sm text-orange-600">
+                      {new Date(visit.visitDate).toLocaleDateString()} - {visit.doctorName}
+                    </p>
+                    <p className="text-sm text-orange-600">
+                      Department:{" "}
+                      {departmentLabels[visit.department as keyof typeof departmentLabels] || visit.department}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleCompleteIncompleteVisit(visit.id)}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    Complete Visit
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsIncompleteVisitsModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Medical Certificate Modal */}
+      <Dialog open={isMedicalCertificateOpen} onOpenChange={setIsMedicalCertificateOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Generate Medical Certificate</DialogTitle>
+            <DialogDescription>Create a medical certificate for {mockPatient.name}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="ailment">Medical Condition/Ailment *</Label>
+              <input
+                id="ailment"
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={certificateData.ailment}
+                onChange={(e) => setCertificateData({ ...certificateData, ailment: e.target.value })}
+                placeholder="e.g., Acute respiratory infection"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="duration">Rest Duration *</Label>
+              <input
+                id="duration"
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={certificateData.duration}
+                onChange={(e) => setCertificateData({ ...certificateData, duration: e.target.value })}
+                placeholder="e.g., 3 days"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recommendations">Medical Recommendations</Label>
+              <textarea
+                id="recommendations"
+                className="w-full p-2 border border-gray-300 rounded-md h-20"
+                value={certificateData.recommendations}
+                onChange={(e) => setCertificateData({ ...certificateData, recommendations: e.target.value })}
+                placeholder="Additional medical recommendations..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="issueDate">Issue Date *</Label>
+              <input
+                id="issueDate"
+                type="date"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={certificateData.issueDate}
+                onChange={(e) => setCertificateData({ ...certificateData, issueDate: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMedicalCertificateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateCertificate}
+              disabled={!certificateData.ailment || !certificateData.duration}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              <FileTextIcon className="h-4 w-4 mr-2" />
+              Generate Certificate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Consent Form Modal */}
+      <Dialog open={isConsentFormOpen} onOpenChange={setIsConsentFormOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Generate Consent Form</DialogTitle>
+            <DialogDescription>Create a consent form for medical procedure</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="procedureName">Procedure Name *</Label>
+              <input
+                id="procedureName"
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={consentData.procedureName}
+                onChange={(e) => setConsentData({ ...consentData, procedureName: e.target.value })}
+                placeholder="e.g., Minor surgical procedure"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="procedureDuration">Expected Duration *</Label>
+              <input
+                id="procedureDuration"
+                type="text"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={consentData.procedureDuration}
+                onChange={(e) => setConsentData({ ...consentData, procedureDuration: e.target.value })}
+                placeholder="e.g., 30-45 minutes"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="procedureDate">Procedure Date *</Label>
+              <input
+                id="procedureDate"
+                type="date"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                value={consentData.procedureDate}
+                onChange={(e) => setConsentData({ ...consentData, procedureDate: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="additionalNotes">Additional Notes</Label>
+              <textarea
+                id="additionalNotes"
+                className="w-full p-2 border border-gray-300 rounded-md h-20"
+                value={consentData.additionalNotes}
+                onChange={(e) => setConsentData({ ...consentData, additionalNotes: e.target.value })}
+                placeholder="Any additional information or special instructions..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConsentFormOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateConsentForm}
+              disabled={!consentData.procedureName || !consentData.procedureDuration}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              <FileTextIcon className="h-4 w-4 mr-2" />
+              Generate Consent Form
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
