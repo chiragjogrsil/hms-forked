@@ -1,5 +1,4 @@
 "use client"
-import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 
@@ -12,6 +11,15 @@ interface DateRangePickerProps {
   className?: string
   date: DateRange | undefined
   setDate: (date: DateRange) => void
+}
+
+// Helper function to format date without date-fns
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
 }
 
 export function DateRangePicker({ className, date, setDate }: DateRangePickerProps) {
@@ -28,10 +36,10 @@ export function DateRangePicker({ className, date, setDate }: DateRangePickerPro
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                  {formatDate(date.from)} - {formatDate(date.to)}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                formatDate(date.from)
               )
             ) : (
               <span>Pick a date range</span>

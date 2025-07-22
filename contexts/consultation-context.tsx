@@ -3,9 +3,44 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
 
+interface VitalSigns {
+  temperature: string
+  bloodPressure: string
+  heartRate: string
+  respiratoryRate: string
+  oxygenSaturation: string
+  weight: string
+  height: string
+}
+
+interface Prescription {
+  id: string
+  medication: string
+  dosage: string
+  frequency: string
+  duration: string
+  instructions: string
+}
+
+interface LabTest {
+  id: string
+  name: string
+  category: string
+  urgency: "routine" | "urgent" | "stat"
+  instructions?: string
+}
+
+interface RadiologyTest {
+  id: string
+  name: string
+  category: string
+  urgency: "routine" | "urgent" | "stat"
+  instructions?: string
+}
+
 interface ConsultationData {
   id?: string
-  patientId?: string
+  patientId: string
   patientName?: string
   visitDate?: string
   visitTime?: string
@@ -15,78 +50,21 @@ interface ConsultationData {
   consultationType?: string
 
   // Clinical Data
-  chiefComplaint?: string
-  historyOfPresentIllness?: string
-  pastMedicalHistory?: string[]
-  familyHistory?: string
-  socialHistory?: string
-  allergies?: string[]
-  currentMedications?: string[]
-
-  // Physical Examination
-  vitals?: {
-    bloodPressure?: string
-    pulse?: string
-    temperature?: string
-    respiratoryRate?: string
-    spo2?: string
-    weight?: string
-    height?: string
-    bmi?: string
-  }
-
-  // System Review
-  systemReview?: {
-    cardiovascular?: string
-    respiratory?: string
-    gastrointestinal?: string
-    neurological?: string
-    musculoskeletal?: string
-    genitourinary?: string
-    endocrine?: string
-    dermatological?: string
-  }
-
-  // Clinical Assessment
-  clinicalFindings?: string
-  provisionalDiagnosis?: string[]
-  differentialDiagnosis?: string[]
-
-  // Investigations
-  investigationsOrdered?: Array<{
-    id: string
-    category: string
-    test: string
-    urgency: string
-    notes?: string
-  }>
-
-  // Treatment Plan
-  prescriptions?: {
-    ayurvedic?: Array<{
-      id: string
-      medicine: string
-      dosage: string
-      frequency: string
-      duration: string
-      instructions: string
-      beforeAfterFood: string
-    }>
-    allopathic?: Array<{
-      id: string
-      medicine: string
-      dosage: string
-      frequency: string
-      duration: string
-      instructions: string
-      beforeAfterFood: string
-    }>
-  }
-
-  // Follow-up and Advice
-  advice?: string
-  followUpDate?: string
-  followUpInstructions?: string
+  chiefComplaint: string
+  historyOfPresentIllness: string
+  pastMedicalHistory: string
+  familyHistory: string
+  socialHistory: string
+  reviewOfSystems: string
+  vitalSigns: VitalSigns
+  physicalExamination: string
+  assessment: string
+  plan: string
+  prescriptions: Prescription[]
+  labTests: LabTest[]
+  radiologyTests: RadiologyTest[]
+  followUpInstructions: string
+  nextAppointment?: Date
 
   // Administrative
   consultationFee?: number
@@ -158,6 +136,16 @@ interface ConsultationContextType {
   hasIncompleteVisits: (patientId: string) => ConsultationData[]
   completeIncompleteVisit: (consultationId: string) => Promise<boolean>
 
+  // Additional functions for consultation data management
+  updateConsultationField: (field: keyof ConsultationData, value: any) => void
+  addPrescription: (prescription: Prescription) => void
+  removePrescription: (prescriptionId: string) => void
+  addLabTest: (test: LabTest) => void
+  removeLabTest: (testId: string) => void
+  addRadiologyTest: (test: RadiologyTest) => void
+  removeRadiologyTest: (testId: string) => void
+  clearConsultation: () => void
+
   debugConsultationHistory: () => ConsultationData[]
 }
 
@@ -178,27 +166,30 @@ const mockConsultationHistory: ConsultationData[] = [
     clinicalNotes:
       "Patient reports improved blood pressure control with current medication regimen. No chest pain or shortness of breath. Compliance with medication is good.",
     provisionalDiagnosis: ["Essential Hypertension - Well Controlled"],
-    vitals: {
-      bloodPressure: "128/82",
-      pulse: "72",
+    vitalSigns: {
       temperature: "98.6",
+      bloodPressure: "128/82",
+      heartRate: "72",
+      respiratoryRate: "",
+      oxygenSaturation: "",
       weight: "75",
       height: "175",
     },
-    prescriptions: {
-      allopathic: [
-        {
-          id: "1",
-          medicine: "Lisinopril",
-          dosage: "10mg",
-          frequency: "Once daily",
-          duration: "30 days",
-          instructions: "Continue current dose",
-          beforeAfterFood: "before",
-        },
-      ],
-      ayurvedic: [],
-    },
+    physicalExamination: "",
+    assessment: "",
+    plan: "",
+    prescriptions: [
+      {
+        id: "1",
+        medication: "Lisinopril",
+        dosage: "10mg",
+        frequency: "Once daily",
+        duration: "30 days",
+        instructions: "Continue current dose",
+      },
+    ],
+    labTests: [],
+    radiologyTests: [],
     advice: "Continue current medication. Monitor blood pressure at home. Follow low-sodium diet.",
     status: "completed",
     createdAt: "2024-06-20T14:30:00.000Z",
@@ -217,18 +208,21 @@ const mockConsultationHistory: ConsultationData[] = [
     clinicalNotes:
       "Comprehensive health assessment. Patient appears well. No acute complaints. Discussed preventive care measures.",
     provisionalDiagnosis: ["Annual Health Maintenance"],
-    vitals: {
-      bloodPressure: "130/85",
-      pulse: "68",
+    vitalSigns: {
       temperature: "98.4",
+      bloodPressure: "130/85",
+      heartRate: "68",
+      respiratoryRate: "",
+      oxygenSaturation: "",
       weight: "74",
       height: "175",
-      bmi: "24.1",
     },
-    prescriptions: {
-      allopathic: [],
-      ayurvedic: [],
-    },
+    physicalExamination: "",
+    assessment: "",
+    plan: "",
+    prescriptions: [],
+    labTests: [],
+    radiologyTests: [],
     advice: "Continue healthy lifestyle. Schedule follow-up in 6 months. Consider flu vaccination.",
     status: "completed",
     createdAt: "2024-06-15T10:15:00.000Z",
@@ -247,34 +241,38 @@ const mockConsultationHistory: ConsultationData[] = [
     clinicalNotes:
       "Patient reports occasional indigestion and work-related stress. Seeking natural remedies for overall wellness.",
     provisionalDiagnosis: ["Digestive Imbalance", "Stress-related symptoms"],
-    vitals: {
-      bloodPressure: "125/80",
-      pulse: "70",
+    vitalSigns: {
       temperature: "98.2",
+      bloodPressure: "125/80",
+      heartRate: "70",
+      respiratoryRate: "",
+      oxygenSaturation: "",
+      weight: "75",
+      height: "175",
     },
-    prescriptions: {
-      allopathic: [],
-      ayurvedic: [
-        {
-          id: "1",
-          medicine: "Triphala Churna",
-          dosage: "1 tsp",
-          frequency: "Twice daily",
-          duration: "15 days",
-          instructions: "Mix with warm water",
-          beforeAfterFood: "after",
-        },
-        {
-          id: "2",
-          medicine: "Brahmi Ghrita",
-          dosage: "1/2 tsp",
-          frequency: "Once daily",
-          duration: "21 days",
-          instructions: "Take with warm milk",
-          beforeAfterFood: "before",
-        },
-      ],
-    },
+    physicalExamination: "",
+    assessment: "",
+    plan: "",
+    prescriptions: [
+      {
+        id: "1",
+        medication: "Triphala Churna",
+        dosage: "1 tsp",
+        frequency: "Twice daily",
+        duration: "15 days",
+        instructions: "Mix with warm water",
+      },
+      {
+        id: "2",
+        medication: "Brahmi Ghrita",
+        dosage: "1/2 tsp",
+        frequency: "Once daily",
+        duration: "21 days",
+        instructions: "Take with warm milk",
+      },
+    ],
+    labTests: [],
+    radiologyTests: [],
     advice: "Practice pranayama daily. Avoid spicy foods. Follow regular meal timings.",
     status: "completed",
     createdAt: "2024-06-10T16:45:00.000Z",
@@ -293,25 +291,30 @@ const mockConsultationHistory: ConsultationData[] = [
     clinicalNotes:
       "Patient reports mild lower back pain after recent gym sessions. No radiation to legs. Pain is mechanical in nature.",
     provisionalDiagnosis: ["Mechanical Lower Back Pain"],
-    vitals: {
-      bloodPressure: "122/78",
-      pulse: "65",
+    vitalSigns: {
       temperature: "98.1",
+      bloodPressure: "122/78",
+      heartRate: "65",
+      respiratoryRate: "",
+      oxygenSaturation: "",
+      weight: "74",
+      height: "175",
     },
-    prescriptions: {
-      allopathic: [
-        {
-          id: "1",
-          medicine: "Ibuprofen",
-          dosage: "400mg",
-          frequency: "Twice daily",
-          duration: "5 days",
-          instructions: "Take with food",
-          beforeAfterFood: "after",
-        },
-      ],
-      ayurvedic: [],
-    },
+    physicalExamination: "",
+    assessment: "",
+    plan: "",
+    prescriptions: [
+      {
+        id: "1",
+        medication: "Ibuprofen",
+        dosage: "400mg",
+        frequency: "Twice daily",
+        duration: "5 days",
+        instructions: "Take with food",
+      },
+    ],
+    labTests: [],
+    radiologyTests: [],
     advice: "Apply heat therapy. Avoid heavy lifting. Start gentle stretching exercises.",
     status: "completed",
     createdAt: "2024-06-05T11:20:00.000Z",
@@ -391,34 +394,25 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
 
       // Clinical Data
       historyOfPresentIllness: "",
-      pastMedicalHistory: [],
+      pastMedicalHistory: "",
       familyHistory: "",
       socialHistory: "",
-      allergies: [],
-      currentMedications: [],
-
-      // Physical Examination
-      vitals: {},
-
-      // System Review
-      systemReview: {},
-
-      // Clinical Assessment
-      clinicalFindings: "",
-      provisionalDiagnosis: [],
-      differentialDiagnosis: [],
-
-      // Investigations
-      investigationsOrdered: [],
-
-      // Treatment Plan
-      prescriptions: {
-        ayurvedic: [],
-        allopathic: [],
+      reviewOfSystems: "",
+      vitalSigns: {
+        temperature: "",
+        bloodPressure: "",
+        heartRate: "",
+        respiratoryRate: "",
+        oxygenSaturation: "",
+        weight: "",
+        height: "",
       },
-
-      // Follow-up and Advice
-      advice: "",
+      physicalExamination: "",
+      assessment: "",
+      plan: "",
+      prescriptions: [],
+      labTests: [],
+      radiologyTests: [],
       followUpInstructions: "",
 
       // Administrative
@@ -779,6 +773,73 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateConsultationField = (field: keyof ConsultationData, value: any) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        [field]: value,
+      })
+    }
+  }
+
+  const addPrescription = (prescription: Prescription) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        prescriptions: [...activeConsultation.prescriptions, prescription],
+      })
+    }
+  }
+
+  const removePrescription = (prescriptionId: string) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        prescriptions: activeConsultation.prescriptions.filter((p) => p.id !== prescriptionId),
+      })
+    }
+  }
+
+  const addLabTest = (test: LabTest) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        labTests: [...activeConsultation.labTests, test],
+      })
+    }
+  }
+
+  const removeLabTest = (testId: string) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        labTests: activeConsultation.labTests.filter((t) => t.id !== testId),
+      })
+    }
+  }
+
+  const addRadiologyTest = (test: RadiologyTest) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        radiologyTests: [...activeConsultation.radiologyTests, test],
+      })
+    }
+  }
+
+  const removeRadiologyTest = (testId: string) => {
+    if (activeConsultation) {
+      setActiveConsultation({
+        ...activeConsultation,
+        radiologyTests: activeConsultation.radiologyTests.filter((t) => t.id !== testId),
+      })
+    }
+  }
+
+  const clearConsultation = () => {
+    setActiveConsultation(null)
+  }
+
   // Add this function to the context value
   const debugConsultationHistory = () => {
     console.log("Current consultation history:", consultationHistory)
@@ -813,6 +874,14 @@ export function ConsultationProvider({ children }: { children: ReactNode }) {
         loadInProgressConsultation,
         hasIncompleteVisits,
         completeIncompleteVisit,
+        updateConsultationField,
+        addPrescription,
+        removePrescription,
+        addLabTest,
+        removeLabTest,
+        addRadiologyTest,
+        removeRadiologyTest,
+        clearConsultation,
         debugConsultationHistory,
       }}
     >

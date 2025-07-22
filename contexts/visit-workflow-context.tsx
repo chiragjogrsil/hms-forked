@@ -1,105 +1,91 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 
-interface VisitWorkflowState {
-  currentStep: "registration" | "vitals" | "consultation" | "tests" | "billing"
-  visitId?: string
-  patientId?: string
-  completedSteps: string[]
-  visitData?: any
+export type WorkflowStep = "registration" | "vital-signs" | "consultation" | "prescription" | "billing" | "completed"
+
+interface Visit {
+  id: string
+  patientId: string
+  patientName: string
+  currentStep: WorkflowStep
+  startTime: Date
+  completedSteps: WorkflowStep[]
+  notes?: string
 }
 
 interface VisitWorkflowContextType {
-  workflowState: VisitWorkflowState
-  startNewVisit: (patientId: string, visitData: any) => void
-  completeStep: (step: string, data?: any) => void
-  goToStep: (step: string) => void
-  resetWorkflow: () => void
-  isStepCompleted: (step: string) => boolean
-  canAccessStep: (step: string) => boolean
+  currentVisit: Visit | null
+  setCurrentVisit: (visit: Visit | null) => void
+  updateVisitStep: (step: WorkflowStep) => void
+  completeStep: (step: WorkflowStep) => void
+  isStepCompleted: (step: WorkflowStep) => boolean
+  canAccessStep: (step: WorkflowStep) => boolean
 }
 
 const VisitWorkflowContext = createContext<VisitWorkflowContextType | undefined>(undefined)
 
-const stepOrder = ["registration", "vitals", "consultation", "tests", "billing"]
+const stepOrder: WorkflowStep[] = [
+  "registration",
+  "vital-signs",
+  "consultation",
+  "prescription",
+  "billing",
+  "completed",
+]
 
-export function VisitWorkflowProvider({ children }: { children: React.ReactNode }) {
-  const [workflowState, setWorkflowState] = useState<VisitWorkflowState>({
-    currentStep: "registration",
-    completedSteps: [],
-  })
+export function VisitWorkflowProvider({ children }: { children: ReactNode }) {
+  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null)
 
-  const startNewVisit = useCallback((patientId: string, visitData: any) => {
-    const visitId = `visit-${Date.now()}`
-    setWorkflowState({
-      currentStep: "vitals", // Move to vitals after registration
-      visitId,
-      patientId,
-      completedSteps: ["registration"],
-      visitData,
-    })
-  }, [])
+  const updateVisitStep = (step: WorkflowStep) => {
+    if (currentVisit) {
+      setCurrentVisit({
+        ...currentVisit,
+        currentStep: step,
+      })
+    }
+  }
 
-  const completeStep = useCallback((step: string, data?: any) => {
-    setWorkflowState((prev) => {
-      const newCompletedSteps = [...prev.completedSteps]
-      if (!newCompletedSteps.includes(step)) {
-        newCompletedSteps.push(step)
+  const completeStep = (step: WorkflowStep) => {
+    if (currentVisit) {
+      const updatedCompletedSteps = [...currentVisit.completedSteps]
+      if (!updatedCompletedSteps.includes(step)) {
+        updatedCompletedSteps.push(step)
       }
 
       // Auto-advance to next step
       const currentIndex = stepOrder.indexOf(step)
       const nextStep = stepOrder[currentIndex + 1]
 
-      return {
-        ...prev,
-        completedSteps: newCompletedSteps,
+      setCurrentVisit({
+        ...currentVisit,
+        completedSteps: updatedCompletedSteps,
         currentStep: nextStep || step,
-        visitData: { ...prev.visitData, [step]: data },
-      }
-    })
-  }, [])
+      })
+    }
+  }
 
-  const goToStep = useCallback((step: string) => {
-    setWorkflowState((prev) => ({
-      ...prev,
-      currentStep: step as any,
-    }))
-  }, [])
+  const isStepCompleted = (step: WorkflowStep): boolean => {
+    return currentVisit?.completedSteps.includes(step) || false
+  }
 
-  const resetWorkflow = useCallback(() => {
-    setWorkflowState({
-      currentStep: "registration",
-      completedSteps: [],
-    })
-  }, [])
+  const canAccessStep = (step: WorkflowStep): boolean => {
+    if (!currentVisit) return false
 
-  const isStepCompleted = useCallback(
-    (step: string) => {
-      return workflowState.completedSteps.includes(step)
-    },
-    [workflowState.completedSteps],
-  )
+    const stepIndex = stepOrder.indexOf(step)
+    const currentStepIndex = stepOrder.indexOf(currentVisit.currentStep)
 
-  const canAccessStep = useCallback(
-    (step: string) => {
-      const stepIndex = stepOrder.indexOf(step)
-      const currentIndex = stepOrder.indexOf(workflowState.currentStep)
-      return stepIndex <= currentIndex || workflowState.completedSteps.includes(step)
-    },
-    [workflowState.currentStep, workflowState.completedSteps],
-  )
+    // Can access current step or any completed step
+    return stepIndex <= currentStepIndex || isStepCompleted(step)
+  }
 
   return (
     <VisitWorkflowContext.Provider
       value={{
-        workflowState,
-        startNewVisit,
+        currentVisit,
+        setCurrentVisit,
+        updateVisitStep,
         completeStep,
-        goToStep,
-        resetWorkflow,
         isStepCompleted,
         canAccessStep,
       }}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Edit, Trash2, Pill, CheckCircle2, X } from "lucide-react"
+import { Plus, Edit, Trash2, Pill, Download, CheckCircle2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { PrescriptionTemplateManager } from "@/components/prescription-template-manager"
+import { usePrescriptionTemplates } from "@/contexts/prescription-template-context"
 
 interface AllopathicPrescriptionProps {
   department: string
@@ -297,6 +297,9 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPrescription, setEditingPrescription] = useState(null)
   const [showInitialOptions, setShowInitialOptions] = useState(data.length === 0)
+  const { getTemplatesByDepartment } = usePrescriptionTemplates()
+
+  const templates = getTemplatesByDepartment(department)
 
   const [overallDietaryConstraints, setOverallDietaryConstraints] = useState<string[]>([])
   const [newDietaryConstraint, setNewDietaryConstraint] = useState("")
@@ -350,13 +353,8 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
     onChange(data.filter((item) => item.id !== id))
   }
 
-  const handleLoadTemplate = (templateData: any) => {
-    if (templateData.prescriptions) {
-      onChange(templateData.prescriptions)
-    }
-    if (templateData.dietaryConstraints) {
-      setOverallDietaryConstraints(templateData.dietaryConstraints)
-    }
+  const handleLoadTemplate = (template: any) => {
+    onChange(template.allopathicPrescriptions || [])
     setShowInitialOptions(false)
   }
 
@@ -389,16 +387,6 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
             </Badge>
           )}
         </div>
-        {!readOnly && (
-          <PrescriptionTemplateManager
-            type="allopathic"
-            prescriptions={data}
-            department={department}
-            onLoadTemplate={handleLoadTemplate}
-            dietaryConstraints={overallDietaryConstraints}
-            readOnly={readOnly}
-          />
-        )}
       </div>
 
       {data.length === 0 && showInitialOptions ? (
@@ -412,6 +400,21 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Prescription
               </Button>
+              {templates.length > 0 && (
+                <Button
+                  onClick={() => {
+                    if (templates[0]) {
+                      handleLoadTemplate(templates[0])
+                    }
+                  }}
+                  variant="outline"
+                  className="border-primary/30 text-primary hover:bg-primary/5"
+                  disabled={readOnly}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Load from Template
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -494,7 +497,7 @@ export function AllopathicPrescription({ department, data, onChange, readOnly = 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-6 text-xs bg-transparent"
+                            className="h-6 text-xs"
                             onClick={() => addOverallDietaryConstraint(item)}
                           >
                             <Plus className="h-2 w-2 mr-1" />
