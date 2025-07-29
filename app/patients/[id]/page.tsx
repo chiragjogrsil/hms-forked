@@ -1,5 +1,7 @@
 "use client"
 
+import { CardDescription } from "@/components/ui/card"
+
 import { CardTitle } from "@/components/ui/card"
 
 import { useState, useEffect } from "react"
@@ -28,12 +30,18 @@ import {
   AlertCircle,
   Download,
   Printer,
+  Search,
+  MoreHorizontal,
+  Play,
+  Upload,
+  Eye,
+  Clock,
+  Heart,
+  Camera,
 } from "lucide-react"
 import { IntegratedConsultation } from "@/components/integrated-consultation"
 import { useConsultation } from "@/contexts/consultation-context"
 import { toast } from "sonner"
-import { LaboratorySection } from "@/components/laboratory-section"
-import { RadiologySection } from "@/components/radiology-section"
 import { ConsultationPrintModal } from "@/components/modals/consultation-print-modal"
 import {
   Dialog,
@@ -45,6 +53,8 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 // Mock patient data
 const mockPatient = {
@@ -65,6 +75,190 @@ const mockPatient = {
   medicalHistory: ["Hypertension", "Type 2 Diabetes", "Previous heart surgery (2019)"],
   currentMedications: ["Metformin 500mg twice daily", "Lisinopril 10mg once daily"],
 }
+
+// Mock services data - combining all service types
+const mockServicesData = [
+  // Laboratory Tests
+  {
+    id: "LAB001",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Complete Blood Count",
+    department: "Laboratory",
+    serviceType: "laboratory",
+    requestedBy: "Dr. Smith",
+    priority: "High",
+    status: "Sample Requested",
+    scheduledTime: "10:30 AM",
+    requestedTime: "9:45 AM",
+    notes: "Fasting required - Patient to fast for 12 hours",
+    technician: "Tech. Sarah",
+    sampleType: "Blood",
+    testCode: "CBC001",
+    barcode: "1234567890123",
+  },
+  {
+    id: "LAB002",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Lipid Profile",
+    department: "Laboratory",
+    serviceType: "laboratory",
+    requestedBy: "Dr. Johnson",
+    priority: "Medium",
+    status: "Sample Collected",
+    scheduledTime: "9:00 AM",
+    requestedTime: "8:30 AM",
+    collectionTime: "9:05 AM",
+    notes: "12-hour fasting confirmed",
+    technician: "Tech. Mike",
+    sampleType: "Blood",
+    testCode: "LIP001",
+    barcode: "1234567890124",
+  },
+  {
+    id: "LAB003",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Thyroid Function Test",
+    department: "Laboratory",
+    serviceType: "laboratory",
+    requestedBy: "Dr. Brown",
+    priority: "Low",
+    status: "Testing Started",
+    scheduledTime: "8:30 AM",
+    requestedTime: "8:00 AM",
+    collectionTime: "8:35 AM",
+    testingStartTime: "9:00 AM",
+    notes: "No special preparation required",
+    technician: "Tech. Sarah",
+    sampleType: "Blood",
+    testCode: "TFT001",
+    barcode: "1234567890125",
+  },
+  // Radiology Services
+  {
+    id: "RAD001",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Chest X-Ray",
+    department: "Radiology",
+    serviceType: "radiology",
+    requestedBy: "Dr. Johnson",
+    priority: "Medium",
+    status: "Requested",
+    scheduledTime: "2:00 PM",
+    requestedTime: "1:30 PM",
+    notes: "Remove jewelry and metal objects",
+    technician: "Tech. David",
+    serviceCode: "CXR001",
+    barcode: "9876543210001",
+  },
+  {
+    id: "RAD002",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Abdominal Ultrasound",
+    department: "Radiology",
+    serviceType: "radiology",
+    requestedBy: "Dr. Lee",
+    priority: "High",
+    status: "Testing Started",
+    scheduledTime: "3:00 PM",
+    requestedTime: "2:30 PM",
+    testingStartTime: "3:05 PM",
+    notes: "Patient fasting for 8 hours",
+    technician: "Tech. Maria",
+    serviceCode: "USG001",
+    barcode: "9876543210002",
+  },
+  // Cardiology Services
+  {
+    id: "CARD001",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "ECG",
+    department: "Cardiology",
+    serviceType: "cardiology",
+    requestedBy: "Dr. Wilson",
+    priority: "High",
+    status: "Reports Uploaded",
+    scheduledTime: "11:15 AM",
+    requestedTime: "10:45 AM",
+    testingStartTime: "11:20 AM",
+    testingCompletedTime: "11:35 AM",
+    reportUploadTime: "11:50 AM",
+    notes: "Patient anxious - results show normal sinus rhythm",
+    technician: "Tech. Lisa",
+    serviceCode: "ECG001",
+    reportUrl: "/reports/ecg-001.pdf",
+    barcode: "5555666677778",
+  },
+  {
+    id: "CARD002",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Echocardiogram",
+    department: "Cardiology",
+    serviceType: "cardiology",
+    requestedBy: "Dr. Patel",
+    priority: "Medium",
+    status: "Requested",
+    scheduledTime: "5:00 PM",
+    requestedTime: "4:30 PM",
+    notes: "Evaluate heart function post-surgery",
+    technician: "Tech. Lisa",
+    serviceCode: "ECHO001",
+    barcode: "5555666677779",
+  },
+  // Physiotherapy Services
+  {
+    id: "PHYS001",
+    patientName: "John Doe",
+    patientId: "P12345",
+    serviceName: "Physical Therapy Session",
+    department: "Physiotherapy",
+    serviceType: "physiotherapy",
+    requestedBy: "Dr. Anderson",
+    priority: "Medium",
+    status: "Testing Started",
+    scheduledTime: "10:00 AM",
+    requestedTime: "9:30 AM",
+    testingStartTime: "10:15 AM",
+    notes: "Lower back pain rehabilitation",
+    technician: "PT. Jennifer",
+    serviceCode: "PT001",
+    barcode: "3333444455556",
+  },
+]
+
+const serviceTypes = [
+  { id: "all", name: "All Services", count: mockServicesData.length, icon: "🏥" },
+  {
+    id: "laboratory",
+    name: "Laboratory",
+    count: mockServicesData.filter((s) => s.serviceType === "laboratory").length,
+    icon: "🔬",
+  },
+  {
+    id: "radiology",
+    name: "Radiology",
+    count: mockServicesData.filter((s) => s.serviceType === "radiology").length,
+    icon: "📷",
+  },
+  {
+    id: "cardiology",
+    name: "Cardiology",
+    count: mockServicesData.filter((s) => s.serviceType === "cardiology").length,
+    icon: "❤️",
+  },
+  {
+    id: "physiotherapy",
+    name: "Physiotherapy",
+    count: mockServicesData.filter((s) => s.serviceType === "physiotherapy").length,
+    icon: "🏃",
+  },
+]
 
 const mockInvoices = [
   {
@@ -319,6 +513,13 @@ export default function PatientDetailsPage() {
   const patientId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
   const [consultationKey, setConsultationKey] = useState(0)
+
+  // Services tab state
+  const [selectedServiceType, setSelectedServiceType] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [priorityFilter, setPriorityFilter] = useState("all")
+
   const {
     activeConsultation,
     isConsultationActive,
@@ -388,6 +589,139 @@ export default function PatientDetailsPage() {
   })
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+
+  // Filter services based on selected type and other filters
+  const filteredServices = mockServicesData.filter((service) => {
+    const matchesServiceType = selectedServiceType === "all" || service.serviceType === selectedServiceType
+    const matchesSearch =
+      service.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.patientId.toLowerCase().includes(searchTerm.toLowerCase())
+
+    let matchesStatus = true
+    if (statusFilter !== "all") {
+      matchesStatus = service.status.toLowerCase().replace(" ", "-") === statusFilter
+    }
+
+    const matchesPriority = priorityFilter === "all" || service.priority.toLowerCase() === priorityFilter
+
+    return matchesServiceType && matchesSearch && matchesStatus && matchesPriority
+  })
+
+  // Service helper functions
+  const getServiceStatusIcon = (status: string, serviceType: string) => {
+    if (serviceType === "laboratory") {
+      switch (status) {
+        case "Sample Requested":
+          return <AlertCircle className="h-4 w-4 text-gray-500" />
+        case "Sample Collected":
+          return <TestTube className="h-4 w-4 text-blue-500" />
+        case "Testing Started":
+          return <Play className="h-4 w-4 text-orange-500" />
+        case "Testing Completed":
+          return <CheckCircle2 className="h-4 w-4 text-green-500" />
+        case "Reports Uploaded":
+          return <Upload className="h-4 w-4 text-purple-500" />
+        default:
+          return <AlertCircle className="h-4 w-4 text-gray-500" />
+      }
+    } else {
+      switch (status) {
+        case "Requested":
+          return <AlertCircle className="h-4 w-4 text-gray-500" />
+        case "Testing Started":
+          return <Play className="h-4 w-4 text-orange-500" />
+        case "Testing Completed":
+          return <CheckCircle2 className="h-4 w-4 text-green-500" />
+        case "Reports Uploaded":
+          return <Upload className="h-4 w-4 text-purple-500" />
+        default:
+          return <AlertCircle className="h-4 w-4 text-gray-500" />
+      }
+    }
+  }
+
+  const getServiceStatusColor = (status: string, serviceType: string) => {
+    if (serviceType === "laboratory") {
+      switch (status) {
+        case "Sample Requested":
+          return "bg-gray-100 text-gray-800 border-gray-200"
+        case "Sample Collected":
+          return "bg-blue-100 text-blue-800 border-blue-200"
+        case "Testing Started":
+          return "bg-orange-100 text-orange-800 border-orange-200"
+        case "Testing Completed":
+          return "bg-green-100 text-green-800 border-green-200"
+        case "Reports Uploaded":
+          return "bg-purple-100 text-purple-800 border-purple-200"
+        default:
+          return "bg-gray-100 text-gray-800 border-gray-200"
+      }
+    } else {
+      switch (status) {
+        case "Requested":
+          return "bg-gray-100 text-gray-800 border-gray-200"
+        case "Testing Started":
+          return "bg-orange-100 text-orange-800 border-orange-200"
+        case "Testing Completed":
+          return "bg-green-100 text-green-800 border-green-200"
+        case "Reports Uploaded":
+          return "bg-purple-100 text-purple-800 border-purple-200"
+        default:
+          return "bg-gray-100 text-gray-800 border-gray-200"
+      }
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return "bg-red-100 text-red-800"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800"
+      case "Low":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getServiceTypeIcon = (serviceType: string) => {
+    switch (serviceType) {
+      case "laboratory":
+        return <TestTube className="h-4 w-4" />
+      case "radiology":
+        return <Camera className="h-4 w-4" />
+      case "cardiology":
+        return <Heart className="h-4 w-4" />
+      case "physiotherapy":
+        return <Activity className="h-4 w-4" />
+      default:
+        return <AlertCircle className="h-4 w-4" />
+    }
+  }
+
+  // Get status options based on service type
+  const getStatusOptions = () => {
+    if (selectedServiceType === "laboratory") {
+      return [
+        { value: "all", label: "All Status" },
+        { value: "sample-requested", label: "Sample Requested" },
+        { value: "sample-collected", label: "Sample Collected" },
+        { value: "testing-started", label: "Testing Started" },
+        { value: "testing-completed", label: "Testing Completed" },
+        { value: "reports-uploaded", label: "Reports Uploaded" },
+      ]
+    } else {
+      return [
+        { value: "all", label: "All Status" },
+        { value: "requested", label: "Requested" },
+        { value: "testing-started", label: "Testing Started" },
+        { value: "testing-completed", label: "Testing Completed" },
+        { value: "reports-uploaded", label: "Reports Uploaded" },
+      ]
+    }
+  }
 
   const handleScheduleMeeting = () => {
     const generatedLink =
@@ -932,12 +1266,242 @@ export default function PatientDetailsPage() {
           )}
         </TabsContent>
 
-        {/* Services Tab */}
+        {/* Services Tab - Updated to match Services navigation */}
         <TabsContent value="services" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LaboratorySection patientId={patientId} patientName={mockPatient.name} />
-            <RadiologySection patientId={patientId} patientName={mockPatient.name} />
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Patient Services</h2>
+              <p className="text-gray-600">Manage prescribed tests and services for this patient</p>
+            </div>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Service
+            </Button>
           </div>
+
+          {/* Service Type Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Service Type Selection</CardTitle>
+              <CardDescription>Select a service type to view and manage prescribed services</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {serviceTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.name}</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {type.count}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {selectedServiceType !== "all" && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">{serviceTypes.find((t) => t.id === selectedServiceType)?.icon}</span>
+                    <h3 className="font-semibold text-blue-900">
+                      {serviceTypes.find((t) => t.id === selectedServiceType)?.name}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    {serviceTypes.find((t) => t.id === selectedServiceType)?.count} prescribed services •{" "}
+                    {selectedServiceType === "laboratory"
+                      ? "5-stage workflow: Requested → Collected → Testing → Completed → Reports"
+                      : "4-stage workflow: Requested → Testing → Completed → Reports"}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Filters and Search */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-1 items-center space-x-2">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getStatusOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Services List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Prescribed Services</CardTitle>
+              <CardDescription>
+                {filteredServices.length} service{filteredServices.length !== 1 ? "s" : ""} found
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredServices.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredServices.map((service) => (
+                    <div
+                      key={service.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          {getServiceTypeIcon(service.serviceType)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-semibold">{service.serviceName}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {service.department}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>Scheduled: {service.scheduledTime}</span>
+                            </div>
+                            <span>•</span>
+                            <span>By: {service.requestedBy}</span>
+                            <span>•</span>
+                            <span>Tech: {service.technician}</span>
+                          </div>
+                          {service.notes && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              <strong>Notes:</strong> {service.notes}
+                            </p>
+                          )}
+
+                          {/* Timeline */}
+                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+                            {service.requestedTime && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>Requested: {service.requestedTime}</span>
+                              </div>
+                            )}
+                            {service.collectionTime && (
+                              <div className="flex items-center gap-1">
+                                <TestTube className="h-3 w-3" />
+                                <span>Collected: {service.collectionTime}</span>
+                              </div>
+                            )}
+                            {service.testingStartTime && (
+                              <div className="flex items-center gap-1">
+                                <Play className="h-3 w-3" />
+                                <span>Started: {service.testingStartTime}</span>
+                              </div>
+                            )}
+                            {service.testingCompletedTime && (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span>Completed: {service.testingCompletedTime}</span>
+                              </div>
+                            )}
+                            {service.reportUploadTime && (
+                              <div className="flex items-center gap-1">
+                                <Upload className="h-3 w-3" />
+                                <span>Report: {service.reportUploadTime}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <Badge className={`${getServiceStatusColor(service.status, service.serviceType)} border`}>
+                          {getServiceStatusIcon(service.status, service.serviceType)}
+                          <span className="ml-1">{service.status}</span>
+                        </Badge>
+                        <Badge className={getPriorityColor(service.priority)}>{service.priority}</Badge>
+
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+
+                          {service.status === "Reports Uploaded" && (
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4 mr-1" />
+                              Report
+                            </Button>
+                          )}
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Printer className="h-4 w-4 mr-2" />
+                                Print Label
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <FileTextIcon className="h-4 w-4 mr-2" />
+                                Add Notes
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No services found</h3>
+                  <p className="text-gray-600 mb-4">
+                    No services match your current filters. Try adjusting your search criteria.
+                  </p>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Service
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Telemedicine Tab */}
